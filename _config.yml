@@ -1,0 +1,14 @@
+theme: minima
+plugins:
+  - jekyll-feed
+
+markdown: kramdown
+kramdown:
+  math_engine: mathjax
+  syntax_highlighter: rouge
+
+# Add MathJax support
+mathjax: true
+
+include:
+  - assets/data
