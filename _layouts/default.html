@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>{{ page.title }}</title>
+    <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}">
+    {% if site.google_analytics and jekyll.environment == 'production' %}
+    {% include analytics.html %}
+    {% endif %}
+    <style>
+        button.accordion2 {
+            font: 14px/1.5 "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            cursor: pointer;
+            padding: 0px;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 100%;
+            transition: 0.4s;
+            background-color: #f8f8f8;
+        }
+    
+        button.accordion {
+            font: 14px/1.5 "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            cursor: pointer;
+            padding: 0px;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 100%;
+            transition: 0.4s;
+            background-color: #f8f8f8;
+        }
+    
+        button.accordion.active,
+        button.accordion:hover {
+            background-color: #f8f8f8;
+        }
+    
+        button.accordion:after {
+            content: '[+]';
+            font-size: 90%;
+            color: #777;
+            float: left;
+            margin-left: 1px;
+            margin-right: 3px;
+        }
+    
+        button.accordion2:after {
+            content: '[#]';
+            font-size: 90%;
+            color: #777;
+            float: left;
+            margin-left: 1px;
+            margin-right: 3px;
+        }
+    
+        button.accordion.active:after {
+            content: "[\2212]";
+        }
+    
+        div.panel {
+            padding: 0 20px;
+            margin-top: 5px;
+            display: none;
+            background-color: white;
+            font-size: 100%;
+        }
+    
+        div.panel.show {
+            display: block !important;
+        }
+    </style>
+    <link rel="alternate" type="application/atom+xml" title="{{ site.description }}" href="/feed.xml">
+
+<script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+<script type="module" src="/assets/js/pdf_gallery.js"></script>
+</head>
+
+<body>
+    <div class="wrapper">
+        <section>
+            <h1> {{ page.title }} </h1>
+            {{ content }}
+        </section>
+        <header>
+            <div class="sidenav">
+                <a href="/">Home</a>
+                <a href="/papers/Resume_RasmusDuret.pdf">CV</a>
+                <img src="/images/portrait_2023.jpg" alt="Profile">
+            </div>
+        </header>
+    </div>
+    <script src="{{ '/assets/js/scale.fix.js' | relative_url }}"></script>
+
+</body>
+
+</html>
