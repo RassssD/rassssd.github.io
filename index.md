@@ -23,7 +23,7 @@ My research areas span Public Economics and Political Economy: I am interested i
     <img src="images/MSc_Dissertation_Bunch.png" alt="MSc Dissertation Bunch" style="max-width: 100%; height: auto;">
   </div>
 </div>
-<br>
+
 <div style="display: flex; align-items: flex-start;">
   <div style="flex: 0 0 50%; max-width: 70%;">
     For my <a href="papers/BSc_Dissertation_RasmusDuret.pdf">BSc dissertation</a>, I developed a simple network-based model of social capital to provide a theoretical background to the empirical findings of Chetty et al. (2022), and replicated their key findings of emergent segregation using county-level US data.
