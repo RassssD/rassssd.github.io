@@ -9,15 +9,23 @@ Hi! I am a 1st year MRes/PhD student in Economics at the London School of Econom
 
 
 <div style="display: flex; align-items: flex-start;">
-  <div style="flex: 1;">
-    For my [MSc dissertation](papers/MSc_Dissertation_RasmusDuret.pdf), I used administrative data from Sweden to investigate how a COVID-related change to students' stipend conditions affected their choice to work part-time. Using bunching, instrumental variables, and diff-in-diff methods, I estimated large behavioural responses: a 10-12% increase in average income.
+  <div style="flex: 0 0 50%; max-width: 70%;">
+    For my <a href="papers/MSc_Dissertation_RasmusDuret.pdf">MSc dissertation</a>, I used administrative data from Sweden to investigate how a COVID-related change to students' stipend conditions affected their choice to work part-time. Using bunching, instrumental variables, and diff-in-diff methods, I estimated large behavioural responses: a 10-12% increase in average income.
   </div>
-  <div style="flex: 0; margin-left: 20px;">
-    <img src="images/MSc_Dissertation_Bunch.png" alt="MSc Dissertation Bunch" style="max-width: 300px; height: auto;">
+  <div style="flex: 0 0 50%; max-width: 50%; margin-left: 20px;">
+    <img src="images/MSc_Dissertation_Bunch.png" alt="MSc Dissertation Bunch" style="max-width: 100%; height: auto;">
   </div>
 </div>
 
-For my [BSc dissertation](papers/BSc_Dissertation_RasmusDuret.pdf), I developed a simple network-based model of social capital to provide a theoretical background to the empirical findings of Chetty et al. (2022), and replicated their key findings of emergent segregation using county-level US data.
+<div style="display: flex; align-items: flex-start;">
+  <div style="flex: 0 0 50%; max-width: 70%;">
+    For my <a href="papers/BSc_Dissertation_RasmusDuret.pdf">BSc dissertation</a>, I developed a simple network-based model of social capital to provide a theoretical background to the empirical findings of Chetty et al. (2022), and replicated their key findings of emergent segregation using county-level US data.
+  </div>
+  <div style="flex: 0 0 50%; max-width: 50%; margin-left: 20px;">
+    <img src="images/BSc_Dissertation_Graph.png" alt="MSc Dissertation Bunch" style="max-width: 100%; height: auto;">
+  </div>
+</div>
+
 
 
 ### Education
