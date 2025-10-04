@@ -6,6 +6,7 @@ title: Predocs
 ## Predocs
 
 ### What is a "predoc"?
+
 A predoc essentially implies working as a research assistant for 1-2 years, before going on to do a PhD. This comes mainly from the US, where most people do not do a MSc and therefore often lack the experience and skills to go straight into a PhD from undergrad. 
 
 Predocs are controversial due to the fact that they have become a soft requirement for PhD studies despite providing ambiguous value for prospective researchers, and a now much-diluted signal of quality for universities, as well as potentially encroaching elitism.
