@@ -268,3 +268,25 @@ section {
     display: none;
   }
 }
+
+/* Icon styles */
+.socials {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+.socials a {
+    display: inline-flex;
+}
+
+.icon-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon {
+    width: 20px;   /* try 16–24px */
+    height: 20px;
+}
