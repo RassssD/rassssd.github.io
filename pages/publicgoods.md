@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Rasmus Duret
+title: Rasmus Duret - Public Goods
 ---
 
 
