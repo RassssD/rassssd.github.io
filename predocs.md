@@ -55,7 +55,7 @@ Most applications will give you a coding task, usually after a first round of sc
 
 In general, you will not be asked to do anything particularly complex, as the main goal is to check whether you have the basic skills you will be using on a day-to-day basis: data cleaning/processing, producing descriptive statistics / graphs, some simple regressions and analysis.
 Make sure your code is clear, structured, well-commented, and don't try to do anything unnecessarily fancy, stick to basics. You can find some practice coding tasks floating around the internet, and replicating existing papers is a fantastic way to practice.
-There is little downside to *intelligently* using GenAI to assist you, as you *will* use it on a daily basis on the job. Emphasis on the *intelligently*: don't blindly copy paste, make sure you understand what you are doing and whenever possible do it yourself (if you need truth-telling incentives, you may be asked about what you did during the interview).
+There is little downside to *intelligently* using GenAI to assist you, as you *will* use it on a daily basis on the job. Emphasis on the *intelligently*: use it to *assist you*, don't blindly copy paste, make sure you understand what you are doing and whenever possible do it yourself (if you need truth-telling incentives, you may be asked about what you did during the interview; also, from colleagues who assessed tasks: "If it's obviously ChatGPT I give it a 0").
 
 ### Interview
 Interviews will tend to be a mix of questions assessing your interest in the project and self-reflecting on your own experience, and some technical questions testing both your coding/research practices, and your economics / econometrics knowledge. Some will give you a paper to read in advance to discuss, others will ask you questions within the field of the project, give you a simple case study. Expect some questions on the coding task.
@@ -66,4 +66,4 @@ Interviews will tend to be a mix of questions assessing your interest in the pro
 [comment]: <> (* A government is considering reforming its tax on foreign citizens resident in the country, by lowering the tax-free allowance and/or increasing the tax rate. )
 [comment]: <> (* The UK government wants to evaluate the effects of R&D subsidies on firm investment)
 
-General advice for interviews: Take it easy. Take 10 seconds to think before you answer if you need to.
+General advice for interviews: Take it easy, "Don't Panic". Take 10 seconds to think before you answer if you need to.
