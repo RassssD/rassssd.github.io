@@ -47,6 +47,4 @@ My research areas span Public Economics and Political Economy: I am interested i
 
 ### Contact
 
-Test: [public goods](/pages/publicgoods.md)
-
 - Email: r.duret@lse.ac.uk
