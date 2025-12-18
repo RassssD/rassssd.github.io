@@ -44,11 +44,12 @@ Most people will tweet about it as well, so become a part of EconTwitter if you 
 
 ### Cover Letter
 Here is a general template that I successfully used, most of it can be reused between letters.
+
 1. **Interest in the project**: Don't underestimate this, mention some specific reasons why you like this project/group in particular. Link it to some of your own research (context, topics, methods, data... Lots to pick from). Do some research, this is a place to show you know the area of research and why this project matters.
 2. **Research & Coding Experience**: Probably the most important section. Be explicit about the projects you worked on, what specifically you were doing, the languages or methods you were using, what you produced and contributed, and what you learned from it. 
 3. **Future Plans**: Usually, that you plan to go on to do a PhD and then do research somewhere. But how does the predoc fit into this, why aren't you already doing a PhD?
 
-ONCE YOU HAVE WRITTEN YOUR FIRST DRAFT: For some reference, here are the cover letters for the 3 successful applications I had at LSE: 1, 2, 3. I encourage you not to look at them before having at least written a first draft.
+ONCE YOU HAVE WRITTEN YOUR FIRST DRAFT: For some reference, here are the cover letters for the 3 successful applications I had at LSE: [1](/pages/notes/predoc_III.pdf), [2](/pages/notes/predoc_POID.pdf), [3](/pages/notes/predoc_STICERD.pdf). I encourage you not to look at them before having at least written a first draft.
 
 ### Coding task
 Most applications will give you a coding task, usually after a first round of screening. You will usually have a choice of coding language (between e.g., Stata, R, Python for applied micro; MatLab for Macro).
