@@ -2,37 +2,35 @@
 
 #let name = "Rasmus Duret"
 #let location = "London, United Kingdom"
-#let email = "rasmus@duret.dk"
+#let email = "r.duret@lse.ac.uk"
 #let github = "github.com/[username]"
 #let linkedin = "linkedin.com/in/[username]"
 #let phone = "+44 07 521 438 168"
+#let website = "https://rassssd.github.io/"
 
 #show: resume.with(
   author: name,
-  location: location,
-  email: email,
-  github: github,
-  phone: phone,
   accent-color: "#26428b",
   font: "New Computer Modern",
   paper: "a4",
   author-position: left,
   personal-info-position: left,
+  linkedin: website,
+  email: email,
 )
-
 
 == Education
 
 #edu(
   institution: "PhD/MRes Economics - London School of Economics",
-  dates: dates-helper(start-date: "Sep 2025", end-date: "Present"),
+  location: "Sep 2025 - Present",
   degree: "MRes Year 1"
 )
 - Core courses: Microeconomics, Macroecoomics, Econometrics.
 
 #edu(
   institution: "MSc Economics - London School of Economics",
-  dates: dates-helper(start-date: "Sep 2023", end-date: "Jun 2024"),
+  location: "Sep 2023 - Jun 2024",
   degree: "First Class, 74%, ranked 11th/140"
 )
 - Courses: Public Economics (83%, 1st/12); Econometrics (76%, 6th/140); Microeconomics (72%, 8th/140); Macroeconomics (64%, 22nd/140).
@@ -40,27 +38,24 @@
 
 #edu(
   institution: "BSc Economics - University College London",
-  location: "London, UK",
-  dates: dates-helper(start-date: "Sep 2020", end-date: "Jun 2023"),
+  location: "Sep 2020 - Jun 2023",
   degree: "First Class, 73.2%",
 )
-- Selected courses: Game Theory (80%); Advanced International Economics (74%); Microeconometrics (69%); Microeconomics (74%); Computational Methods (77%); Mathematics (77%) and Statistics (73%) for Economists.
+- Selected courses: Game Theory (80%); Advanced International Economics (74%); Microeconometrics (69%); Computational Methods (77%); Mathematics (77%) and Statistics (73%) for Economists.
 - Dissertation: 81%, nominated for best in year.
 
 == Research Interests
 
-Social mobility and inequality, public economics, causal inference and policy evaluation.
+I am interested in how governments design and evaluate policies to promote technological innovation, social mobility, and broad prosperity. My work focuses on applied microeconomics, often using administrative data.
 
 
 == Research
 #work(
-  title: link("test")[Cash for Cradles: the effects of Estonia's Large Family Allowance],
-  company: text("with David Seim and Jaanika Merikull", style: "italic")
+  title: link("https://rassssd.github.io/resources/papers/Slides_Fertility_Rasmus_06_02_2026.pdf")[Cash for Cradles: the effects of Estonia's Large Family Allowance],
+  company: text("with David Seim and Jaanika Meriküll", style: "italic")
 )
 #v(-4pt)
-In 2017, Estonia introduced a €300/month allowance for families with 3 or more children, _quadrupling_ marginal child benefits. Using administrative data, we are examining how this affected fertility, and assessing the effects on between-household inequality as well as the gender gap.
-
-#v(4pt)
+In 2017, Estonia introduced a €300/month allowance for families with 3 or more children, _quadrupling_ marginal child benefits. Using administrative data, we  examine how this affected fertility and between- and within-household inequality.
 
 
 #work(
@@ -70,8 +65,8 @@ In 2017, Estonia introduced a €300/month allowance for families with 3 or more
   dates: "",
 )
 #v(-4pt)
-Using Swedish admin data (LISA), I investigated the impact of temporarily removing the income threshold for higher education stipends during COVID, employing bunching, simulated IV, and DID methods. Students’ average earnings rose \~11%, with larger effects for higher earners prior to reform.
-#v(4pt)
+Using Swedish admin data (LISA), I investigated the impact of temporarily removing the income threshold for higher education stipends during COVID. Employing bunching, simulated IV, and DID methods, I find that students’ average earnings rose \~11%, with larger effects for higher earners prior to reform, and effects driven by COVID-induced compliers.
+
 
 #work(
   title: link("https://drive.google.com/file/d/1tXeWdGNeAEZwmp1XzGiFgBMMay4HjwBG/view")[Unravelling Network Capital: a network model of Exposure and Friending Effects],
@@ -80,14 +75,14 @@ Using Swedish admin data (LISA), I investigated the impact of temporarily removi
   dates: "",
 )
 #v(-4pt)
-Developed a network-based model of social capital to provide theoretical foundations for the empirical findings of Chetty et al. (2022). Calibrating on their data and reproducing key findings through simulation.
-#v(4pt)
+Developed a network-based model of social capital to provide theoretical foundations for Chetty et al. (2022).
+
 
 == Experience
 
 #work(
   title: "Pre-Doctoral Fellow - London School of Economics",
-  dates: dates-helper(start-date: "Sep 2024", end-date: "Present"),
+  dates: dates-helper(start-date: "Sep 2024", end-date: "Aug 2025"),
   location: ""
 )
 #v(-16pt)
@@ -115,23 +110,7 @@ Developed a network-based model of social capital to provide theoretical foundat
 
 == Skills
 
-#generic-two-by-two(
-  top-left: "Programming: Stata, R, Python, SQL, Git/GitHub, LaTeX, ArcGIS, HTML",
-  top-right: "",
-  bottom-left: "Languages: Danish & French (native), English (proficiency), Spanish (intermediate), Swedish & Norwegian (reading), German (novice)",
-  bottom-right: "",
-)
+*Programming*: Stata, R, Python, MATLAB, Git/GitHub, LaTeX.
+#v(-8pt)
+*Languages*: English (proficiency), Danish & French (native), Spanish (intermediate), German (novice)"
 
-== References
-
-#generic-two-by-two(
-  top-left: "Prof. Johannes Spinnewijn",
-  top-right: "Prof. David Seim",
-  bottom-left: "London School of Economics — j.spinnewijn@lse.ac.uk",
-  bottom-right: "Stockholm University — david.seim@su.se",
-)
-
-#generic-one-by-two(
-  left: "Prof. Wendy Carlin — University College London — w.carlin@ucl.ac.uk",
-  right: "",
-)

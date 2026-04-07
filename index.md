@@ -25,7 +25,7 @@ My research areas span Public Economics and Political Economy: I am interested i
     Contributed a [case study on Denmark's flexicurity system](https://books.core-econ.org/the-economy/macroeconomics/02-unemployment-wages-inequality-10-application-labour-market-denmark.html) to the CORE Economy 2.0 textbook.
 * 2022-23: Research Assistant, UCL.
 
-[My CV is available here.](resources/papers/Resume_RasmusDuret.pdf)
+[My CV is available here.](resources/papers/Resume_Rasmus_Duret.pdf)
 
 ### Contact
 
