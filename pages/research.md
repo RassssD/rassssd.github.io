@@ -5,7 +5,7 @@ title: Rasmus Duret - Research
 
 ### Working papers
 
-1. **Cradles and Cash: Lessons from Estonia’s Law of Large Families** <br> with David Seim <i>(Very early-stage, currently getting data access)</i> <br>
+1. **Cradles and Cash: Lessons from Estonia’s Law of Large Families** <br> with David Seim <i>(Very early-stage, currently getting data access)</i> <br> <b><a href="/resources/papers/Slides_Fertility_Rasmus_06_02_2026.pdf">Slides</a></b>
 <div style="display: flex; align-items: flex-start;">
   <div style="flex: 0 0 50%; max-width: 70%;">
     We use administrative data from Estonia to study the effects of the 2017 Law of Large Families, which <i>quadrupled</i> marginal child benefits for large families. Exploiting variation across birth orders and marital status, we examine the LLF's effects on fertility patterns, and estimate marginal propensity to consume out of increased child benefits.
