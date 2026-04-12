@@ -6,7 +6,7 @@
 #let github = "github.com/[username]"
 #let linkedin = "linkedin.com/in/[username]"
 #let phone = "+44 07 521 438 168"
-#let website = "https://rassssd.github.io/"
+#let website = "rassssd.github.io/"
 
 #show: resume.with(
   author: name,
@@ -96,7 +96,7 @@ Developed a network-based model of social capital to provide theoretical foundat
 )
 #v(-16pt)
 - *PI*: Elaine Drayton. 
-- Used data from the Understanding Society survey to estimate the effects of social housing on socioeconomic outcomes in England, using an event study design. #link("test")[Presented findings] to IFS staff, produced reports supporting future research.
+- Used data from the Understanding Society survey to estimate the effects of social housing on socioeconomic outcomes in England, using an event study design. #link("https://drive.google.com/file/d/1R5-VTjLFVZc8GVkRk5fwY_dcMR1uhuPu/view?usp=sharing")[Presented findings] to IFS staff, produced reports supporting future research.
 
 #work(
   title: "Researcher, CORE Economics Project",
