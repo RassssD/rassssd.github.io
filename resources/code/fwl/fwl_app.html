@@ -17,6 +17,7 @@
     --muted: #6b6560;
     --accent: #8b1a1a;
     --blue: #1a3a6b;
+    --green: #2d6a2d;
     --mono: 'JetBrains Mono', monospace;
     --serif: 'Source Serif 4', Georgia, serif;
   }
@@ -29,28 +30,104 @@
     padding: 2rem;
   }
 
+  /* ── Header ── */
   header {
     max-width: 1100px;
     margin: 0 auto 2rem;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 1rem;
   }
 
   header h1 {
-    font-size: 1.8rem;
+    font-size: 1.9rem;
     font-weight: 300;
     letter-spacing: -0.02em;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
   }
 
   header h1 span { font-weight: 600; color: var(--accent); }
 
-  header p {
-    margin-top: 0.4rem;
-    font-size: 0.95rem;
-    color: var(--muted);
-    font-style: italic;
+  .theorem-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 1rem;
   }
 
+  .theorem-box .thm-title {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.7rem;
+  }
+
+  .theorem-box p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 0.8rem;
+  }
+
+  .theorem-box p:last-child { margin-bottom: 0; }
+
+  .thm-list {
+    list-style: none;
+    margin: 0.6rem 0 0.8rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .thm-list li {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr;
+    gap: 0.5rem;
+    font-size: 0.93rem;
+    line-height: 1.5;
+  }
+
+  .thm-list li .num {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 500;
+    padding-top: 0.15rem;
+  }
+
+  .thm-list li .eq {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--blue);
+    background: #f0f4ff;
+    padding: 0.15rem 0.4rem;
+    border-radius: 2px;
+    display: inline;
+    margin-right: 0.4rem;
+  }
+
+  .intuition-box {
+    background: #faf8f4;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    padding: 1rem 1.4rem;
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .intuition-box .int-title {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── Layout ── */
   .container {
     max-width: 1100px;
     margin: 0 auto;
@@ -60,6 +137,7 @@
     align-items: start;
   }
 
+  /* ── Controls ── */
   .controls {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -150,8 +228,9 @@
 
   .val.red   { color: var(--accent); }
   .val.blue  { color: var(--blue); }
-  .val.green { color: #2d6a2d; }
+  .val.green { color: var(--green); }
 
+  /* ── Plots ── */
   .plots {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -205,13 +284,73 @@
       var(--accent) 0, var(--accent) 4px,
       transparent 4px, transparent 7px);
   }
+
+  /* ── Distribution section ── */
+  .dist-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .dist-header {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    padding-left: 0.25rem;
+  }
+
+  .dist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
 </style>
 </head>
 <body>
 
 <header>
   <h1>Frisch–Waugh–<span>Lovell</span> Theorem</h1>
-  <p>Regressing residualised Y on residualised X₁ recovers the same coefficient as the full multivariate regression.</p>
+
+  <div class="theorem-box">
+    <div class="thm-title">Theorem</div>
+    <p>
+      Let the model be <span style="font-family:var(--mono);font-size:0.88rem;color:var(--blue)">y = β₁X₁ + β₂X₂ + ε</span>.
+      Let <span style="font-family:var(--mono);font-size:0.88rem;color:var(--blue)">ỹ</span> and
+      <span style="font-family:var(--mono);font-size:0.88rem;color:var(--blue)">X̃₁</span> denote
+      the residuals from regressing <span style="font-family:var(--mono);font-size:0.88rem">y</span> and
+      <span style="font-family:var(--mono);font-size:0.88rem">X₁</span> on
+      <span style="font-family:var(--mono);font-size:0.88rem">X₂</span> respectively.
+      Then there are three equivalent ways to obtain β̂₁:
+    </p>
+    <ol class="thm-list">
+      <li>
+        <span class="num">1.</span>
+        <span><span class="eq">β̂₁ = (X′X)⁻¹X′y</span> — regress <em>y</em> on <em>X₁</em> and <em>X₂</em></span>
+      </li>
+      <li>
+        <span class="num">2.</span>
+        <span><span class="eq">β̂₁ = (X̃₁′X̃₁)⁻¹X̃₁′ỹ</span> — regress <em>ỹ</em> on <em>X̃₁</em></span>
+      </li>
+      <li>
+        <span class="num">3.</span>
+        <span><span class="eq">β̂₁ = (X̃₁′X̃₁)⁻¹X̃₁′y</span> — regress <em>y</em> on <em>X̃₁</em></span>
+      </li>
+    </ol>
+  </div>
+
+  <div class="intuition-box">
+    <div class="int-title">Intuition</div>
+    <span style="font-family:var(--mono);font-size:0.85rem;color:var(--blue)">ỹ</span> and
+    <span style="font-family:var(--mono);font-size:0.85rem;color:var(--blue)">X̃₁</span>
+    are the parts of <em>y</em> and <em>X₁</em> orthogonal to <em>X₂</em> — the variation unexplained by the control.
+    Regressing on these residuals isolates the pure partial effect of <em>X₁</em>.
+    The raw univariate regression of <em>y</em> on <em>X₁</em> alone conflates this with the
+    <em>X₁</em>–<em>X₂</em> correlation, producing omitted variable bias when <em>X₂</em> also affects <em>y</em>.
+    The bottom-right panel illustrates method 2; the sampling distributions below show the consequence for bias.
+  </div>
 </header>
 
 <div class="container">
@@ -239,7 +378,7 @@
     </div>
 
     <div class="stats">
-      <h2>Coefficients</h2>
+      <h2>This sample</h2>
       <div class="stat-row">True β₁ <span class="val blue" id="st-true">—</span></div>
       <div class="stat-row">Full model <span class="val green" id="st-full">—</span></div>
       <div class="stat-row">FWL (bottom-right) <span class="val green" id="st-fwl">—</span></div>
@@ -268,164 +407,227 @@
         <div id="p4"></div>
       </div>
     </div>
+
     <div class="legend-bar">
       <div class="legend-item"><div class="legend-line red"></div> OLS fit</div>
       <div class="legend-item"><div class="legend-line dashed"></div> 95% CI</div>
       <div class="legend-item"><div class="legend-line blue"></div> True slope</div>
     </div>
+
+    <div class="dist-section">
+      <div class="dist-header">Sampling distribution of β̂₁ across 500 simulations at current parameters</div>
+      <div class="dist-grid">
+        <div class="plot-cell highlight">
+          <div class="plot-label">★ Full model / FWL — unbiased</div>
+          <div id="d1"></div>
+        </div>
+        <div class="plot-cell">
+          <div class="plot-label">Raw univariate — biased</div>
+          <div id="d2"></div>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
-<!-- Plotly loaded BEFORE our script -->
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
 <script>
 window.addEventListener('load', function () {
 
-  // Seeded PRNG
+  // ── PRNG ────────────────────────────────────────────────────────────────────
   function mulberry32(seed) {
     return function () {
       seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
       t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
   }
 
   function boxMuller(rand) {
-    const u1 = rand(), u2 = rand();
+    var u1 = rand(), u2 = rand();
     return Math.sqrt(-2 * Math.log(u1 + 1e-12)) * Math.cos(2 * Math.PI * u2);
   }
 
   function rnorm(n, rand) {
-    return Array.from({length: n}, () => boxMuller(rand));
+    return Array.from({length: n}, function() { return boxMuller(rand); });
   }
 
-  function mean(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
+  // ── Stats ───────────────────────────────────────────────────────────────────
+  function mean(arr) { return arr.reduce(function(a,b){return a+b;},0) / arr.length; }
 
   function ols(x, y) {
-    const mx = mean(x), my = mean(y);
-    let sxy = 0, sxx = 0;
-    for (let i = 0; i < x.length; i++) {
-      sxy += (x[i] - mx) * (y[i] - my);
-      sxx += (x[i] - mx) ** 2;
+    var mx = mean(x), my = mean(y), sxy = 0, sxx = 0;
+    for (var i = 0; i < x.length; i++) {
+      sxy += (x[i]-mx)*(y[i]-my);
+      sxx += (x[i]-mx)*(x[i]-mx);
     }
-    const b = sxy / sxx;
-    return {a: my - b * mx, b};
+    var b = sxy/sxx;
+    return {a: my - b*mx, b: b};
   }
 
   function residuals(x, y) {
-    const {a, b} = ols(x, y);
-    return y.map((yi, i) => yi - a - b * x[i]);
+    var fit = ols(x, y);
+    return y.map(function(yi, i){ return yi - fit.a - fit.b*x[i]; });
   }
 
   function variance(arr) {
-    const m = mean(arr);
-    return arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length;
+    var m = mean(arr);
+    return arr.reduce(function(s,v){ return s + (v-m)*(v-m); }, 0) / arr.length;
   }
 
-  function confBand(x, y, npts) {
-    npts = npts || 100;
-    const n = x.length;
-    const {a, b} = ols(x, y);
-    const yhat = x.map(xi => a + b * xi);
-    const sse  = y.reduce((s, yi, i) => s + (yi - yhat[i]) ** 2, 0);
-    const s2   = sse / (n - 2);
-    const mx   = mean(x);
-    const sxx  = x.reduce((s, xi) => s + (xi - mx) ** 2, 0);
-    const xmin = Math.min.apply(null, x);
-    const xmax = Math.max.apply(null, x);
-    const xs   = Array.from({length: npts}, (_, i) => xmin + i * (xmax - xmin) / (npts - 1));
-    const t    = 1.96;
-    const upper = xs.map(xi => a + b * xi + t * Math.sqrt(s2 * (1/n + (xi-mx)**2/sxx)));
-    const lower = xs.map(xi => a + b * xi - t * Math.sqrt(s2 * (1/n + (xi-mx)**2/sxx)));
-    return {xs, upper, lower, a, b};
+  function confBand(x, y) {
+    var n = x.length;
+    var fit = ols(x, y);
+    var yhat = x.map(function(xi){ return fit.a + fit.b*xi; });
+    var sse = y.reduce(function(s,yi,i){ return s + (yi-yhat[i])*(yi-yhat[i]); }, 0);
+    var s2 = sse/(n-2);
+    var mx = mean(x);
+    var sxx = x.reduce(function(s,xi){ return s + (xi-mx)*(xi-mx); }, 0);
+    var xmin = Math.min.apply(null,x), xmax = Math.max.apply(null,x);
+    var xs = Array.from({length:100}, function(_,i){ return xmin + i*(xmax-xmin)/99; });
+    var t = 1.96;
+    var upper = xs.map(function(xi){ return fit.a+fit.b*xi + t*Math.sqrt(s2*(1/n+(xi-mx)*(xi-mx)/sxx)); });
+    var lower = xs.map(function(xi){ return fit.a+fit.b*xi - t*Math.sqrt(s2*(1/n+(xi-mx)*(xi-mx)/sxx)); });
+    return {xs:xs, upper:upper, lower:lower, a:fit.a, b:fit.b};
   }
 
-  const ACCENT = '#8b1a1a', BLUE = '#1a3a6b';
-  const SZ = 330;
-  const initialized = {};
+  // ── KDE ─────────────────────────────────────────────────────────────────────
+  function kde(vals) {
+    var n = vals.length;
+    var s = Math.sqrt(variance(vals));
+    var h = 1.06 * s * Math.pow(n, -0.2);
+    var vmin = Math.min.apply(null,vals) - 3*h;
+    var vmax = Math.max.apply(null,vals) + 3*h;
+    var xs = Array.from({length:200}, function(_,i){ return vmin + i*(vmax-vmin)/199; });
+    var ys = xs.map(function(x){
+      return vals.reduce(function(s,v){
+        var z = (x-v)/h;
+        return s + Math.exp(-0.5*z*z);
+      }, 0) / (n * h * Math.sqrt(2*Math.PI));
+    });
+    return {xs:xs, ys:ys};
+  }
 
+  // ── Simulate ────────────────────────────────────────────────────────────────
+  function simulate(n, b1, b2, corr, nsim) {
+    var bFull = [], bRaw = [];
+    for (var s = 0; s < nsim; s++) {
+      var rand = mulberry32(s * 7919 + 1);
+      var X2   = rnorm(n, rand);
+      var eps1 = rnorm(n, rand);
+      var epsY = rnorm(n, rand);
+      var X1   = X2.map(function(v,i){ return corr*v + eps1[i]; });
+      var Y    = X1.map(function(v,i){ return b1*v + b2*X2[i] + epsY[i]; });
+      var tX1  = residuals(X2, X1);
+      var tY   = residuals(X2, Y);
+      bFull.push(ols(tX1, tY).b);
+      bRaw.push(ols(X1, Y).b);
+    }
+    return {bFull:bFull, bRaw:bRaw};
+  }
+
+  // ── Constants ────────────────────────────────────────────────────────────────
+  var ACCENT = '#8b1a1a', BLUE = '#1a3a6b', GREEN = '#2d6a2d';
+  var SZ = 330, DSZ_H = 220;
+  var initialized = {};
+
+  // ── Scatter plot ─────────────────────────────────────────────────────────────
   function makePlot(divId, x, y, betaTrue) {
-    const {xs, upper, lower, a, b} = confBand(x, y);
-    const xmin = Math.min.apply(null, x);
-    const xmax = Math.max.apply(null, x);
+    var cb = confBand(x, y);
+    var xmin = Math.min.apply(null,x), xmax = Math.max.apply(null,x);
 
-    const traces = [
-      {
-        x, y, mode: 'markers', type: 'scatter',
-        marker: {color: 'rgba(100,100,100,0.2)', size: 4},
-        showlegend: false,
-        hovertemplate: '(%{x:.2f}, %{y:.2f})<extra></extra>'
-      },
-      {
-        x: xs, y: upper, mode: 'lines',
-        line: {color: ACCENT, width: 1, dash: 'dot'},
-        showlegend: false, hoverinfo: 'skip'
-      },
-      {
-        x: xs, y: lower, mode: 'lines',
-        line: {color: ACCENT, width: 1, dash: 'dot'},
-        fill: 'tonexty', fillcolor: 'rgba(139,26,26,0.07)',
-        showlegend: false, hoverinfo: 'skip'
-      },
-      {
-        x: xs, y: xs.map(xi => a + b * xi), mode: 'lines',
-        line: {color: ACCENT, width: 2},
-        showlegend: false,
-        hovertemplate: 'Slope: ' + b.toFixed(3) + '<extra></extra>'
-      },
-      {
-        x: [xmin, xmax],
-        y: [a + betaTrue * xmin, a + betaTrue * xmax],
-        mode: 'lines',
-        line: {color: BLUE, width: 2},
-        showlegend: false,
-        hovertemplate: 'True β: ' + betaTrue + '<extra></extra>'
-      }
+    var traces = [
+      { x:x, y:y, mode:'markers', type:'scatter',
+        marker:{color:'rgba(100,100,100,0.2)', size:4},
+        showlegend:false, hovertemplate:'(%{x:.2f}, %{y:.2f})<extra></extra>' },
+      { x:cb.xs, y:cb.upper, mode:'lines', line:{color:ACCENT,width:1,dash:'dot'},
+        showlegend:false, hoverinfo:'skip' },
+      { x:cb.xs, y:cb.lower, mode:'lines', line:{color:ACCENT,width:1,dash:'dot'},
+        fill:'tonexty', fillcolor:'rgba(139,26,26,0.07)',
+        showlegend:false, hoverinfo:'skip' },
+      { x:cb.xs, y:cb.xs.map(function(xi){return cb.a+cb.b*xi;}), mode:'lines',
+        line:{color:ACCENT,width:2}, showlegend:false,
+        hovertemplate:'Slope: '+cb.b.toFixed(3)+'<extra></extra>' },
+      { x:[xmin,xmax], y:[cb.a+betaTrue*xmin, cb.a+betaTrue*xmax],
+        mode:'lines', line:{color:BLUE,width:2}, showlegend:false,
+        hovertemplate:'True β: '+betaTrue+'<extra></extra>' }
     ];
 
-    const layout = {
-      margin: {t: 36, r: 12, b: 40, l: 44},
-      width: SZ, height: SZ,
-      paper_bgcolor: 'rgba(0,0,0,0)',
-      plot_bgcolor:  'rgba(0,0,0,0)',
-      xaxis: {
-        title: {text: 'X', font: {size: 11, family: 'JetBrains Mono'}},
-        gridcolor: '#e8e4dc', zerolinecolor: '#ccc',
-        tickfont: {size: 9}
-      },
-      yaxis: {
-        title: {text: 'Y', font: {size: 11, family: 'JetBrains Mono'}},
-        gridcolor: '#e8e4dc', zerolinecolor: '#ccc',
-        tickfont: {size: 9}
-      },
-      annotations: [{
-        x: 0.97, y: 0.97, xref: 'paper', yref: 'paper',
-        xanchor: 'right', yanchor: 'top',
-        text: 'β̂ = <b>' + b.toFixed(3) + '</b>',
-        showarrow: false,
-        font: {size: 12, color: ACCENT, family: 'JetBrains Mono'},
-        bgcolor: 'rgba(255,255,255,0.85)',
-        borderpad: 3
+    var layout = {
+      margin:{t:36,r:12,b:40,l:44}, width:SZ, height:SZ,
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      xaxis:{title:{text:'X',font:{size:11,family:'JetBrains Mono'}},
+             gridcolor:'#e8e4dc',zerolinecolor:'#ccc',tickfont:{size:9}},
+      yaxis:{title:{text:'Y',font:{size:11,family:'JetBrains Mono'}},
+             gridcolor:'#e8e4dc',zerolinecolor:'#ccc',tickfont:{size:9}},
+      annotations:[{
+        x:0.97,y:0.97,xref:'paper',yref:'paper',xanchor:'right',yanchor:'top',
+        text:'β̂ = <b>'+cb.b.toFixed(3)+'</b>',
+        showarrow:false, font:{size:12,color:ACCENT,family:'JetBrains Mono'},
+        bgcolor:'rgba(255,255,255,0.85)', borderpad:3
       }]
     };
 
-    const config = {displayModeBar: false, responsive: false};
-
-    if (!initialized[divId]) {
-      Plotly.newPlot(divId, traces, layout, config);
-      initialized[divId] = true;
-    } else {
-      Plotly.react(divId, traces, layout, config);
-    }
+    var config = {displayModeBar:false, responsive:false};
+    if (!initialized[divId]) { Plotly.newPlot(divId,traces,layout,config); initialized[divId]=true; }
+    else { Plotly.react(divId,traces,layout,config); }
   }
 
+  // ── Distribution plot ────────────────────────────────────────────────────────
+  function makeDistPlot(divId, vals, betaTrue, color, label) {
+    var k = kde(vals);
+    var m = mean(vals);
+    var maxY = Math.max.apply(null, k.ys);
+
+    var traces = [
+      { x:k.xs, y:k.ys, mode:'lines', fill:'tozeroy',
+        fillcolor: color==='red' ? 'rgba(139,26,26,0.12)' : 'rgba(26,58,107,0.12)',
+        line:{color: color==='red' ? ACCENT : GREEN, width:2},
+        showlegend:false,
+        hovertemplate:'β̂: %{x:.3f}<extra></extra>' },
+      // true value line
+      { x:[betaTrue,betaTrue], y:[0, maxY*1.1], mode:'lines',
+        line:{color:BLUE,width:2,dash:'dash'},
+        showlegend:false, hovertemplate:'True β₁: '+betaTrue+'<extra></extra>' },
+      // mean line
+      { x:[m,m], y:[0, maxY*1.1], mode:'lines',
+        line:{color: color==='red' ? ACCENT : GREEN, width:1.5, dash:'dot'},
+        showlegend:false, hovertemplate:'Mean β̂: '+m.toFixed(3)+'<extra></extra>' }
+    ];
+
+    var layout = {
+      margin:{t:36,r:12,b:40,l:44},
+      width:SZ, height:DSZ_H,
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      xaxis:{title:{text:'β̂₁',font:{size:11,family:'JetBrains Mono'}},
+             gridcolor:'#e8e4dc',zerolinecolor:'#ccc',tickfont:{size:9}},
+      yaxis:{title:{text:'Density',font:{size:11,family:'JetBrains Mono'}},
+             gridcolor:'#e8e4dc',zerolinecolor:'#ccc',tickfont:{size:9}},
+      annotations:[
+        { x:0.97,y:0.97,xref:'paper',yref:'paper',xanchor:'right',yanchor:'top',
+          text:'mean = <b>'+m.toFixed(3)+'</b>',
+          showarrow:false,
+          font:{size:11, color: color==='red'?ACCENT:GREEN, family:'JetBrains Mono'},
+          bgcolor:'rgba(255,255,255,0.85)', borderpad:3 },
+        { x: betaTrue, y: maxY*1.15, xref:'x', yref:'y',
+          text:'true', showarrow:false,
+          font:{size:9,color:BLUE,family:'JetBrains Mono'} }
+      ]
+    };
+
+    var config = {displayModeBar:false, responsive:false};
+    if (!initialized[divId]) { Plotly.newPlot(divId,traces,layout,config); initialized[divId]=true; }
+    else { Plotly.react(divId,traces,layout,config); }
+  }
+
+  // ── Update ───────────────────────────────────────────────────────────────────
   function update() {
-    const n    = +document.getElementById('sl-n').value;
-    const b1   = +document.getElementById('sl-b1').value;
-    const b2   = +document.getElementById('sl-b2').value;
-    const corr = +document.getElementById('sl-cr').value;
-    const seed = +document.getElementById('sl-sd').value;
+    var n    = +document.getElementById('sl-n').value;
+    var b1   = +document.getElementById('sl-b1').value;
+    var b2   = +document.getElementById('sl-b2').value;
+    var corr = +document.getElementById('sl-cr').value;
+    var seed = +document.getElementById('sl-sd').value;
 
     document.getElementById('lbl-n').textContent  = n;
     document.getElementById('lbl-b1').textContent = b1.toFixed(1);
@@ -433,19 +635,20 @@ window.addEventListener('load', function () {
     document.getElementById('lbl-cr').textContent = corr.toFixed(2);
     document.getElementById('lbl-sd').textContent = seed;
 
-    const rand    = mulberry32(seed * 1337 + 42);
-    const X2      = rnorm(n, rand);
-    const eps1    = rnorm(n, rand);
-    const epsY    = rnorm(n, rand);
-    const X1      = X2.map((v, i) => corr * v + eps1[i]);
-    const Y       = X1.map((v, i) => b1 * v + b2 * X2[i] + epsY[i]);
-    const tildeY  = residuals(X2, Y);
-    const tildeX1 = residuals(X2, X1);
+    // Single sample for scatter plots
+    var rand    = mulberry32(seed * 1337 + 42);
+    var X2      = rnorm(n, rand);
+    var eps1    = rnorm(n, rand);
+    var epsY    = rnorm(n, rand);
+    var X1      = X2.map(function(v,i){ return corr*v + eps1[i]; });
+    var Y       = X1.map(function(v,i){ return b1*v + b2*X2[i] + epsY[i]; });
+    var tildeY  = residuals(X2, Y);
+    var tildeX1 = residuals(X2, X1);
 
-    const bRaw  = ols(X1, Y).b;
-    const bFWL  = ols(tildeX1, tildeY).b;
-    const bFull = ols(tildeX1, Y).b;
-    const att   = variance(tildeX1) / variance(X1);
+    var bRaw  = ols(X1, Y).b;
+    var bFWL  = ols(tildeX1, tildeY).b;
+    var bFull = ols(tildeX1, Y).b;
+    var att   = variance(tildeX1) / variance(X1);
 
     makePlot('p1', X1,      Y,      b1);
     makePlot('p2', X1,      tildeY, b1);
@@ -457,10 +660,15 @@ window.addEventListener('load', function () {
     document.getElementById('st-fwl').textContent   = bFWL.toFixed(3);
     document.getElementById('st-raw').textContent   = bRaw.toFixed(3);
     document.getElementById('st-att').textContent   = att.toFixed(3);
-    document.getElementById('st-check').textContent = (b1 * att).toFixed(3);
+    document.getElementById('st-check').textContent = (b1*att).toFixed(3);
+
+    // 500 simulations for sampling distributions
+    var sims = simulate(n, b1, b2, corr, 500);
+    makeDistPlot('d1', sims.bFull, b1, 'green', 'Full / FWL');
+    makeDistPlot('d2', sims.bRaw,  b1, 'red',   'Raw');
   }
 
-  ['sl-n', 'sl-b1', 'sl-b2', 'sl-cr', 'sl-sd'].forEach(function(id) {
+  ['sl-n','sl-b1','sl-b2','sl-cr','sl-sd'].forEach(function(id){
     document.getElementById(id).addEventListener('input', update);
   });
 
