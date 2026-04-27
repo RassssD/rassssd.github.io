@@ -12,4 +12,7 @@ title: Rasmus Duret - Public Goods
 
 [UK Master's in Econ](/pages/notes/UK_masters.html): some thoughts on the top programmes.
 
-#### Some notes
+#### Some notes and Code
+
+* [Frisch-Waugh-Lovell Visualisation](/resources/code/fwl_app/): interactive illustration of the [FWL theorem](https://en.wikipedia.org/wiki/Frisch%E2%80%93Waugh%E2%80%93Lovell_theorem).
+
