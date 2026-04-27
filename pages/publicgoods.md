@@ -14,5 +14,5 @@ title: Rasmus Duret - Public Goods
 
 #### Some notes and Code
 
-* [Frisch-Waugh-Lovell Visualisation](/resources/code/fwl/): interactive illustration of the [FWL theorem](https://en.wikipedia.org/wiki/Frisch%E2%80%93Waugh%E2%80%93Lovell_theorem).
+* [Frisch-Waugh-Lovell Visualisation](/resources/code/fwl/fwl_app.html): interactive illustration of the [FWL theorem](https://en.wikipedia.org/wiki/Frisch%E2%80%93Waugh%E2%80%93Lovell_theorem).
 

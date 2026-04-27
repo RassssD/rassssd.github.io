@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frisch-Waugh-Lovell Theorem</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f5f0;
+    --panel: #ffffff;
+    --border: #e0dbd0;
+    --text: #1a1a1a;
+    --muted: #6b6560;
+    --accent: #8b1a1a;
+    --blue: #1a3a6b;
+    --mono: 'JetBrains Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+  }
+
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  header {
+    max-width: 1100px;
+    margin: 0 auto 2rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+  }
+
+  header h1 {
+    font-size: 1.8rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+  }
+
+  header h1 span { font-weight: 600; color: var(--accent); }
+
+  header p {
+    margin-top: 0.4rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .controls {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 1.4rem;
+    position: sticky;
+    top: 1rem;
+  }
+
+  .controls h2 {
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.2rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.6rem;
+  }
+
+  .control-group { margin-bottom: 1.2rem; }
+
+  .control-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.88rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .control-group label span {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+  .stats {
+    margin-top: 1.4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .stats h2 {
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px dotted var(--border);
+    color: var(--muted);
+  }
+
+  .stat-row:last-child { border-bottom: none; }
+
+  .stat-row .val {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+
+  .val.red   { color: var(--accent); }
+  .val.blue  { color: var(--blue); }
+  .val.green { color: #2d6a2d; }
+
+  .plots {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 1rem;
+  }
+
+  .plot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .plot-cell { position: relative; }
+
+  .plot-label {
+    position: absolute;
+    top: 8px; left: 12px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .plot-cell.highlight { outline: 2px solid var(--accent); }
+  .plot-cell.highlight .plot-label { color: var(--accent); }
+
+  .legend-bar {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.6rem 0.5rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .legend-line { width: 24px; height: 2px; }
+  .legend-line.red  { background: var(--accent); }
+  .legend-line.blue { background: var(--blue); }
+  .legend-line.dashed {
+    background: repeating-linear-gradient(90deg,
+      var(--accent) 0, var(--accent) 4px,
+      transparent 4px, transparent 7px);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Frisch–Waugh–<span>Lovell</span> Theorem</h1>
+  <p>Regressing residualised Y on residualised X₁ recovers the same coefficient as the full multivariate regression.</p>
+</header>
+
+<div class="container">
+  <aside class="controls">
+    <h2>Parameters</h2>
+    <div class="control-group">
+      <label>Sample size <span id="lbl-n">200</span></label>
+      <input type="range" id="sl-n" min="50" max="500" step="50" value="200">
+    </div>
+    <div class="control-group">
+      <label>True β₁ <span id="lbl-b1">2.0</span></label>
+      <input type="range" id="sl-b1" min="0" max="5" step="0.5" value="2">
+    </div>
+    <div class="control-group">
+      <label>Effect of X₂ on Y <span id="lbl-b2">3.0</span></label>
+      <input type="range" id="sl-b2" min="0" max="5" step="0.5" value="3">
+    </div>
+    <div class="control-group">
+      <label>X₁–X₂ correlation <span id="lbl-cr">1.5</span></label>
+      <input type="range" id="sl-cr" min="0" max="3" step="0.25" value="1.5">
+    </div>
+    <div class="control-group">
+      <label>Random seed <span id="lbl-sd">1</span></label>
+      <input type="range" id="sl-sd" min="1" max="100" step="1" value="1">
+    </div>
+
+    <div class="stats">
+      <h2>Coefficients</h2>
+      <div class="stat-row">True β₁ <span class="val blue" id="st-true">—</span></div>
+      <div class="stat-row">Full model <span class="val green" id="st-full">—</span></div>
+      <div class="stat-row">FWL (bottom-right) <span class="val green" id="st-fwl">—</span></div>
+      <div class="stat-row">Raw (OVB) <span class="val red" id="st-raw">—</span></div>
+      <div class="stat-row">Attenuation factor <span class="val" id="st-att">—</span></div>
+      <div class="stat-row">True × att. <span class="val" id="st-check">—</span></div>
+    </div>
+  </aside>
+
+  <main class="plots">
+    <div class="plot-grid">
+      <div class="plot-cell">
+        <div class="plot-label">Raw Y vs X₁</div>
+        <div id="p1"></div>
+      </div>
+      <div class="plot-cell">
+        <div class="plot-label">Residual Y vs X₁</div>
+        <div id="p2"></div>
+      </div>
+      <div class="plot-cell">
+        <div class="plot-label">Y vs Residual X₁</div>
+        <div id="p3"></div>
+      </div>
+      <div class="plot-cell highlight">
+        <div class="plot-label">★ FWL: Residual Y vs Residual X₁</div>
+        <div id="p4"></div>
+      </div>
+    </div>
+    <div class="legend-bar">
+      <div class="legend-item"><div class="legend-line red"></div> OLS fit</div>
+      <div class="legend-item"><div class="legend-line dashed"></div> 95% CI</div>
+      <div class="legend-item"><div class="legend-line blue"></div> True slope</div>
+    </div>
+  </main>
+</div>
+
+<!-- Plotly loaded BEFORE our script -->
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<script>
+window.addEventListener('load', function () {
+
+  // Seeded PRNG
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function boxMuller(rand) {
+    const u1 = rand(), u2 = rand();
+    return Math.sqrt(-2 * Math.log(u1 + 1e-12)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function rnorm(n, rand) {
+    return Array.from({length: n}, () => boxMuller(rand));
+  }
+
+  function mean(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
+
+  function ols(x, y) {
+    const mx = mean(x), my = mean(y);
+    let sxy = 0, sxx = 0;
+    for (let i = 0; i < x.length; i++) {
+      sxy += (x[i] - mx) * (y[i] - my);
+      sxx += (x[i] - mx) ** 2;
+    }
+    const b = sxy / sxx;
+    return {a: my - b * mx, b};
+  }
+
+  function residuals(x, y) {
+    const {a, b} = ols(x, y);
+    return y.map((yi, i) => yi - a - b * x[i]);
+  }
+
+  function variance(arr) {
+    const m = mean(arr);
+    return arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length;
+  }
+
+  function confBand(x, y, npts) {
+    npts = npts || 100;
+    const n = x.length;
+    const {a, b} = ols(x, y);
+    const yhat = x.map(xi => a + b * xi);
+    const sse  = y.reduce((s, yi, i) => s + (yi - yhat[i]) ** 2, 0);
+    const s2   = sse / (n - 2);
+    const mx   = mean(x);
+    const sxx  = x.reduce((s, xi) => s + (xi - mx) ** 2, 0);
+    const xmin = Math.min.apply(null, x);
+    const xmax = Math.max.apply(null, x);
+    const xs   = Array.from({length: npts}, (_, i) => xmin + i * (xmax - xmin) / (npts - 1));
+    const t    = 1.96;
+    const upper = xs.map(xi => a + b * xi + t * Math.sqrt(s2 * (1/n + (xi-mx)**2/sxx)));
+    const lower = xs.map(xi => a + b * xi - t * Math.sqrt(s2 * (1/n + (xi-mx)**2/sxx)));
+    return {xs, upper, lower, a, b};
+  }
+
+  const ACCENT = '#8b1a1a', BLUE = '#1a3a6b';
+  const SZ = 330;
+  const initialized = {};
+
+  function makePlot(divId, x, y, betaTrue) {
+    const {xs, upper, lower, a, b} = confBand(x, y);
+    const xmin = Math.min.apply(null, x);
+    const xmax = Math.max.apply(null, x);
+
+    const traces = [
+      {
+        x, y, mode: 'markers', type: 'scatter',
+        marker: {color: 'rgba(100,100,100,0.2)', size: 4},
+        showlegend: false,
+        hovertemplate: '(%{x:.2f}, %{y:.2f})<extra></extra>'
+      },
+      {
+        x: xs, y: upper, mode: 'lines',
+        line: {color: ACCENT, width: 1, dash: 'dot'},
+        showlegend: false, hoverinfo: 'skip'
+      },
+      {
+        x: xs, y: lower, mode: 'lines',
+        line: {color: ACCENT, width: 1, dash: 'dot'},
+        fill: 'tonexty', fillcolor: 'rgba(139,26,26,0.07)',
+        showlegend: false, hoverinfo: 'skip'
+      },
+      {
+        x: xs, y: xs.map(xi => a + b * xi), mode: 'lines',
+        line: {color: ACCENT, width: 2},
+        showlegend: false,
+        hovertemplate: 'Slope: ' + b.toFixed(3) + '<extra></extra>'
+      },
+      {
+        x: [xmin, xmax],
+        y: [a + betaTrue * xmin, a + betaTrue * xmax],
+        mode: 'lines',
+        line: {color: BLUE, width: 2},
+        showlegend: false,
+        hovertemplate: 'True β: ' + betaTrue + '<extra></extra>'
+      }
+    ];
+
+    const layout = {
+      margin: {t: 36, r: 12, b: 40, l: 44},
+      width: SZ, height: SZ,
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor:  'rgba(0,0,0,0)',
+      xaxis: {
+        title: {text: 'X', font: {size: 11, family: 'JetBrains Mono'}},
+        gridcolor: '#e8e4dc', zerolinecolor: '#ccc',
+        tickfont: {size: 9}
+      },
+      yaxis: {
+        title: {text: 'Y', font: {size: 11, family: 'JetBrains Mono'}},
+        gridcolor: '#e8e4dc', zerolinecolor: '#ccc',
+        tickfont: {size: 9}
+      },
+      annotations: [{
+        x: 0.97, y: 0.97, xref: 'paper', yref: 'paper',
+        xanchor: 'right', yanchor: 'top',
+        text: 'β̂ = <b>' + b.toFixed(3) + '</b>',
+        showarrow: false,
+        font: {size: 12, color: ACCENT, family: 'JetBrains Mono'},
+        bgcolor: 'rgba(255,255,255,0.85)',
+        borderpad: 3
+      }]
+    };
+
+    const config = {displayModeBar: false, responsive: false};
+
+    if (!initialized[divId]) {
+      Plotly.newPlot(divId, traces, layout, config);
+      initialized[divId] = true;
+    } else {
+      Plotly.react(divId, traces, layout, config);
+    }
+  }
+
+  function update() {
+    const n    = +document.getElementById('sl-n').value;
+    const b1   = +document.getElementById('sl-b1').value;
+    const b2   = +document.getElementById('sl-b2').value;
+    const corr = +document.getElementById('sl-cr').value;
+    const seed = +document.getElementById('sl-sd').value;
+
+    document.getElementById('lbl-n').textContent  = n;
+    document.getElementById('lbl-b1').textContent = b1.toFixed(1);
+    document.getElementById('lbl-b2').textContent = b2.toFixed(1);
+    document.getElementById('lbl-cr').textContent = corr.toFixed(2);
+    document.getElementById('lbl-sd').textContent = seed;
+
+    const rand    = mulberry32(seed * 1337 + 42);
+    const X2      = rnorm(n, rand);
+    const eps1    = rnorm(n, rand);
+    const epsY    = rnorm(n, rand);
+    const X1      = X2.map((v, i) => corr * v + eps1[i]);
+    const Y       = X1.map((v, i) => b1 * v + b2 * X2[i] + epsY[i]);
+    const tildeY  = residuals(X2, Y);
+    const tildeX1 = residuals(X2, X1);
+
+    const bRaw  = ols(X1, Y).b;
+    const bFWL  = ols(tildeX1, tildeY).b;
+    const bFull = ols(tildeX1, Y).b;
+    const att   = variance(tildeX1) / variance(X1);
+
+    makePlot('p1', X1,      Y,      b1);
+    makePlot('p2', X1,      tildeY, b1);
+    makePlot('p3', tildeX1, Y,      b1);
+    makePlot('p4', tildeX1, tildeY, b1);
+
+    document.getElementById('st-true').textContent  = b1.toFixed(3);
+    document.getElementById('st-full').textContent  = bFull.toFixed(3);
+    document.getElementById('st-fwl').textContent   = bFWL.toFixed(3);
+    document.getElementById('st-raw').textContent   = bRaw.toFixed(3);
+    document.getElementById('st-att').textContent   = att.toFixed(3);
+    document.getElementById('st-check').textContent = (b1 * att).toFixed(3);
+  }
+
+  ['sl-n', 'sl-b1', 'sl-b2', 'sl-cr', 'sl-sd'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', update);
+  });
+
+  update();
+});
+</script>
+</body>
+</html>
