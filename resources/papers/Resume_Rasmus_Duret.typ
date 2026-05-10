@@ -23,14 +23,14 @@
 
 #edu(
   institution: "PhD/MRes Economics - London School of Economics",
-  location: "Sep 2025 - Present",
+  location: "2025 - ",
   degree: "MRes Year 1"
 )
 - Core courses: Microeconomics, Macroecoomics, Econometrics.
 
 #edu(
   institution: "MSc Economics - London School of Economics",
-  location: "Sep 2023 - Jun 2024",
+  location: "2023 - 2024",
   degree: "First Class, 74%, ranked 11th/140"
 )
 - Courses: Public Economics (83%, 1st/12); Econometrics (76%, 6th/140); Microeconomics (72%, 8th/140); Macroeconomics (64%, 22nd/140).
@@ -38,7 +38,7 @@
 
 #edu(
   institution: "BSc Economics - University College London",
-  location: "Sep 2020 - Jun 2023",
+  location: "2020 - 2023",
   degree: "First Class, 73.2%",
 )
 - Selected courses: Game Theory (80%); Advanced International Economics (74%); Microeconometrics (69%); Computational Methods (77%); Mathematics (77%) and Statistics (73%) for Economists.
@@ -82,7 +82,7 @@ Developed a network-based model of social capital to provide theoretical foundat
 
 #work(
   title: "Pre-Doctoral Fellow - London School of Economics",
-  dates: dates-helper(start-date: "Sep 2024", end-date: "Aug 2025"),
+  dates: dates-helper(start-date: "2024", end-date: "2025"),
   location: ""
 )
 #v(-16pt)
@@ -92,7 +92,7 @@ Developed a network-based model of social capital to provide theoretical foundat
 
 #work(
   title: "Summer Student, Institute for Fiscal Studies",
-  dates: dates-helper(start-date: "Jul 2024", end-date: "Aug 2024"),
+  dates: dates-helper(start-date: "", end-date: "Summer 2024"),
 )
 #v(-16pt)
 - *PI*: Elaine Drayton. 
@@ -101,7 +101,7 @@ Developed a network-based model of social capital to provide theoretical foundat
 #work(
   title: "Researcher, CORE Economics Project",
   location: "",
-  dates: dates-helper(start-date: "Aug 2022", end-date: "Sep 2025"),
+  dates: dates-helper(start-date: "2022", end-date: "2025"),
 )
 #v(-16pt)
 - *PI*: Prof. Wendy Carlin
