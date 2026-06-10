@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frisch–Waugh–Lovell Theorem</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --surface: #f7fafc;
+    --border: #e2e8f0;
+    --text: #2d3748;
+    --muted: #718096;
+    --accent: #2b6cb0;
+    --accent-dark: #1a4a8a;
+    --green: #276749;
+    --red: #9b2335;
+    --mono: 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 1.2rem;
+  }
+
+  header h1 a {
+    color: #1a202c;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--accent);
+    margin-right: 1rem;
+  }
+
+  .theorem-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .box-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 0.6rem;
+  }
+
+  .theorem-box p { font-size: 0.92rem; line-height: 1.7; margin-bottom: 0.7rem; }
+  .theorem-box p:last-child { margin-bottom: 0; }
+
+  .thm-list { list-style: none; margin: 0.5rem 0 0.7rem; display: flex; flex-direction: column; gap: 0.45rem; }
+  .thm-list li { display: grid; grid-template-columns: 1.4rem 1fr; gap: 0.4rem; font-size: 0.9rem; line-height: 1.5; }
+  .thm-list li .num { font-family: var(--mono); font-size: 0.75rem; color: var(--accent); font-weight: 500; padding-top: 0.1rem; }
+  .thm-list li .eq { font-family: var(--mono); font-size: 0.8rem; color: var(--accent-dark); background: #ebf4ff; padding: 0.12rem 0.35rem; border-radius: 3px; display: inline; margin-right: 0.35rem; }
+
+  .intuition-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid #718096;
+    border-radius: 4px;
+    padding: 1rem 1.4rem;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .intuition-box .box-label { color: var(--muted); }
+
+  .container {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .controls {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    position: sticky;
+    top: 1rem;
+  }
+
+  .controls-title {
+    font-size: 0.65rem;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  .control-group { margin-bottom: 1rem; }
+  .control-group:last-child { margin-bottom: 0; }
+
+  .control-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.84rem;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+  }
+
+  .control-group label span {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+    border-radius: 1px;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+  .stats {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    padding: 0.28rem 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .stat-row:last-child { border-bottom: none; }
+
+  .stat-row .val { font-family: var(--mono); font-size: 0.78rem; font-weight: 500; }
+  .val.red   { color: var(--red); }
+  .val.blue  { color: var(--accent); }
+  .val.green { color: var(--green); }
+
+  .plots {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .plot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .plot-cell { position: relative; }
+
+  .plot-label {
+    position: absolute;
+    top: 8px; left: 12px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .plot-cell.highlight { outline: 2px solid var(--accent); border-radius: 3px; }
+  .plot-cell.highlight .plot-label { color: var(--accent); }
+
+  .legend-bar {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.5rem 0.3rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--muted); }
+  .legend-line { width: 22px; height: 2px; }
+  .legend-line.red  { background: var(--red); }
+  .legend-line.blue { background: var(--accent); }
+  .legend-line.dashed {
+    background: repeating-linear-gradient(90deg, var(--red) 0, var(--red) 4px, transparent 4px, transparent 7px);
+  }
+
+  .dist-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .dist-header {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  .dist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Frisch–Waugh–Lovell Theorem</h1>
+
+  <div class="theorem-box">
+    <div class="box-label">Theorem</div>
+    <p>Let the model be <span style="font-family:var(--mono);font-size:0.85rem;color:var(--accent-dark)">y = β₁X₁ + β₂X₂ + ε</span>. Let <span style="font-family:var(--mono);font-size:0.85rem;color:var(--accent-dark)">ỹ</span> and <span style="font-family:var(--mono);font-size:0.85rem;color:var(--accent-dark)">X̃₁</span> denote the residuals from regressing <span style="font-family:var(--mono)">y</span> and <span style="font-family:var(--mono)">X₁</span> on <span style="font-family:var(--mono)">X₂</span> respectively. Then there are three equivalent ways to obtain β̂₁:</p>
+    <ol class="thm-list">
+      <li><span class="num">1.</span><span><span class="eq">β̂₁ = (X′X)⁻¹X′y</span> — regress <em>y</em> on <em>X₁</em> and <em>X₂</em></span></li>
+      <li><span class="num">2.</span><span><span class="eq">β̂₁ = (X̃₁′X̃₁)⁻¹X̃₁′ỹ</span> — regress <em>ỹ</em> on <em>X̃₁</em></span></li>
+      <li><span class="num">3.</span><span><span class="eq">β̂₁ = (X̃₁′X̃₁)⁻¹X̃₁′y</span> — regress <em>y</em> on <em>X̃₁</em></span></li>
+    </ol>
+  </div>
+
+  <div class="intuition-box">
+    <div class="box-label">Intuition</div>
+    <span style="font-family:var(--mono);font-size:0.82rem;color:var(--accent-dark)">ỹ</span> and <span style="font-family:var(--mono);font-size:0.82rem;color:var(--accent-dark)">X̃₁</span> are the parts of <em>y</em> and <em>X₁</em> orthogonal to <em>X₂</em> — the variation unexplained by the control. Regressing on these residuals isolates the pure partial effect of <em>X₁</em>. The raw univariate regression conflates this with the <em>X₁</em>–<em>X₂</em> correlation, producing omitted variable bias. The bottom-right panel illustrates method 2; the sampling distributions below show the consequence for bias.
+  </div>
+</header>
+
+<div class="container">
+  <aside class="controls">
+    <div class="controls-title">Parameters</div>
+    <div class="control-group">
+      <label>Sample size <span id="lbl-n">200</span></label>
+      <input type="range" id="sl-n" min="50" max="500" step="50" value="200">
+    </div>
+    <div class="control-group">
+      <label>True β₁ <span id="lbl-b1">2.0</span></label>
+      <input type="range" id="sl-b1" min="0" max="5" step="0.5" value="2">
+    </div>
+    <div class="control-group">
+      <label>Effect of X₂ on Y <span id="lbl-b2">3.0</span></label>
+      <input type="range" id="sl-b2" min="0" max="5" step="0.5" value="3">
+    </div>
+    <div class="control-group">
+      <label>X₁–X₂ correlation <span id="lbl-cr">1.5</span></label>
+      <input type="range" id="sl-cr" min="0" max="3" step="0.25" value="1.5">
+    </div>
+    <div class="control-group">
+      <label>Random seed <span id="lbl-sd">1</span></label>
+      <input type="range" id="sl-sd" min="1" max="100" step="1" value="1">
+    </div>
+
+    <div class="stats">
+      <div class="controls-title" style="margin-bottom:0.7rem">This sample</div>
+      <div class="stat-row">True β₁ <span class="val blue" id="st-true">—</span></div>
+      <div class="stat-row">Full model <span class="val green" id="st-full">—</span></div>
+      <div class="stat-row">FWL <span class="val green" id="st-fwl">—</span></div>
+      <div class="stat-row">Raw (OVB) <span class="val red" id="st-raw">—</span></div>
+      <div class="stat-row">Attenuation <span class="val" id="st-att">—</span></div>
+      <div class="stat-row">True × att. <span class="val" id="st-check">—</span></div>
+    </div>
+  </aside>
+
+  <main class="plots">
+    <div class="plot-grid">
+      <div class="plot-cell">
+        <div class="plot-label">Raw Y vs X₁</div>
+        <div id="p1"></div>
+      </div>
+      <div class="plot-cell">
+        <div class="plot-label">Residual Y vs X₁</div>
+        <div id="p2"></div>
+      </div>
+      <div class="plot-cell">
+        <div class="plot-label">Y vs Residual X₁</div>
+        <div id="p3"></div>
+      </div>
+      <div class="plot-cell highlight">
+        <div class="plot-label">★ FWL: Residual Y vs Residual X₁</div>
+        <div id="p4"></div>
+      </div>
+    </div>
+
+    <div class="legend-bar">
+      <div class="legend-item"><div class="legend-line red"></div> OLS fit</div>
+      <div class="legend-item"><div class="legend-line dashed"></div> 95% CI</div>
+      <div class="legend-item"><div class="legend-line blue"></div> True slope</div>
+    </div>
+
+    <div class="dist-section">
+      <div class="dist-header">Sampling distribution of β̂₁ across 500 simulations at current parameters</div>
+      <div class="dist-grid">
+        <div class="plot-cell highlight">
+          <div class="plot-label">★ Full model / FWL — unbiased</div>
+          <div id="d1"></div>
+        </div>
+        <div class="plot-cell">
+          <div class="plot-label">Raw univariate — biased</div>
+          <div id="d2"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<script>
+window.addEventListener('load', function () {
+
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function boxMuller(rand) {
+    var u1 = rand(), u2 = rand();
+    return Math.sqrt(-2 * Math.log(u1 + 1e-12)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function rnorm(n, rand) {
+    return Array.from({length: n}, function() { return boxMuller(rand); });
+  }
+
+  function mean(arr) { return arr.reduce(function(a,b){return a+b;},0) / arr.length; }
+
+  function ols(x, y) {
+    var mx = mean(x), my = mean(y), sxy = 0, sxx = 0;
+    for (var i = 0; i < x.length; i++) {
+      sxy += (x[i]-mx)*(y[i]-my);
+      sxx += (x[i]-mx)*(x[i]-mx);
+    }
+    var b = sxy/sxx;
+    return {a: my - b*mx, b: b};
+  }
+
+  function residuals(x, y) {
+    var fit = ols(x, y);
+    return y.map(function(yi, i){ return yi - fit.a - fit.b*x[i]; });
+  }
+
+  function variance(arr) {
+    var m = mean(arr);
+    return arr.reduce(function(s,v){ return s + (v-m)*(v-m); }, 0) / arr.length;
+  }
+
+  function confBand(x, y) {
+    var n = x.length, fit = ols(x, y);
+    var yhat = x.map(function(xi){ return fit.a + fit.b*xi; });
+    var sse = y.reduce(function(s,yi,i){ return s + (yi-yhat[i])*(yi-yhat[i]); }, 0);
+    var s2 = sse/(n-2), mx = mean(x);
+    var sxx = x.reduce(function(s,xi){ return s + (xi-mx)*(xi-mx); }, 0);
+    var xmin = Math.min.apply(null,x), xmax = Math.max.apply(null,x);
+    var xs = Array.from({length:100}, function(_,i){ return xmin + i*(xmax-xmin)/99; });
+    var t = 1.96;
+    var upper = xs.map(function(xi){ return fit.a+fit.b*xi + t*Math.sqrt(s2*(1/n+(xi-mx)*(xi-mx)/sxx)); });
+    var lower = xs.map(function(xi){ return fit.a+fit.b*xi - t*Math.sqrt(s2*(1/n+(xi-mx)*(xi-mx)/sxx)); });
+    return {xs:xs, upper:upper, lower:lower, a:fit.a, b:fit.b};
+  }
+
+  function kde(vals) {
+    var n = vals.length, s = Math.sqrt(variance(vals));
+    var h = 1.06 * s * Math.pow(n, -0.2);
+    var vmin = Math.min.apply(null,vals) - 3*h, vmax = Math.max.apply(null,vals) + 3*h;
+    var xs = Array.from({length:200}, function(_,i){ return vmin + i*(vmax-vmin)/199; });
+    var ys = xs.map(function(x){
+      return vals.reduce(function(s,v){ var z=(x-v)/h; return s+Math.exp(-0.5*z*z); }, 0) / (n*h*Math.sqrt(2*Math.PI));
+    });
+    return {xs:xs, ys:ys};
+  }
+
+  function simulate(n, b1, b2, corr, nsim) {
+    var bFull = [], bRaw = [];
+    for (var s = 0; s < nsim; s++) {
+      var rand = mulberry32(s * 7919 + 1);
+      var X2=rnorm(n,rand), eps1=rnorm(n,rand), epsY=rnorm(n,rand);
+      var X1=X2.map(function(v,i){return corr*v+eps1[i];});
+      var Y=X1.map(function(v,i){return b1*v+b2*X2[i]+epsY[i];});
+      var tX1=residuals(X2,X1), tY=residuals(X2,Y);
+      bFull.push(ols(tX1,tY).b); bRaw.push(ols(X1,Y).b);
+    }
+    return {bFull:bFull, bRaw:bRaw};
+  }
+
+  var ACCENT='#2b6cb0', ACCENT_DARK='#1a4a8a', GREEN='#276749', RED='#9b2335';
+  var SZ=330, DSZ_H=220;
+  var initialized={};
+
+  function plotLayout(w, h) {
+    return {
+      margin:{t:36,r:12,b:40,l:44}, width:w, height:h,
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      xaxis:{title:{text:'X',font:{size:11,family:'Fira Code'}}, gridcolor:'#e2e8f0', zerolinecolor:'#cbd5e0', tickfont:{size:9,color:'#718096'}},
+      yaxis:{title:{text:'Y',font:{size:11,family:'Fira Code'}}, gridcolor:'#e2e8f0', zerolinecolor:'#cbd5e0', tickfont:{size:9,color:'#718096'}}
+    };
+  }
+
+  function makePlot(divId, x, y, betaTrue) {
+    var cb=confBand(x,y);
+    var xmin=Math.min.apply(null,x), xmax=Math.max.apply(null,x);
+    var traces=[
+      {x:x,y:y,mode:'markers',type:'scatter',marker:{color:'rgba(113,128,150,0.25)',size:4},showlegend:false,hovertemplate:'(%{x:.2f}, %{y:.2f})<extra></extra>'},
+      {x:cb.xs,y:cb.upper,mode:'lines',line:{color:RED,width:1,dash:'dot'},showlegend:false,hoverinfo:'skip'},
+      {x:cb.xs,y:cb.lower,mode:'lines',line:{color:RED,width:1,dash:'dot'},fill:'tonexty',fillcolor:'rgba(155,35,53,0.07)',showlegend:false,hoverinfo:'skip'},
+      {x:cb.xs,y:cb.xs.map(function(xi){return cb.a+cb.b*xi;}),mode:'lines',line:{color:RED,width:2},showlegend:false,hovertemplate:'Slope: '+cb.b.toFixed(3)+'<extra></extra>'},
+      {x:[xmin,xmax],y:[cb.a+betaTrue*xmin,cb.a+betaTrue*xmax],mode:'lines',line:{color:ACCENT,width:2},showlegend:false,hovertemplate:'True β: '+betaTrue+'<extra></extra>'}
+    ];
+    var layout=plotLayout(SZ,SZ);
+    layout.annotations=[{x:0.97,y:0.97,xref:'paper',yref:'paper',xanchor:'right',yanchor:'top',
+      text:'β̂ = <b>'+cb.b.toFixed(3)+'</b>',showarrow:false,
+      font:{size:11,color:RED,family:'Fira Code'},bgcolor:'rgba(255,255,255,0.9)',borderpad:3}];
+    var config={displayModeBar:false,responsive:false};
+    if (!initialized[divId]){Plotly.newPlot(divId,traces,layout,config);initialized[divId]=true;}
+    else Plotly.react(divId,traces,layout);
+  }
+
+  function makeDistPlot(divId, vals, betaTrue, color) {
+    var k=kde(vals), m=mean(vals), maxY=Math.max.apply(null,k.ys);
+    var col=color==='red'?RED:GREEN;
+    var traces=[
+      {x:k.xs,y:k.ys,mode:'lines',fill:'tozeroy',fillcolor:color==='red'?'rgba(155,35,53,0.1)':'rgba(39,103,73,0.1)',
+       line:{color:col,width:2},showlegend:false,hovertemplate:'β̂: %{x:.3f}<extra></extra>'},
+      {x:[betaTrue,betaTrue],y:[0,maxY*1.1],mode:'lines',line:{color:ACCENT,width:2,dash:'dash'},showlegend:false,hovertemplate:'True β₁: '+betaTrue+'<extra></extra>'},
+      {x:[m,m],y:[0,maxY*1.1],mode:'lines',line:{color:col,width:1.5,dash:'dot'},showlegend:false,hovertemplate:'Mean β̂: '+m.toFixed(3)+'<extra></extra>'}
+    ];
+    var layout=plotLayout(SZ,DSZ_H);
+    layout.xaxis.title.text='β̂₁'; layout.yaxis.title.text='Density';
+    layout.annotations=[
+      {x:0.97,y:0.97,xref:'paper',yref:'paper',xanchor:'right',yanchor:'top',
+       text:'mean = <b>'+m.toFixed(3)+'</b>',showarrow:false,
+       font:{size:11,color:col,family:'Fira Code'},bgcolor:'rgba(255,255,255,0.9)',borderpad:3},
+      {x:betaTrue,y:maxY*1.15,xref:'x',yref:'y',text:'true',showarrow:false,
+       font:{size:9,color:ACCENT,family:'Fira Code'}}
+    ];
+    var config={displayModeBar:false,responsive:false};
+    if (!initialized[divId]){Plotly.newPlot(divId,traces,layout,config);initialized[divId]=true;}
+    else Plotly.react(divId,traces,layout);
+  }
+
+  function update() {
+    var n=+document.getElementById('sl-n').value;
+    var b1=+document.getElementById('sl-b1').value;
+    var b2=+document.getElementById('sl-b2').value;
+    var corr=+document.getElementById('sl-cr').value;
+    var seed=+document.getElementById('sl-sd').value;
+
+    document.getElementById('lbl-n').textContent=n;
+    document.getElementById('lbl-b1').textContent=b1.toFixed(1);
+    document.getElementById('lbl-b2').textContent=b2.toFixed(1);
+    document.getElementById('lbl-cr').textContent=corr.toFixed(2);
+    document.getElementById('lbl-sd').textContent=seed;
+
+    var rand=mulberry32(seed*1337+42);
+    var X2=rnorm(n,rand), eps1=rnorm(n,rand), epsY=rnorm(n,rand);
+    var X1=X2.map(function(v,i){return corr*v+eps1[i];});
+    var Y=X1.map(function(v,i){return b1*v+b2*X2[i]+epsY[i];});
+    var tildeY=residuals(X2,Y), tildeX1=residuals(X2,X1);
+
+    var bRaw=ols(X1,Y).b, bFWL=ols(tildeX1,tildeY).b, bFull=ols(tildeX1,Y).b;
+    var att=variance(tildeX1)/variance(X1);
+
+    makePlot('p1',X1,Y,b1); makePlot('p2',X1,tildeY,b1);
+    makePlot('p3',tildeX1,Y,b1); makePlot('p4',tildeX1,tildeY,b1);
+
+    document.getElementById('st-true').textContent=b1.toFixed(3);
+    document.getElementById('st-full').textContent=bFull.toFixed(3);
+    document.getElementById('st-fwl').textContent=bFWL.toFixed(3);
+    document.getElementById('st-raw').textContent=bRaw.toFixed(3);
+    document.getElementById('st-att').textContent=att.toFixed(3);
+    document.getElementById('st-check').textContent=(b1*att).toFixed(3);
+
+    var sims=simulate(n,b1,b2,corr,500);
+    makeDistPlot('d1',sims.bFull,b1,'green');
+    makeDistPlot('d2',sims.bRaw,b1,'red');
+  }
+
+  ['sl-n','sl-b1','sl-b2','sl-cr','sl-sd'].forEach(function(id){
+    document.getElementById(id).addEventListener('input',update);
+  });
+  update();
+});
+</script>
+<footer style="max-width:1200px;margin:2rem auto 0;padding-top:1rem;border-top:1px solid #e2e8f0;font-size:0.78rem;color:#718096;font-family:'Fira Code',monospace;display:flex;justify-content:space-between;align-items:center;">
+  <span>Rasmus Duret · LSE</span>
+  <a href="https://rassssd.github.io" style="color:#2b6cb0;text-decoration:none;border-bottom:1px solid transparent;transition:border-color 0.2s;" onmouseover="this.style.borderBottomColor='#2b6cb0'" onmouseout="this.style.borderBottomColor='transparent'">rassssd.github.io</a>
+</footer>
+</body>
+</html>

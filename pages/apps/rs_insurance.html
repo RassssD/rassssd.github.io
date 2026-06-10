@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rothschild-Stiglitz Insurance Model</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --panel: #f7fafc; --border: #e2e8f0;
+    --text: #2d3748; --muted: #718096; --accent: #9b2335;
+    --blue: #2b6cb0; --green: #276749;
+    --mono: 'Fira Code', monospace; --serif: 'Inter', -apple-system, system-ui, sans-serif;
+  }
+  body { font-family: var(--serif); background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem; max-width: 1200px; margin: 0 auto; line-height: 1.6; }
+  header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+  header h1 { font-size: 1.75rem; font-weight: 600; color: #1a202c; }
+  header h1 span { font-weight: 600; color: var(--accent); }
+  header p { margin-top: 0.4rem; font-size: 0.9rem; color: var(--muted); }
+  .container { display: grid; grid-template-columns: 260px 1fr 230px; gap: 1.2rem; align-items: start; }
+  .sidebar { display: flex; flex-direction: column; gap: 0.8rem; position: sticky; top: 1rem; max-height: 95vh; overflow-y: auto; }
+  .panel { background: var(--panel); border: 1px solid var(--border); padding: 1.1rem; border-radius: 8px; }
+  .panel-title { font-size: 0.65rem; font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.9rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; font-weight: 500; }
+  .ctrl { margin-bottom: 0.85rem; }
+  .ctrl:last-child { margin-bottom: 0; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 0.3rem; }
+  .ctrl label .val { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); font-weight: 500; }
+  input[type=range] { width: 100%; -webkit-appearance: none; height: 2px; background: var(--border); outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; background: var(--accent); border-radius: 50%; cursor: pointer; transition: transform 0.1s; }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+  .toggle-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.82rem; cursor: pointer; user-select: none; }
+  .toggle-row:last-child { margin-bottom: 0; }
+  .toggle-row input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+  .swatch { width: 16px; height: 3px; border-radius: 1px; flex-shrink: 0; }
+  .swatch-dash { width: 16px; height: 0; border-top: 2px dashed currentColor; flex-shrink: 0; }
+  .main { background: var(--bg); border: 1px solid var(--border); padding: 1rem; border-radius: 8px; }
+  .legend-bar { display: flex; flex-wrap: wrap; gap: 0.9rem; padding: 0.6rem 0.2rem; border-top: 1px solid var(--border); margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted); }
+  .leg { display: flex; align-items: center; gap: 0.35rem; }
+  .leg-line { width: 20px; height: 2px; flex-shrink: 0; }
+  .leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .leg-fill { width: 14px; height: 10px; border-radius: 1px; flex-shrink: 0; opacity: 0.5; }
+  .right-col { display: flex; flex-direction: column; gap: 0.8rem; position: sticky; top: 1rem; }
+  .status-row { display: flex; justify-content: space-between; align-items: center; padding: 0.38rem 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+  .status-row:last-child { border-bottom: none; }
+  .badge { font-family: var(--mono); font-size: 0.66rem; padding: 0.12rem 0.45rem; border-radius: 3px; font-weight: 600; letter-spacing: 0.04em; }
+  .badge.yes  { background: rgba(39,103,73,0.12);  color: var(--green); }
+  .badge.no   { background: rgba(155,35,53,0.12);  color: var(--accent); }
+  .badge.warn { background: rgba(43,108,176,0.1);  color: var(--blue); }
+  .badge.na   { background: var(--panel); color: var(--muted); }
+  .stat-val { font-family: var(--mono); font-size: 0.76rem; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Rothschild–<span>Stiglitz</span> Insurance Model</h1>
+  <p>Separating equilibrium in (w₁, w₂) space. w₁ = wealth if loss, w₂ = wealth if no loss. Log utility u(w) = ln(w).</p>
+</header>
+
+<div class="container">
+  <aside class="sidebar">
+    <div class="panel">
+      <div class="panel-title">Parameters</div>
+      <div class="ctrl"><label>W (initial wealth) <span class="val" id="v-W">8.00</span></label>
+        <input type="range" id="sl-W" min="2" max="20" step="0.5" value="8"></div>
+      <div class="ctrl"><label>L (loss amount) <span class="val" id="v-L">7.50</span></label>
+        <input type="range" id="sl-L" min="0.5" max="15" step="0.25" value="7.5"></div>
+      <div class="ctrl"><label>p<sub>H</sub> (high risk prob.) <span class="val" id="v-pH">0.72</span></label>
+        <input type="range" id="sl-pH" min="0.05" max="0.95" step="0.01" value="0.72"></div>
+      <div class="ctrl"><label>p<sub>L</sub> (low risk prob.) <span class="val" id="v-pL">0.38</span></label>
+        <input type="range" id="sl-pL" min="0.01" max="0.94" step="0.01" value="0.38"></div>
+      <div class="ctrl"><label>λ = P(high risk) <span class="val" id="v-lam">0.67</span></label>
+        <input type="range" id="sl-lam" min="0.01" max="0.99" step="0.01" value="0.67"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Display</div>
+      <label class="toggle-row"><input type="checkbox" id="chk-fH" checked>
+        <span class="swatch" style="background:var(--accent)"></span> ZeroProf<sub>H</sub></label>
+      <label class="toggle-row"><input type="checkbox" id="chk-fL" checked>
+        <span class="swatch" style="background:var(--green)"></span> ZeroProf<sub>L</sub></label>
+      <label class="toggle-row"><input type="checkbox" id="chk-fe" checked>
+        <span class="swatch" style="background:var(--blue)"></span> ZeroProf<sub>e</sub> (pooled)</label>
+      <label class="toggle-row"><input type="checkbox" id="chk-icH" checked>
+        <span class="swatch-dash" style="color:var(--accent)"></span> IC<sub>H</sub> through C<sub>H</sub></label>
+      <label class="toggle-row"><input type="checkbox" id="chk-icL" checked>
+        <span class="swatch-dash" style="color:var(--green)"></span> IC<sub>L</sub> through C<sub>L</sub></label>
+      <label class="toggle-row"><input type="checkbox" id="chk-icLH" checked>
+        <span class="swatch-dash" style="color:var(--blue)"></span> IC<sub>L</sub> through C<sub>H</sub></label>
+      <label class="toggle-row"><input type="checkbox" id="chk-pool" checked>
+        <span class="swatch" style="background:var(--blue);opacity:0.5"></span> Pooling deviation region</label>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="plot"></div>
+    <div class="legend-bar">
+      <div class="leg"><div class="leg-line" style="background:var(--accent)"></div>ZeroProf<sub>H</sub></div>
+      <div class="leg"><div class="leg-line" style="background:var(--green)"></div>ZeroProf<sub>L</sub></div>
+      <div class="leg"><div class="leg-line" style="background:var(--blue)"></div>ZeroProf<sub>e</sub></div>
+      <div class="leg"><div class="leg-line" style="background:#999;height:0;border-top:1px dashed #999"></div>45° line</div>
+      <div class="leg"><div class="leg-line" style="height:0;border-top:2px dashed var(--accent)"></div>IC<sub>H</sub></div>
+      <div class="leg"><div class="leg-line" style="height:0;border-top:2px dashed var(--green)"></div>IC<sub>L</sub> (C<sub>L</sub>)</div>
+      <div class="leg"><div class="leg-line" style="height:0;border-top:2px dashed var(--blue)"></div>IC<sub>L</sub> (C<sub>H</sub>)</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--accent)"></div>C<sub>H</sub></div>
+      <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>C<sub>L</sub></div>
+      <div class="leg"><div class="leg-fill" style="background:var(--blue)"></div>Pooling dev. region</div>
+    </div>
+  </main>
+
+  <aside class="right-col">
+    <div class="panel">
+      <div class="panel-title">Equilibrium Status</div>
+      <div class="status-row">Sep. eq. exists <span class="badge na" id="st-sep">—</span></div>
+      <div class="status-row">Pooling dev. exists <span class="badge na" id="st-pool">—</span></div>
+      <div class="status-row">RS eq. exists <span class="badge na" id="st-rs">—</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Key Values</div>
+      <div class="status-row">p<sub>e</sub> (pooled) <span class="stat-val" id="kv-pe">—</span></div>
+      <div class="status-row">C<sub>H</sub> = (w₁,w₂) <span class="stat-val" id="kv-CH">—</span></div>
+      <div class="status-row">C<sub>L</sub> = (w₁,w₂) <span class="stat-val" id="kv-CL">—</span></div>
+      <div class="status-row">U<sub>H</sub> at C<sub>H</sub> <span class="stat-val" id="kv-UH">—</span></div>
+      <div class="status-row">U<sub>L</sub> at C<sub>L</sub> <span class="stat-val" id="kv-UL">—</span></div>
+      <div class="status-row">W - pL (fair EV) <span class="stat-val" id="kv-ev">—</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Notes</div>
+      <div style="font-size:0.77rem;color:var(--muted);line-height:1.6;font-style:italic">
+        <p><b style="font-style:normal;color:var(--text)">C<sub>H</sub>:</b> full insurance on ZeroProf<sub>H</sub> — intersection with 45° line.</p>
+        <p style="margin-top:0.5rem"><b style="font-style:normal;color:var(--text)">C<sub>L</sub>:</b> partial insurance — intersection of IC<sub>H</sub> with ZeroProf<sub>L</sub>. IC<sub>H</sub> binds.</p>
+        <p style="margin-top:0.5rem"><b style="font-style:normal;color:var(--text)">Pooling dev.:</b> region above both ICs on ZeroProf<sub>e</sub>. Non-empty ⟹ sep. eq. destroyed. Shrinks as λ → 1.</p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<script>
+window.addEventListener('load', function() {
+
+  var plotInit = false;
+
+  // ── Utility: log ─────────────────────────────────────────────────────────────
+  function U(w1, w2, p) { return p*Math.log(w1) + (1-p)*Math.log(w2); }
+
+  // IC through (w1_0, w2_0) for type p: p*ln(w1) + (1-p)*ln(w2) = k
+  // => w2 = exp((k - p*ln(w1))/(1-p))
+  function makeIC(w1_0, w2_0, p) {
+    var k = p*Math.log(w1_0) + (1-p)*Math.log(w2_0);
+    return function(w1) {
+      if (w1 <= 0) return null;
+      return Math.exp((k - p*Math.log(w1))/(1-p));
+    };
+  }
+
+  // Zero profit line: w2 = (W-pL)/(1-p) - p/(1-p)*w1
+  function makeZP(W, L, p) {
+    var intercept = (W - p*L)/(1-p);
+    var slope = -p/(1-p);
+    return function(w1) { return intercept + slope*w1; };
+  }
+
+  // Bisection
+  function bisect(f, a, b) {
+    var fa=f(a), fb=f(b);
+    if (fa*fb > 0) return null;
+    for (var i=0; i<80; i++) {
+      var m=(a+b)/2, fm=f(m);
+      if (Math.abs(fm)<1e-10||(b-a)<1e-10) return m;
+      if (fa*fm<=0){b=m;fb=fm;}else{a=m;fa=fm;}
+    }
+    return (a+b)/2;
+  }
+
+  function setBadge(id, text, cls) {
+    var el=document.getElementById(id); el.textContent=text; el.className='badge '+cls;
+  }
+
+  function update() {
+    var W   = +document.getElementById('sl-W').value;
+    var L   = +document.getElementById('sl-L').value;
+    var pH  = +document.getElementById('sl-pH').value;
+    var pL  = +document.getElementById('sl-pL').value;
+    var lam = +document.getElementById('sl-lam').value;
+
+    // Guard
+    if (pL >= pH) { pL = pH - 0.05; document.getElementById('sl-pL').value = pL; }
+    if (L >= W)   { L  = W  - 0.5;  document.getElementById('sl-L').value  = L;  }
+
+    var pe = lam*pH + (1-lam)*pL;
+
+    document.getElementById('v-W').textContent   = W.toFixed(2);
+    document.getElementById('v-L').textContent   = L.toFixed(2);
+    document.getElementById('v-pH').textContent  = pH.toFixed(2);
+    document.getElementById('v-pL').textContent  = pL.toFixed(2);
+    document.getElementById('v-lam').textContent = lam.toFixed(2);
+    document.getElementById('kv-pe').textContent = pe.toFixed(3);
+    document.getElementById('kv-ev').textContent = (W - pe*L).toFixed(3);
+
+    // ── Zero profit lines ────────────────────────────────────────────────────
+    var zpH = makeZP(W, L, pH);
+    var zpL = makeZP(W, L, pL);
+    var zpE = makeZP(W, L, pe);
+
+    // ── C_H: intersection of ZeroProf_H with 45-degree line ─────────────────
+    // zpH(w1) = w1 => (W-pH*L)/(1-pH) - pH/(1-pH)*w1 = w1
+    // (W-pH*L)/(1-pH) = w1*(1 + pH/(1-pH)) = w1/(1-pH)
+    // w1 = W - pH*L
+    var CH_w1 = W - pH*L;
+    var CH_w2 = CH_w1; // on 45-deg line
+    document.getElementById('kv-CH').textContent = '('+CH_w1.toFixed(2)+', '+CH_w2.toFixed(2)+')';
+
+    // ── IC_H through C_H ─────────────────────────────────────────────────────
+    var icH = makeIC(CH_w1, CH_w2, pH);
+
+    // ── C_L: intersection of IC_H with ZeroProf_L ────────────────────────────
+    // Find w1 where zpL(w1) = icH(w1)
+    var fCL = function(w1){ var ic=icH(w1); if(ic===null) return 1e10; return zpL(w1)-ic; };
+    // search in (0, W)
+    var CL_w1 = null;
+    var step = 0.01;
+    for (var w=step; w<W-step; w+=step) {
+      if (fCL(w)*fCL(w+step) < 0) {
+        CL_w1 = bisect(fCL, w, w+step);
+        break;
+      }
+    }
+
+    var CL_w2 = CL_w1 !== null ? zpL(CL_w1) : null;
+    var sepExists = CL_w1 !== null && CL_w2 !== null && CL_w1 > 0 && CL_w2 > 0 && CL_w1 < CH_w1;
+
+    if (sepExists) {
+      document.getElementById('kv-CL').textContent = '('+CL_w1.toFixed(2)+', '+CL_w2.toFixed(2)+')';
+      document.getElementById('kv-UH').textContent = U(CH_w1,CH_w2,pH).toFixed(3);
+      document.getElementById('kv-UL').textContent = U(CL_w1,CL_w2,pL).toFixed(3);
+    } else {
+      document.getElementById('kv-CL').textContent = '—';
+      document.getElementById('kv-UH').textContent = '—';
+      document.getElementById('kv-UL').textContent = '—';
+    }
+
+    // ── IC_L curves ──────────────────────────────────────────────────────────
+    var icL_atCL  = sepExists ? makeIC(CL_w1, CL_w2, pL) : null; // IC_L through C_L
+    var icL_atCH  = makeIC(CH_w1, CH_w2, pL);                     // IC_L through C_H (for pooling dev)
+
+    // ── Pooling deviation region ─────────────────────────────────────────────
+    // Region on ZeroProf_e above both IC_H (through C_H) and IC_L (through C_L)
+    // i.e. zpE(w1) > icH(w1)  AND  zpE(w1) > icL_atCL(w1)
+    // Since IC_H passes through C_H which is above zpE (usually),
+    // the pooling dev region is where zpE is above both ICs
+    var poolDevExists = false;
+    var poolX = [], poolY = [];
+    if (sepExists) {
+      var w1arr = [];
+      for (var w=0.1; w<=W*1.1; w+=0.05) w1arr.push(w);
+      w1arr.forEach(function(w1){
+        var wZPe = zpE(w1);
+        var wICH = icH(w1);
+        var wICL = icL_atCL(w1);
+        if (wZPe===null||wICH===null||wICL===null) return;
+        if (wZPe > 0 && wZPe > wICH && wZPe > wICL) {
+          poolX.push(w1);
+          poolY.push(wZPe);
+          poolDevExists = true;
+        }
+      });
+    }
+
+    // ── Plot range ───────────────────────────────────────────────────────────
+    var wMax = W * 1.15;
+    var w1arr = [];
+    for (var w=0.1; w<=wMax; w+=0.05) w1arr.push(w);
+
+    // ── Build traces ─────────────────────────────────────────────────────────
+    var showFH   = document.getElementById('chk-fH').checked;
+    var showFL   = document.getElementById('chk-fL').checked;
+    var showFe   = document.getElementById('chk-fe').checked;
+    var showICH  = document.getElementById('chk-icH').checked;
+    var showICL  = document.getElementById('chk-icL').checked;
+    var showICLH = document.getElementById('chk-icLH').checked;
+    var showPool = document.getElementById('chk-pool').checked;
+
+    var traces = [];
+
+    // 45-degree line
+    traces.push({x:[0,wMax],y:[0,wMax],mode:'lines',type:'scatter',
+      line:{color:'#aaa',width:1.2,dash:'dot'},showlegend:false,hoverinfo:'skip'});
+
+    // Pooling deviation region — mark the ZeroProf_e points above both ICs
+    if (showPool && poolDevExists && poolX.length > 0) {
+      // shade as thick markers on ZPe line above both ICs
+      traces.push({x:poolX, y:poolY, mode:'lines', type:'scatter',
+        line:{color:'rgba(26,58,107,0.0)',width:0},
+        fill:'tozeroy', fillcolor:'rgba(26,58,107,0.08)',
+        showlegend:false, hoverinfo:'skip'});
+      // overlay the actual ZPe segment more visibly
+      traces.push({x:poolX, y:poolY, mode:'lines', type:'scatter',
+        line:{color:'#1a3a6b',width:5},
+        showlegend:false,
+        hovertemplate:'Pooling dev. contract: (w₁=%{x:.2f}, w₂=%{y:.2f})<extra></extra>'});
+    }
+
+    // Zero profit lines
+    var clip = function(arr, fn) {
+      var xs=[],ys=[];
+      arr.forEach(function(x){ var y=fn(x); if(y>=0&&y<=wMax*1.2){xs.push(x);ys.push(y);} });
+      return {x:xs,y:ys};
+    };
+
+    if (showFH) { var d=clip(w1arr,zpH); traces.push({x:d.x,y:d.y,mode:'lines',type:'scatter',
+      line:{color:'#8b1a1a',width:2.5},showlegend:false,
+      hovertemplate:'ZeroProf_H: w₂=%{y:.3f}<extra></extra>'}); }
+    if (showFL) { var d=clip(w1arr,zpL); traces.push({x:d.x,y:d.y,mode:'lines',type:'scatter',
+      line:{color:'#2d6a2d',width:2.5},showlegend:false,
+      hovertemplate:'ZeroProf_L: w₂=%{y:.3f}<extra></extra>'}); }
+    if (showFe) { var d=clip(w1arr,zpE); traces.push({x:d.x,y:d.y,mode:'lines',type:'scatter',
+      line:{color:'#1a3a6b',width:2.5},showlegend:false,
+      hovertemplate:'ZeroProf_e: w₂=%{y:.3f}<extra></extra>'}); }
+
+    // IC curves
+    var clipIC = function(arr, fn) {
+      var xs=[],ys=[];
+      arr.forEach(function(x){ var y=fn(x); if(y!==null&&y>=0&&y<=wMax*1.5&&x>0){xs.push(x);ys.push(y);} });
+      return {x:xs,y:ys};
+    };
+
+    if (showICH) { var d=clipIC(w1arr,icH); traces.push({x:d.x,y:d.y,mode:'lines',type:'scatter',
+      line:{color:'#8b1a1a',width:2,dash:'dash'},showlegend:false,
+      hovertemplate:'IC_H: w₂=%{y:.3f}<extra></extra>'}); }
+    if (showICL && icL_atCL) { var d=clipIC(w1arr,icL_atCL); traces.push({x:d.x,y:d.y,mode:'lines',type:'scatter',
+      line:{color:'#2d6a2d',width:2,dash:'dash'},showlegend:false,
+      hovertemplate:'IC_L (through C_L): w₂=%{y:.3f}<extra></extra>'}); }
+    if (showICLH) { var d=clipIC(w1arr,icL_atCH); traces.push({x:d.x,y:d.y,mode:'lines',type:'scatter',
+      line:{color:'#1a3a6b',width:2,dash:'dash'},showlegend:false,
+      hovertemplate:'IC_L (through C_H): w₂=%{y:.3f}<extra></extra>'}); }
+
+    // Points
+    traces.push({x:[CH_w1],y:[CH_w2],mode:'markers+text',type:'scatter',
+      marker:{color:'#8b1a1a',size:11,symbol:'circle',line:{color:'white',width:1.5}},
+      text:['  C_H'],textposition:'right',textfont:{family:'JetBrains Mono',size:11,color:'#8b1a1a'},
+      showlegend:false,
+      hovertemplate:'C_H: ('+CH_w1.toFixed(3)+', '+CH_w2.toFixed(3)+')<extra></extra>'});
+
+    if (sepExists) {
+      traces.push({x:[CL_w1],y:[CL_w2],mode:'markers+text',type:'scatter',
+        marker:{color:'#2d6a2d',size:11,symbol:'circle',line:{color:'white',width:1.5}},
+        text:['  C_L'],textposition:'right',textfont:{family:'JetBrains Mono',size:11,color:'#2d6a2d'},
+        showlegend:false,
+        hovertemplate:'C_L: ('+CL_w1.toFixed(3)+', '+CL_w2.toFixed(3)+')<extra></extra>'});
+    }
+
+    // ── Layout ────────────────────────────────────────────────────────────────
+    var layout = {
+      width:700, height:530,
+      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+      margin:{t:16,r:16,b:50,l:55},
+      xaxis:{title:{text:'w₁ (wealth if loss)',font:{size:12,family:'Fira Code',color:'#718096'}},
+        range:[0,wMax], gridcolor:'#e2e8f0', zerolinecolor:'#cbd5e0',
+        tickfont:{size:10,color:'#718096'}},
+      yaxis:{title:{text:'w₂ (wealth if no loss)',font:{size:12,family:'Fira Code',color:'#718096'}},
+        range:[0,wMax], gridcolor:'#e2e8f0', zerolinecolor:'#cbd5e0',
+        tickfont:{size:10,color:'#718096'}},
+      showlegend:false
+    };
+
+    var config={displayModeBar:false,responsive:false};
+    if (!plotInit){Plotly.newPlot('plot',traces,layout,config);plotInit=true;}
+    else Plotly.react('plot',traces,layout);
+
+    // ── Status ────────────────────────────────────────────────────────────────
+    setBadge('st-sep',  sepExists     ? 'YES':'NO', sepExists    ?'yes':'no');
+    setBadge('st-pool', poolDevExists ? 'YES':'NO', poolDevExists?'no':'yes');
+    setBadge('st-rs',   (sepExists && !poolDevExists) ? 'YES':'NO',
+      (sepExists&&!poolDevExists)?'yes':'no');
+  }
+
+  ['sl-W','sl-L','sl-pH','sl-pL','sl-lam'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', update);
+  });
+  ['chk-fH','chk-fL','chk-fe','chk-icH','chk-icL','chk-icLH','chk-pool'].forEach(function(id){
+    document.getElementById(id).addEventListener('change', update);
+  });
+
+  update();
+});
+</script>
+<footer style="max-width:1200px;margin:2rem auto 0;padding-top:1rem;border-top:1px solid #e2e8f0;font-size:0.78rem;color:#718096;font-family:'Fira Code',monospace;display:flex;justify-content:space-between;align-items:center;">
+  <span>Rasmus Duret · LSE</span>
+  <a href="https://rassssd.github.io" style="color:#2b6cb0;text-decoration:none;border-bottom:1px solid transparent;transition:border-color 0.2s;" onmouseover="this.style.borderBottomColor='#2b6cb0'" onmouseout="this.style.borderBottomColor='transparent'">rassssd.github.io</a>
+</footer>
+</body>
+</html>

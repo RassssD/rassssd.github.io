@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Akerlof Adverse Selection Model</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --panel: #f7fafc; --border: #e2e8f0;
+    --text: #2d3748; --muted: #718096; --accent: #2b6cb0;
+    --blue: #2b6cb0; --green: #276749;
+    --mono: 'Fira Code', monospace; --serif: 'Inter', -apple-system, system-ui, sans-serif;
+  }
+  body { font-family: var(--serif); background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem; max-width: 1200px; margin: 0 auto; line-height: 1.6; }
+  header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+  header h1 { font-size: 1.75rem; font-weight: 600; color: #1a202c; }
+  header h1 span { font-weight: 600; color: var(--accent); }
+  header p { margin-top: 0.4rem; font-size: 0.9rem; color: var(--muted); }
+  .container { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; }
+  .sidebar { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 1rem; max-height: 95vh; overflow-y: auto; }
+  .panel { background: var(--panel); border: 1px solid var(--border); padding: 1.2rem; border-radius: 8px; }
+  .panel-title { font-size: 0.65rem; font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; font-weight: 500; }
+  .control-group { margin-bottom: 0.9rem; }
+  .control-group:last-child { margin-bottom: 0; }
+  .control-group label { display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 0.3rem; }
+  .control-group label span { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); font-weight: 500; }
+  input[type=range] { width: 100%; -webkit-appearance: none; height: 2px; background: var(--border); outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; background: var(--accent); border-radius: 50%; cursor: pointer; transition: transform 0.1s; }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+  select { width: 100%; padding: 0.35rem 0.5rem; font-family: var(--mono); font-size: 0.76rem; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; margin-bottom: 0.8rem; border-radius: 4px; }
+  input[type=text] { width: 100%; padding: 0.35rem 0.5rem; font-family: var(--mono); font-size: 0.76rem; border: 1px solid var(--border); background: var(--bg); color: var(--text); margin-bottom: 0.6rem; border-radius: 4px; }
+  .btn { display: inline-block; padding: 0.4rem 0.9rem; font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.04em; cursor: pointer; border: none; transition: opacity 0.15s; border-radius: 4px; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: white; width: 100%; text-align: center; }
+  .btn-danger { background: #e53e3e; color: white; font-size: 0.7rem; padding: 0.2rem 0.5rem; }
+  .spec-item { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+  .spec-item:last-child { border-bottom: none; }
+  .spec-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem; flex-shrink: 0; }
+  .empty-note { font-size: 0.8rem; color: var(--muted); font-style: italic; text-align: center; padding: 0.5rem 0; }
+  .main { display: flex; flex-direction: column; gap: 1rem; }
+  .plot-panel { background: var(--bg); border: 1px solid var(--border); padding: 1rem; border-radius: 8px; }
+  .legend-bar { display: flex; flex-wrap: wrap; gap: 1.2rem; padding: 0.6rem 0.2rem; border-top: 1px solid var(--border); margin-top: 0.4rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--muted); }
+  .legend-dash { width: 22px; height: 2px; background: repeating-linear-gradient(90deg, #a0aec0 0, #a0aec0 4px, transparent 4px, transparent 7px); }
+  .table-panel { background: var(--bg); border: 1px solid var(--border); padding: 1.2rem; overflow-x: auto; border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); white-space: nowrap; font-weight: 500; }
+  td { padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 0.78rem; }
+  tr:last-child td { border-bottom: none; }
+  td.stable { color: var(--green); } td.unstable { color: #e53e3e; } td.gap { color: var(--accent); font-weight: 500; }
+  .no-data { text-align: center; color: var(--muted); font-style: italic; padding: 1rem; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Akerlof <span>Adverse Selection</span> Model</h1>
+  <p>Workers with types t ∈ [0,1] have outside option r(t). Equilibrium: w* = g(w*) = E[t | r(t) ≤ w*]. Both r(t) and g(w) plotted in the (t,w) plane — intersections with 45° line give efficient cutoff (◆) and CE wages (● stable, ○ unstable). Shaded regions show efficient employment set {t : t ≥ r(t)}.</p>
+</header>
+
+<div class="container">
+  <aside class="sidebar">
+
+    <div class="panel">
+      <div class="panel-title">Type Distribution F(t)</div>
+      <div class="control-group">
+        <select id="dist-select">
+          <option value="uniform">Uniform</option>
+          <option value="beta">Beta (custom)</option>
+          <option value="left_skew">Beta (left skew, α=5 β=2)</option>
+          <option value="right_skew">Beta (right skew, α=2 β=5)</option>
+        </select>
+      </div>
+      <div id="beta-params" style="display:none">
+        <div class="control-group">
+          <label>Alpha <span id="lbl-alpha">2.00</span></label>
+          <input type="range" id="sl-alpha" min="0.5" max="10" step="0.5" value="2">
+        </div>
+        <div class="control-group">
+          <label>Beta <span id="lbl-beta">2.00</span></label>
+          <input type="range" id="sl-beta" min="0.5" max="10" step="0.5" value="2">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Add r(t) Specification</div>
+      <input type="text" id="spec-name" placeholder="Label" value="">
+      <select id="spec-type">
+        <option value="linear">Linear: a + b·t</option>
+        <option value="convex">Convex: a + b·tᶜ</option>
+        <option value="concave">Concave: a + b·t^(1/c)</option>
+        <option value="step">Step</option>
+        <option value="sine">Sine: a + b·sin(freq·π·t)</option>
+      </select>
+
+      <div id="params-linear">
+        <div class="control-group">
+          <label>a (intercept) <span id="lbl-la">0.00</span></label>
+          <input type="range" id="sl-la" min="-1" max="1" step="0.05" value="0">
+        </div>
+        <div class="control-group">
+          <label>b (slope) <span id="lbl-lb">0.50</span></label>
+          <input type="range" id="sl-lb" min="-2" max="2" step="0.05" value="0.5">
+        </div>
+      </div>
+      <div id="params-convex" style="display:none">
+        <div class="control-group">
+          <label>a <span id="lbl-ca">0.00</span></label>
+          <input type="range" id="sl-ca" min="-1" max="1" step="0.05" value="0">
+        </div>
+        <div class="control-group">
+          <label>b <span id="lbl-cb">1.00</span></label>
+          <input type="range" id="sl-cb" min="-2" max="2" step="0.05" value="1">
+        </div>
+        <div class="control-group">
+          <label>c (power) <span id="lbl-cc">2.00</span></label>
+          <input type="range" id="sl-cc" min="1.1" max="5" step="0.1" value="2">
+        </div>
+      </div>
+      <div id="params-concave" style="display:none">
+        <div class="control-group">
+          <label>a <span id="lbl-na">0.00</span></label>
+          <input type="range" id="sl-na" min="-1" max="1" step="0.05" value="0">
+        </div>
+        <div class="control-group">
+          <label>b <span id="lbl-nb">1.00</span></label>
+          <input type="range" id="sl-nb" min="-2" max="2" step="0.05" value="1">
+        </div>
+        <div class="control-group">
+          <label>c (root) <span id="lbl-nc">2.00</span></label>
+          <input type="range" id="sl-nc" min="1.1" max="5" step="0.1" value="2">
+        </div>
+      </div>
+      <div id="params-step" style="display:none">
+        <div class="control-group">
+          <label>Cutoff <span id="lbl-sc">0.50</span></label>
+          <input type="range" id="sl-sc" min="0" max="1" step="0.05" value="0.5">
+        </div>
+        <div class="control-group">
+          <label>r below cutoff <span id="lbl-sl">0.20</span></label>
+          <input type="range" id="sl-sl" min="-0.5" max="1" step="0.05" value="0.2">
+        </div>
+        <div class="control-group">
+          <label>r above cutoff <span id="lbl-sh">0.80</span></label>
+          <input type="range" id="sl-sh" min="-0.5" max="1.5" step="0.05" value="0.8">
+        </div>
+      </div>
+      <div id="params-sine" style="display:none">
+        <div class="control-group">
+          <label>a (baseline) <span id="lbl-sia">0.50</span></label>
+          <input type="range" id="sl-sia" min="-0.5" max="1" step="0.05" value="0.5">
+        </div>
+        <div class="control-group">
+          <label>b (amplitude) <span id="lbl-sib">0.20</span></label>
+          <input type="range" id="sl-sib" min="-0.5" max="0.5" step="0.05" value="0.2">
+        </div>
+        <div class="control-group">
+          <label>freq <span id="lbl-sif">1.00</span></label>
+          <input type="range" id="sl-sif" min="0.5" max="4" step="0.5" value="1">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btn-add">Add Specification</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Active Specifications</div>
+      <div id="spec-list"><div class="empty-note">No specifications added yet.</div></div>
+    </div>
+
+  </aside>
+
+  <main class="main">
+    <div class="plot-panel">
+      <div id="main-plot"></div>
+      <div class="legend-bar">
+        <div class="legend-item"><div class="legend-dash"></div> 45° line</div>
+        <div class="legend-item"><span style="font-family:var(--mono);font-size:0.73rem;color:var(--muted)">
+          r(t): solid &nbsp;|&nbsp; g(w): dashed &nbsp;|&nbsp; ● stable eq &nbsp;|&nbsp; ○ unstable eq &nbsp;|&nbsp; shading: efficient employment set
+        </span></div>
+      </div>
+    </div>
+    <div class="table-panel">
+      <div class="panel-title" style="font-size:0.68rem;font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.8rem;">Equilibrium Summary</div>
+      <div id="eq-table"><div class="no-data">Add a specification to see equilibrium results.</div></div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<script>
+window.addEventListener('load', function() {
+
+  var N = 1000;
+  var t_grid = Array.from({length:N}, function(_,i){ return 0.0005 + i*0.999/(N-1); });
+  var w_grid = Array.from({length:N}, function(_,i){ return -0.1 + i*1.3/(N-1); });
+
+  var COLORS = ['#8b1a1a','#1a3a6b','#2d6a2d','#7b3f00','#4b0082','#b8860b','#2f4f4f','#8b008b'];
+  var specs = [];
+  var plotInitialized = false;
+
+  // ── Auto-name ────────────────────────────────────────────────────────────────
+  function autoName() {
+    var type = document.getElementById('spec-type').value;
+    var p = getParams();
+    switch(type) {
+      case 'linear':
+        return 'Linear: '+(p.b>=0?'':'')+p.b.toFixed(2)+'t + '+p.a.toFixed(2);
+      case 'convex':
+        return 'Convex: '+p.b.toFixed(2)+'t^'+p.c.toFixed(1);
+      case 'concave':
+        return 'Concave: '+p.b.toFixed(2)+'t^(1/'+p.c.toFixed(1)+')';
+      case 'step':
+        return 'Step at '+p.cutoff.toFixed(2);
+      case 'sine':
+        return 'Sine: a='+p.a.toFixed(2)+' b='+p.b.toFixed(2)+' f='+p.freq.toFixed(1);
+    }
+  }
+
+  // ── Density ──────────────────────────────────────────────────────────────────
+  function density(t) {
+    var dist = document.getElementById('dist-select').value;
+    if (dist==='uniform') return 1;
+    var a, b;
+    if (dist==='beta') { a=+document.getElementById('sl-alpha').value; b=+document.getElementById('sl-beta').value; }
+    else if (dist==='left_skew') { a=5; b=2; }
+    else { a=2; b=5; }
+    if (t<=0||t>=1) return 0;
+    return Math.pow(t,a-1)*Math.pow(1-x,b-1);
+  }
+
+  // fix: proper beta
+  function densityFn(t) {
+    var dist = document.getElementById('dist-select').value;
+    if (dist==='uniform') return 1;
+    var a, b;
+    if (dist==='beta') { a=+document.getElementById('sl-alpha').value; b=+document.getElementById('sl-beta').value; }
+    else if (dist==='left_skew') { a=5; b=2; }
+    else { a=2; b=5; }
+    if (t<=0||t>=1) return 0;
+    return Math.pow(t,a-1)*Math.pow(1-t,b-1);
+  }
+
+  // ── r(t) ─────────────────────────────────────────────────────────────────────
+  function makeR(spec) {
+    var p = spec.params;
+    switch(spec.type) {
+      case 'linear':  return function(t){ return p.a + p.b*t; };
+      case 'convex':  return function(t){ return p.a + p.b*Math.pow(Math.max(t,0), p.c); };
+      case 'concave': return function(t){ return p.a + p.b*Math.pow(Math.max(t,0), 1/p.c); };
+      case 'step':    return function(t){ return t < p.cutoff ? p.lo : p.hi; };
+      case 'sine':    return function(t){ return p.a + p.b*Math.sin(p.freq*Math.PI*t); };
+    }
+  }
+
+  // ── g(w) ─────────────────────────────────────────────────────────────────────
+  function computeG(rFn) {
+    return w_grid.map(function(w) {
+      var sumTF=0, sumF=0;
+      t_grid.forEach(function(t){
+        if (rFn(t) <= w) { var f=densityFn(t); sumTF+=t*f; sumF+=f; }
+      });
+      return sumF < 1e-10 ? null : sumTF/sumF;
+    });
+  }
+
+  // ── Efficient employment: fraction of types where t >= r(t) ─────────────────
+  function efficientEmployment(rFn) {
+    var sumIn=0, sumAll=0;
+    t_grid.forEach(function(t){
+      var f=densityFn(t); sumAll+=f;
+      if (t >= rFn(t)) sumIn+=f;
+    });
+    return sumAll < 1e-10 ? 0 : sumIn/sumAll;
+  }
+
+  // Get connected intervals where t >= r(t) for shading
+  function efficientIntervals(rFn) {
+    var intervals = [], inRegion=false, start=null;
+    t_grid.forEach(function(t, i){
+      var eff = t >= rFn(t);
+      if (eff && !inRegion) { inRegion=true; start=t; }
+      if (!eff && inRegion) { inRegion=false; intervals.push([start, t_grid[i-1]]); }
+    });
+    if (inRegion) intervals.push([start, t_grid[t_grid.length-1]]);
+    return intervals;
+  }
+
+  // ── Equilibria ───────────────────────────────────────────────────────────────
+  function findEquilibria(gVals) {
+    var eqs=[];
+    for (var i=0; i<w_grid.length-1; i++) {
+      var g0=gVals[i], g1=gVals[i+1];
+      if (g0===null||g1===null) continue;
+      var d0=g0-w_grid[i], d1=g1-w_grid[i+1];
+      if (d0*d1<=0 && Math.abs(d1-d0)>1e-12) {
+        var wEq=w_grid[i]-d0*(w_grid[i+1]-w_grid[i])/(d1-d0);
+        var slope=(g1-g0)/(w_grid[i+1]-w_grid[i]);
+        eqs.push({w:wEq, stable:slope<1});
+      }
+    }
+    return eqs;
+  }
+
+  function eqEmployment(rFn, wEq) {
+    var sumIn=0, sumAll=0;
+    t_grid.forEach(function(t){ var f=densityFn(t); sumAll+=f; if(rFn(t)<=wEq) sumIn+=f; });
+    return sumAll<1e-10 ? 0 : sumIn/sumAll;
+  }
+
+  // ── Params ───────────────────────────────────────────────────────────────────
+  function getParams() {
+    var type=document.getElementById('spec-type').value;
+    switch(type) {
+      case 'linear':  return {a:+document.getElementById('sl-la').value, b:+document.getElementById('sl-lb').value};
+      case 'convex':  return {a:+document.getElementById('sl-ca').value, b:+document.getElementById('sl-cb').value, c:+document.getElementById('sl-cc').value};
+      case 'concave': return {a:+document.getElementById('sl-na').value, b:+document.getElementById('sl-nb').value, c:+document.getElementById('sl-nc').value};
+      case 'step':    return {cutoff:+document.getElementById('sl-sc').value, lo:+document.getElementById('sl-sl').value, hi:+document.getElementById('sl-sh').value};
+      case 'sine':    return {a:+document.getElementById('sl-sia').value, b:+document.getElementById('sl-sib').value, freq:+document.getElementById('sl-sif').value};
+    }
+  }
+
+  // ── Param panels ─────────────────────────────────────────────────────────────
+  function updateParamPanels() {
+    var type=document.getElementById('spec-type').value;
+    ['linear','convex','concave','step','sine'].forEach(function(t){
+      document.getElementById('params-'+t).style.display=t===type?'block':'none';
+    });
+    // update auto-name if user hasn't typed custom
+    var nameEl=document.getElementById('spec-name');
+    if (!nameEl.dataset.custom) nameEl.value=autoName();
+  }
+
+  document.getElementById('spec-type').addEventListener('change', updateParamPanels);
+
+  // Mark name as custom if user edits it
+  document.getElementById('spec-name').addEventListener('input', function(){
+    this.dataset.custom = '1';
+  });
+
+  // Slider label wiring + auto-name update
+  var sliderMap = {
+    'sl-la':'lbl-la','sl-lb':'lbl-lb',
+    'sl-ca':'lbl-ca','sl-cb':'lbl-cb','sl-cc':'lbl-cc',
+    'sl-na':'lbl-na','sl-nb':'lbl-nb','sl-nc':'lbl-nc',
+    'sl-sc':'lbl-sc','sl-sl':'lbl-sl','sl-sh':'lbl-sh',
+    'sl-sia':'lbl-sia','sl-sib':'lbl-sib','sl-sif':'lbl-sif',
+    'sl-alpha':'lbl-alpha','sl-beta':'lbl-beta'
+  };
+
+  Object.keys(sliderMap).forEach(function(sid){
+    var el=document.getElementById(sid); if(!el) return;
+    el.addEventListener('input', function(){
+      document.getElementById(sliderMap[sid]).textContent=parseFloat(el.value).toFixed(2);
+      var nameEl=document.getElementById('spec-name');
+      if (!nameEl.dataset.custom) nameEl.value=autoName();
+    });
+  });
+
+  document.getElementById('dist-select').addEventListener('change', function(){
+    document.getElementById('beta-params').style.display=this.value==='beta'?'block':'none';
+    update();
+  });
+  ['sl-alpha','sl-beta'].forEach(function(id){ document.getElementById(id).addEventListener('input', update); });
+
+  // ── Add spec ─────────────────────────────────────────────────────────────────
+  document.getElementById('btn-add').addEventListener('click', function(){
+    if (specs.length>=COLORS.length) { alert('Maximum 8 specifications.'); return; }
+    var nameEl=document.getElementById('spec-name');
+    var name=nameEl.value.trim()||autoName();
+    var type=document.getElementById('spec-type').value;
+    var params=getParams();
+    specs.push({name:name, type:type, params:params, color:COLORS[specs.length]});
+    renderSpecList();
+    update();
+    // reset name field
+    nameEl.dataset.custom='';
+    nameEl.value='';
+    setTimeout(function(){ nameEl.value=autoName(); }, 10);
+  });
+
+  // ── Spec list ────────────────────────────────────────────────────────────────
+  function renderSpecList() {
+    var el=document.getElementById('spec-list');
+    if (specs.length===0) { el.innerHTML='<div class="empty-note">No specifications added yet.</div>'; return; }
+    el.innerHTML=specs.map(function(sp,i){
+      return '<div class="spec-item">'+
+        '<span><span class="spec-dot" style="background:'+sp.color+'"></span>'+sp.name+'</span>'+
+        '<button class="btn btn-danger" data-idx="'+i+'">✕</button>'+
+        '</div>';
+    }).join('');
+    el.querySelectorAll('.btn-danger').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        specs.splice(+this.dataset.idx,1);
+        specs.forEach(function(s,i){ s.color=COLORS[i]; });
+        renderSpecList(); update();
+      });
+    });
+  }
+
+  // ── Hex to rgba ──────────────────────────────────────────────────────────────
+  function hexToRgba(hex, alpha) {
+    var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+    return 'rgba('+r+','+g+','+b+','+alpha+')';
+  }
+
+  // ── Update plot ──────────────────────────────────────────────────────────────
+  function update() {
+    if (specs.length===0) {
+      var eL={width:760,height:580,paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+        xaxis:{title:{text:'type t / average type g(w)',font:{size:12,family:'Fira Code'}},range:[0,1.05]},
+        yaxis:{title:{text:'wage w / outside option r(t)',font:{size:12,family:'Fira Code'}},range:[0,1.05]},
+        annotations:[{x:0.5,y:0.5,xref:'paper',yref:'paper',text:'Add a specification to begin',
+          showarrow:false,font:{size:14,color:'#a0aec0',family:'Inter'}}]};
+      if(!plotInitialized){Plotly.newPlot('main-plot',[],eL,{displayModeBar:false,responsive:false});plotInitialized=true;}
+      else Plotly.react('main-plot',[],eL);
+      document.getElementById('eq-table').innerHTML='<div class="no-data">Add a specification to see equilibrium results.</div>';
+      return;
+    }
+
+    var traces=[];
+    // 45-degree line
+    traces.push({x:[-0.1,1.2],y:[-0.1,1.2],mode:'lines',type:'scatter',
+      line:{color:'#999',width:1.5,dash:'dot'},showlegend:false,hovertemplate:'45° line<extra></extra>'});
+
+    var tableRows=[];
+
+    specs.forEach(function(sp){
+      var rFn=makeR(sp);
+      var gVals=computeG(rFn);
+      var effEmp=efficientEmployment(rFn);
+      var intervals=efficientIntervals(rFn);
+      var rgba=hexToRgba(sp.color, 0.12);
+
+      // Shaded efficient employment regions
+      intervals.forEach(function(iv){
+        var tSeg=t_grid.filter(function(t){ return t>=iv[0]&&t<=iv[1]; });
+        if (tSeg.length<2) return;
+        // shade between r(t) and 45-line where t>=r(t): fill between y=t and y=r(t)
+        var rSeg=tSeg.map(function(t){ return rFn(t); });
+        // upper boundary: y=t (45-line values)
+        // lower boundary: y=r(t)
+        traces.push({
+          x: tSeg.concat(tSeg.slice().reverse()),
+          y: tSeg.concat(rSeg.slice().reverse()),
+          fill:'toself', fillcolor:rgba,
+          line:{width:0}, mode:'lines', type:'scatter',
+          showlegend:false, hoverinfo:'skip'
+        });
+      });
+
+      // r(t) curve
+      traces.push({
+        x:t_grid, y:t_grid.map(function(t){return rFn(t);}),
+        mode:'lines',type:'scatter',
+        line:{color:sp.color,width:2.5},
+        name:sp.name+' r(t)',
+        hovertemplate:'t=%{x:.3f}, r(t)=%{y:.3f}<extra>'+sp.name+' r(t)</extra>'
+      });
+
+      // g(w) curve: x=g(w), y=w
+      var gX=[],gW=[];
+      w_grid.forEach(function(w,i){ if(gVals[i]!==null){gX.push(gVals[i]);gW.push(w);} });
+      traces.push({
+        x:gX,y:gW,mode:'lines',type:'scatter',
+        line:{color:sp.color,width:2.5,dash:'dash'},
+        name:sp.name+' g(w)',
+        hovertemplate:'g(w)=%{x:.3f}, w=%{y:.3f}<extra>'+sp.name+' g(w)</extra>'
+      });
+
+      // Equilibria
+      var eqs=findEquilibria(gVals);
+      eqs.forEach(function(eq){
+        traces.push({
+          x:[eq.w],y:[eq.w],mode:'markers',type:'scatter',
+          marker:{color:eq.stable?sp.color:'white',size:11,symbol:'circle',
+            line:{color:sp.color,width:2.5}},
+          showlegend:false,
+          hovertemplate:(eq.stable?'Stable':'Unstable')+' eq: w*='+eq.w.toFixed(3)+'<extra>'+sp.name+'</extra>'
+        });
+        var eqEmp=eqEmployment(rFn,eq.w);
+        tableRows.push({name:sp.name,color:sp.color,
+          wStar:eq.w.toFixed(3),
+          eqEmp:(eqEmp*100).toFixed(1)+'%',
+          effEmp:(effEmp*100).toFixed(1)+'%',
+          gap:((effEmp-eqEmp)*100).toFixed(1)+'%',
+          stable:eq.stable});
+      });
+
+      if (eqs.length===0) {
+        tableRows.push({name:sp.name,color:sp.color,wStar:'—',eqEmp:'—',
+          effEmp:(effEmp*100).toFixed(1)+'%',gap:'—',stable:null});
+      }
+    });
+
+    var layout={
+      width:760,height:580,
+      paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+      margin:{t:20,r:20,b:60,l:60},
+      xaxis:{title:{text:'type t  /  average type g(w)',font:{size:12,family:'Fira Code'}},
+        range:[0,1.05],gridcolor:'#e2e8f0',zerolinecolor:'#cbd5e0',tickfont:{size:10,color:'#718096'}},
+      yaxis:{title:{text:'wage w  /  outside option r(t)',font:{size:12,family:'Fira Code'}},
+        range:[-0.05,1.1],gridcolor:'#e2e8f0',zerolinecolor:'#cbd5e0',tickfont:{size:10,color:'#718096'}},
+      showlegend:false
+    };
+
+    var config={displayModeBar:false,responsive:false};
+    if(!plotInitialized){Plotly.newPlot('main-plot',traces,layout,config);plotInitialized=true;}
+    else Plotly.react('main-plot',traces,layout);
+
+    // Table
+    if (tableRows.length===0) {
+      document.getElementById('eq-table').innerHTML='<div class="no-data">No equilibria found.</div>';
+    } else {
+      var html='<table><thead><tr>'+
+        '<th>Specification</th><th>Eq. wage w*</th><th>Eq. employment</th>'+
+        '<th>Efficient employment</th><th>Employment gap</th><th>Stable</th>'+
+        '</tr></thead><tbody>';
+      tableRows.forEach(function(r){
+        html+='<tr>'+
+          '<td><span style="background:'+r.color+';display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;"></span>'+r.name+'</td>'+
+          '<td>'+r.wStar+'</td><td>'+r.eqEmp+'</td><td>'+r.effEmp+'</td>'+
+          '<td class="gap">'+r.gap+'</td>'+
+          '<td class="'+(r.stable===null?'':(r.stable?'stable':'unstable'))+'">'+
+            (r.stable===null?'—':(r.stable?'Yes':'No'))+'</td></tr>';
+      });
+      html+='</tbody></table>';
+      document.getElementById('eq-table').innerHTML=html;
+    }
+  }
+
+  // ── Preload two specs ────────────────────────────────────────────────────────
+  // 1. Textbook linear r(t) = 0.5t
+  specs.push({name:'Linear r(t) = 0.5t', type:'linear', params:{a:0, b:0.5}, color:COLORS[0]});
+  // 2. Sine with multiple equilibria
+  specs.push({name:'Sine (multiple eq)', type:'sine', params:{a:0.5, b:0.3, freq:2}, color:COLORS[1]});
+  renderSpecList();
+
+  // Init auto-name
+  document.getElementById('spec-name').value = autoName();
+  update();
+});
+</script>
+<footer style="max-width:1200px;margin:2rem auto 0;padding-top:1rem;border-top:1px solid #e2e8f0;font-size:0.78rem;color:#718096;font-family:'Fira Code',monospace;display:flex;justify-content:space-between;align-items:center;">
+  <span>Rasmus Duret · LSE</span>
+  <a href="https://rassssd.github.io" style="color:#2b6cb0;text-decoration:none;border-bottom:1px solid transparent;transition:border-color 0.2s;" onmouseover="this.style.borderBottomColor='#2b6cb0'" onmouseout="this.style.borderBottomColor='transparent'">rassssd.github.io</a>
+</footer>
+</body>
+</html>

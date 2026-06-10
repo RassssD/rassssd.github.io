@@ -13,3 +13,7 @@ title: Rasmus Duret - Public Goods
 [UK Master's in Econ](/pages/notes/UK_masters.html): some thoughts on the top programmes.
 
 #### Some notes
+
+* [Visualising Frisch-Vaugh-Lowell](/pages/apps/fwl_app.html)
+* [Lemons: Akerlof Signalling](/pages/apps/akerlof_app.html)
+* [Insurance: Rothschild-Stiglitz](/pages/apps/rs_insurance.html)
