@@ -3,7 +3,7 @@ layout: default
 title: Rasmus Duret
 ---
 
-Hi! I am a 1st year MRes/PhD student in Economics at the London School of Economics.
+Hi! I am a 2nd year MRes/PhD student in Economics at the London School of Economics.
 
 ### Education
 
@@ -29,4 +29,4 @@ My research areas span Public Economics and Political Economy: I am interested i
 
 ### Contact
 
-- Email: r.duret@lse.ac.uk
+- Email: r.duret[at]lse.ac.uk
