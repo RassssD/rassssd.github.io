@@ -1,3 +1,8 @@
+---
+layout: default
+title: UK Master's in Econ
+---
+
 ### Choosing Modules
 
 Picking modules you find interesting is never a bad choice.

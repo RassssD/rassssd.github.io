@@ -1,9 +1,11 @@
 ---
 layout: default
-title: Rasmus Duret
 ---
 
-Hi! I am a 2nd year MRes/PhD student in Economics at the London School of Economics.
+<div class="hero">
+  <img src="/images/Portrait_2025_Round.png" alt="Rasmus Duret" class="hero-photo">
+  <p class="hero-intro">Hi! I am a 2nd year MRes/PhD student in Economics at the London School of Economics.</p>
+</div>
 
 ### Education
 

@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Rasmus Duret - Research
+title: Research
 ---
 
 ### Working papers
