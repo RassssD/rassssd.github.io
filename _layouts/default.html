@@ -5,90 +5,10 @@
     <meta charset="utf-8">
     <title>{{ page.title }}</title>
     <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}">
-    {% if site.google_analytics and jekyll.environment == 'production' %}
-    {% include analytics.html %}
+    {% if site.goatcounter and jekyll.environment == 'production' %}
+    <script data-goatcounter="https://{{ site.goatcounter }}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
     {% endif %}
-    <style>
-        button.accordion2 {
-            font: 14px/1.5 "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            cursor: pointer;
-            padding: 0px;
-            border: none;
-            text-align: left;
-            outline: none;
-            font-size: 100%;
-            transition: 0.4s;
-            background-color: #f8f8f8;
-        }
-    
-        button.accordion {
-            font: 14px/1.5 "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            cursor: pointer;
-            padding: 0px;
-            border: none;
-            text-align: left;
-            outline: none;
-            font-size: 100%;
-            transition: 0.4s;
-            background-color: #f8f8f8;
-        }
-    
-        button.accordion.active,
-        button.accordion:hover {
-            background-color: #f8f8f8;
-        }
-    
-        button.accordion:after {
-            content: '[+]';
-            font-size: 90%;
-            color: #777;
-            float: left;
-            margin-left: 1px;
-            margin-right: 3px;
-        }
-    
-        button.accordion2:after {
-            content: '[#]';
-            font-size: 90%;
-            color: #777;
-            float: left;
-            margin-left: 1px;
-            margin-right: 3px;
-        }
-    
-        button.accordion.active:after {
-            content: "[\2212]";
-        }
-    
-        div.panel {
-            padding: 0 20px;
-            margin-top: 5px;
-            display: none;
-            background-color: white;
-            font-size: 100%;
-        }
-    
-        div.panel.show {
-            display: block !important;
-        }
-    </style>
     <link rel="alternate" type="application/atom+xml" title="{{ site.description }}" href="/feed.xml">
-
-<script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
-<script type="module" src="/assets/js/pdf_gallery.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  var acc = document.getElementsByClassName("accordion");
-  for (var i = 0; i < acc.length; i++) {
-    acc[i].addEventListener("click", function () {
-      this.classList.toggle("active");
-      var panel = this.nextElementSibling;
-      panel.classList.toggle("show");
-    });
-  }
-});
-</script>
 </head>
 
 <body>
@@ -130,7 +50,6 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
         </header>
     </div>
-    <script src="{{ '/assets/js/scale.fix.js' | relative_url }}"></script>
 
 </body>
 
