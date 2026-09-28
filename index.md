@@ -18,6 +18,14 @@ layout: default
       <li>MSc Economics, LSE (2024)</li>
       <li>BSc Economics, UCL (2023)</li>
     </ul>
+
+    <h3>CV</h3>
+    <p><a href="/resources/papers/Resume_Rasmus_Duret.pdf">My CV is available here.</a></p>
+
+    <h3>Contact</h3>
+    <ul>
+      <li>Email: r.duret[at]lse.ac.uk</li>
+    </ul>
   </div>
   <div>
     <h3>Experience</h3>
@@ -29,9 +37,3 @@ layout: default
     </ul>
   </div>
 </div>
-
-[My CV is available here.](resources/papers/Resume_Rasmus_Duret.pdf)
-
-### Contact
-
-- Email: r.duret[at]lse.ac.uk
