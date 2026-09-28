@@ -16,12 +16,26 @@ main {
   padding: 0 1.5rem 4rem;
 }
 
-/* Homepage hero: larger photo next to the intro line */
+/* Homepage hero: intro + research text on the left, photo on the right */
 .hero {
   display: flex;
   align-items: center;
-  gap: 1.75rem;
+  gap: 2rem;
   margin: 2rem 0 1rem;
+}
+
+.hero-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.hero-text p {
+  font-size: 1.1rem;
+  color: #2d3748;
+}
+
+.hero-text p:last-child {
+  margin-bottom: 0;
 }
 
 .hero-photo {
@@ -30,12 +44,6 @@ main {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-}
-
-.hero-intro {
-  font-size: 1.2rem;
-  color: #2d3748;
-  margin: 0;
 }
 
 @media (max-width: 640px) {
@@ -48,6 +56,25 @@ main {
   .hero-photo {
     width: 110px;
     height: 110px;
+  }
+}
+
+/* Homepage: Education / Experience side by side */
+.two-col {
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.two-col > div {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .two-col {
+    flex-direction: column;
+    gap: 0;
   }
 }
 
@@ -107,7 +134,7 @@ a:hover {
   border-bottom-color: currentColor;
 }
 
-/* Top navigation: avatar + name left, links and socials right */
+/* Top navigation: name left, links and socials right */
 .topnav {
   padding: 1.5rem 0 1.25rem;
 }
@@ -125,18 +152,7 @@ a:hover {
 }
 
 .nav-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
   border-bottom: none;
-}
-
-.nav-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
 }
 
 .nav-name {
