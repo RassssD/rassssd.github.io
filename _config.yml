@@ -10,7 +10,5 @@ kramdown:
 # Add MathJax support
 mathjax: true
 
-# Visitor analytics via GoatCounter (free, cookie-free). Sign up at
-# https://www.goatcounter.com, then set this to your site code
-# (the subdomain in https://<code>.goatcounter.com) to enable tracking.
-# goatcounter: your-code
+# Visitor analytics via GoatCounter (free, cookie-free).
+goatcounter: rasmusduret
