@@ -7,7 +7,7 @@ layout: default
     <p>Hi! I am a 2nd year MRes/PhD student in Economics at the London School of Economics.</p>
     <p>My research areas span Public Economics and Political Economy: I am interested in how governments can design, evaluate, and adapt policies to promote innovation and social mobility, and how this interacts with voter preferences to shape political outcomes.</p>
   </div>
-  <img src="/images/Portrait_2025_Round.png" alt="Rasmus Duret" class="hero-photo">
+  <img src="/images/RasmusDuret_Portrait_2025.jpg" alt="Rasmus Duret" class="hero-photo">
 </div>
 
 <div class="two-col">

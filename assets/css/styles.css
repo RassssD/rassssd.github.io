@@ -16,17 +16,14 @@ main {
   padding: 0 1.5rem 4rem;
 }
 
-/* Homepage hero: intro + research text on the left, photo on the right */
+/* Homepage hero: intro + research text on the left, photo on the right,
+   roughly equal width so neither side dominates. */
 .hero {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
-  gap: 2rem;
+  gap: 2.5rem;
   margin: 2rem 0 1rem;
-}
-
-.hero-text {
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
 .hero-text p {
@@ -39,23 +36,20 @@ main {
 }
 
 .hero-photo {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
-  flex-shrink: 0;
+  border-radius: 8px;
 }
 
 @media (max-width: 640px) {
   .hero {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
     gap: 1.25rem;
   }
 
   .hero-photo {
-    width: 110px;
-    height: 110px;
+    width: 220px;
   }
 }
 
