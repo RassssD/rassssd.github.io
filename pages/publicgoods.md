@@ -15,5 +15,6 @@ title: Public Goods
 #### Some notes
 
 * [Visualising Frisch-Vaugh-Lowell](/pages/apps/fwl_app.html)
+* [Regression Geometry](/pages/apps/regression-geometry.html)
 * [Lemons: Akerlof Signalling](/pages/apps/akerlof_app.html)
 * [Insurance: Rothschild-Stiglitz](/pages/apps/rs_insurance.html)

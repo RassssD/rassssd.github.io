@@ -1,0 +1,529 @@
+<title>Regression Geometry</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+/* Layout: diagram + objective left, narrative + controls + scatter dual right; stacks on phone */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --fg:#1c2330; --muted:#5f6b7a; --grid:#e8ebf0; --rule:#d5dae2;
+  --y:#2457c5; --x:#c2620a; --iota:#16825a; --fit:#6b3fc0; --res:#cf2e2a;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --iota:#3fcf94; --fit:#b996ff; --res:#ff6b66; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --iota:#3fcf94; --fit:#b996ff; --res:#ff6b66; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
+.wrap{max-width:1120px;margin:0 auto;padding-block:22px 36px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:2px 0 0;color:var(--muted)}
+.steps{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.steps .part{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 4px 0 10px}
+.steps .part:first-child{margin-left:0}
+.steps button{width:30px;height:30px;padding:0;border-radius:50%;font-family:var(--mono);font-size:.8rem}
+.steps button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.steps button.done{border-color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.left{display:grid;gap:12px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px;min-width:0}
+.panel svg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.hint{margin:4px 2px 0;font-size:.8rem;color:var(--muted);min-height:1.2em}
+.side{display:grid;gap:12px;min-width:0}
+.stepnum{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h2{margin:0;font-size:1.2rem;text-wrap:balance}
+.text{max-width:62ch}
+.text p{margin:0 0 .6em}
+math{font-size:1.06em}
+.controls{display:grid;gap:10px}
+.controls:not(:has(:not([hidden]))){display:none}
+.ctl{display:grid;grid-template-columns:4.5em 1fr 3.6em;gap:10px;align-items:center}
+.ctl label{font-family:var(--mono);font-size:.9rem}
+.ctl output{font-family:var(--mono);font-size:.85rem;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--fit)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-size:.85rem;padding:6px 12px;border-radius:6px;border:1px solid var(--rule);background:var(--panel);color:var(--fg);cursor:pointer}
+button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible{outline:2px solid var(--fit);outline-offset:2px}
+.check{display:flex;gap:6px;align-items:center;font-size:.88rem}
+.readout{font-family:var(--mono);font-size:.82rem;line-height:1.7;font-variant-numeric:tabular-nums;border-left:2px solid var(--rule);padding-left:10px;overflow-x:auto;white-space:pre}
+.readout:empty{display:none}
+.plabel{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 4px 2px}
+.objhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.toggle{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.toggle button{border:0;border-radius:0;padding:3px 10px;font-size:.78rem}
+.toggle button.on{background:var(--fg);color:var(--bg)}
+.topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px}
+.pager{display:flex;gap:8px;margin-left:auto}
+svg text{font-family:var(--mono);font-size:12px}
+svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:italic}
+svg .sm{font-family:var(--sans);font-size:13px;font-style:italic;font-weight:600}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Regression Geometry</h1>
+    <p class="sub">OLS in observation space, built up one piece at a time. Use the buttons or the ← → keys.</p>
+  </header>
+  <div class="topbar">
+    <nav class="steps" id="nav" aria-label="Steps"></nav>
+    <div class="pager"><button id="prev">← Previous</button><button id="next" class="primary">Next →</button></div>
+  </div>
+  <div class="grid">
+    <div class="left">
+      <section class="panel">
+        <svg id="main" viewBox="0 0 440 440" role="img" aria-label="Main diagram"></svg>
+        <p class="hint" id="hint"></p>
+      </section>
+      <section class="panel" id="objp">
+        <div class="objhead"><div class="plabel" id="objlab"></div>
+          <div class="toggle" id="objmode"><button data-m="surf" class="on">Bowl</button><button data-m="cont">Contours</button></div></div>
+        <svg id="obj" viewBox="0 0 440 260" role="img" aria-label="OLS objective"></svg>
+        <p class="hint" id="objhint"></p>
+      </section>
+    </div>
+    <section class="side">
+      <div>
+        <div class="stepnum" id="stepnum"></div>
+        <h2 id="stitle"></h2>
+      </div>
+      <div class="text" id="stext"></div>
+      <div class="controls">
+        <div class="ctl" id="c-b"><label for="b">b</label><input type="range" id="b" min="0" max="3" step="0.005"><output id="bo"></output></div>
+        <div class="ctl" id="c-a2"><label for="a2">a</label><input type="range" id="a2" min="-3" max="5" step="0.01"><output id="a2o"></output></div>
+        <div class="ctl" id="c-b2"><label for="b2">b</label><input type="range" id="b2" min="-3" max="4" step="0.01"><output id="b2o"></output></div>
+        <div class="ctl" id="c-a3"><label for="a3">a</label><input type="range" id="a3" min="-1" max="3" step="0.01"><output id="a3o"></output></div>
+        <div class="ctl" id="c-b3"><label for="b3">b</label><input type="range" id="b3" min="-1" max="2" step="0.01"><output id="b3o"></output></div>
+        <div class="row" id="c-row">
+          <button id="snap">Jump to OLS</button>
+          <button id="reset">Reset data</button>
+          <label class="check" id="c-alone"><input type="checkbox" id="alone"> Regress on x alone</label>
+        </div>
+      </div>
+      <div class="readout" id="readout"></div>
+      <div class="panel" id="inset"><div class="plabel">Same data as a scatter plot · drag the dots</div><svg id="scatter" viewBox="0 0 300 210" role="img" aria-label="Scatter plot of the same data"></svg></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const NS='http://www.w3.org/2000/svg';
+const Y2=[3,2],X2=[1,2],X3D=[1,2,3],Y3D=[1,3.5,1.5];
+const st={step:0,y:[...Y2],x:[...X2],xSaved:null,b:1,a2:0,b2:0.5,a3:0,b3:1,
+  yaw:-0.75,pitch:0.42,yaw2:-0.6,pitch2:0.5,objMode:'surf',alone:false};
+const X3=[...X3D],Y3=[...Y3D],I3=[1,1,1];
+const T=String.raw, DRAG='Drag the dots in the scatter plot.';
+
+const steps=[
+ {id:'scatter',part:'A',t:'The familiar picture',ctl:['reset'],hint:'Drag the dots.',
+  text:T`<p>Start with the picture everyone knows: one dot per observation, one axis per variable. Here there are \(n=2\) observations of \((x_i,y_i)\).</p><p>The dots stay draggable throughout. Every other diagram updates from them.</p>`},
+ {id:'obs',part:'A',t:'Observation space',ctl:[],hint:DRAG,
+  text:T`<p>Now flip the picture. Each <em>axis</em> is one observation, so with \(n=2\) we work in \(\mathbb{R}^2\).</p><p>A single point gives a value for every observation at once. The scatter plot stays alongside.</p>`},
+ {id:'ypt',part:'A',t:'The outcome is a point',ctl:['reset'],hint:DRAG+' Moving a dot up or down moves y.',
+  text:T`<p>Stack the outcomes into \(y=(y_1,y_2)\). That is one point here: go \(y_1\) along the first axis and \(y_2\) along the second.</p><p>In the scatter plot, the same two numbers are the heights of the dots. The dashed guides show where each number sits in both pictures.</p>`},
+ {id:'xpt',part:'A',t:'The regressor is a point too',ctl:['reset'],hint:DRAG+' Moving a dot sideways moves x.',
+  text:T`<p>The regressor \(x=(x_1,x_2)\) is a point in the same space. In the scatter plot, \(x_1\) and \(x_2\) are the horizontal positions of the dots. Here they are the coordinates of the arrow \(x\).</p><p>So each dot in the scatter plot contributes one coordinate to each arrow: observation 1 supplies \(x_1\) and \(y_1\), the first coordinates of \(x\) and \(y\).</p>`},
+ {id:'xb',part:'A',t:'Each b gives a point Xb',ctl:['b'],hint:'Move b. Its range runs from one dot to the other, and a little beyond.',
+  text:T`<p>With one regressor and no intercept, the model predicts \(Xb=b\,x\). Each choice of \(b\) is one point: \(b\) copies of the arrow \(x\).</p><p>All of them together form the line through the origin and \(x\), the column space \(\text{col}(X)\). It passes through the origin because \(b=0\) is always allowed. In the scatter plot, the same \(b\) is a line through the origin.</p>`},
+ {id:'res',part:'A',t:'The residual is one vector',ctl:['b'],obj:'curve',hint:'Move b, or drag along the SSR curve.',
+  text:T`<p>The residual \(e=y-Xb\) is the arrow from the prediction to the outcome. Its squared length is \(e_1^2+e_2^2=\text{SSR}\).</p><p>In the scatter plot, the two vertical residuals are its two components. The curve below the diagram plots SSR against \(b\).</p>`},
+ {id:'ols',part:'A',t:'OLS drops the perpendicular',ctl:['b','snap'],obj:'curve',hint:'Move b away from β̂: the residual becomes a hypotenuse.',
+  text:T`<p>The shortest residual is perpendicular to the line: \(x'(y-X\hat\beta)=0\). That is the normal equation, and it gives \(\hat\beta=x'y/x'x\).</p><p>For any other \(b\), the residual is the hypotenuse of a right triangle, so \(\text{SSR}(b)=\text{SSR}(\hat\beta)+(b-\hat\beta)^2\lVert x\rVert^2\). That is the parabola below. Pythagoras is the whole proof that OLS minimises SSR.</p>`},
+ {id:'P',part:'A',t:'P: the projection matrix',ctl:[],hint:DRAG+' P changes with x, never with y.',
+  text:T`<p>Computing the fitted values takes two steps. First \(\hat\beta=(X'X)^{-1}X'y\) turns \(y\) into a coefficient; then \(X\) turns that coefficient back into a point. Composing them gives one matrix that maps \(y\) straight to its shadow on \(\text{col}(X)\):</p><p>\(Py = X\hat\beta,\quad P = X(X'X)^{-1}X'.\)</p><p>With one regressor, \(P = xx'/x'x\): a \(2\times2\) matrix built from \(x\) alone. Three properties can be read off the picture. A point already on the line stays put (\(Px=x\)). Projecting twice changes nothing (\(PP=P\)). And \(P\) is symmetric.</p>`},
+ {id:'M',part:'A',t:'M: the residual maker',ctl:[],hint:DRAG,
+  text:T`<p>What \(P\) leaves behind is the residual: \(e=y-Py=(I-P)y\). Call \(M=I-P\) the residual maker. It is also a projection, onto the line through the origin perpendicular to \(\text{col}(X)\), drawn in red.</p><p>Every \(y\) splits into two perpendicular pieces, \(y=Py+My\). \(M\) sends anything in the column space to zero (\(Mx=0\)), projecting twice changes nothing (\(MM=M\)), and \(PM=0\). Because the pieces are perpendicular, \(\lVert y\rVert^2=\lVert Py\rVert^2+\lVert My\rVert^2\): total sum of squares equals fitted plus residual.</p>`},
+ {id:'iota',part:'B',t:'The intercept is a point too',ctl:[],hint:DRAG,
+  text:T`<p>An intercept is just another regressor: the variable that equals 1 for every observation. Stacked over the observations it is \(\iota=(1,1)\), a point in observation space like \(x\) and \(y\).</p><p>\(\iota\) always sits on the 45° line, since every coordinate is 1. Scaling it to \(a\,\iota=(a,a)\) adds the same amount \(a\) to every prediction, which is exactly what an intercept does.</p>`},
+ {id:'span',part:'B',t:'Two directions fill the plane',ctl:['a2','b2','snap','reset'],hint:'Move a and b, or press Jump to OLS.',
+  text:T`<p>Now \(X=[\iota,\;x]\). Two arrows pointing in different directions span all of \(\mathbb{R}^2\): any point, \(y\) included, can be reached as \(a\,\iota+b\,x\) by the parallelogram rule.</p><p>So projecting onto \(\text{col}(X)\) does nothing: \(P=I\), \(M=0\), and the residual is zero. In the scatter plot, a line through two points always fits exactly.</p>`},
+ {id:'colin',part:'B',t:'When x lines up with ι',colin:1,ctl:[],hint:'The dots have been moved to the same x. Drag one sideways to break the collinearity.',
+  text:T`<p>Now put both dots at the same \(x\), which this slide has done for you. Then \(x=(c,c)=c\,\iota\): the point \(x\) lands on the 45° line, and its arrow lies along \(\iota\).</p><p>Two arrows on the same line span only that line. Adding \(x\) supplies no new direction, so \(\text{col}(X)\) shrinks from the whole plane back to a line. In the scatter plot, both dots sit above the same \(x\), so the data say nothing about how \(y\) changes with \(x\).</p>`},
+ {id:'colinfit',part:'B',t:'Fitting with collinear regressors',colin:1,ctl:['a2','b2','snap'],hint:'Move a and b: many pairs reach the same fitted point.',
+  text:T`<p>The best fit is again a perpendicular drop, now onto the line through \(\iota\). Its foot is \(\bar y\,\iota\): predict the mean for everyone.</p><p>The fitted values are unique, but the coefficients are not. Every \((a,b)\) with \(a+bc=\bar y\) reaches the same point. That is perfect collinearity.</p><p>Here \(P=\iota\iota'/n\), which replaces each entry by the mean, and \(M_\iota=I-\iota\iota'/n\) demeans: \(M_\iota y=y-\bar y\,\iota\). This matrix returns in Frisch–Waugh–Lovell.</p>`},
+ {id:'s3d',part:'C',t:'Three observations',ctl:['reset'],hint:'Drag the diagram to rotate it. '+DRAG,
+  text:T`<p>Add a third observation. Observation space is now \(\mathbb{R}^3\), one axis per observation. Each variable is still a single arrow: \(\iota=(1,1,1)\), \(x=(x_1,x_2,x_3)\) and \(y=(y_1,y_2,y_3)\).</p><p>The scatter plot now has three dots, and each dot still contributes one coordinate to each arrow. The dashed guides show where \(y\)'s coordinates sit.</p>`},
+ {id:'plane',part:'C',t:'The column space is a plane',ctl:['a3','b3','reset'],obj:'k2',hint:'Drag the diagram to rotate it. Move a and b to travel around the plane.',
+  text:T`<p>Every \((a,b)\) gives a point \(a\,\iota+b\,x\). With two arrows in \(\mathbb{R}^3\), these points fill a plane through the origin: \(\text{col}(X)\). Unlike the \(n=2\) case, the plane is not the whole space, so \(y\) generally sticks out of it and no fit is perfect.</p><p>SSR now depends on two parameters. It is quadratic in \((a,b)\), so its graph is a bowl over the \((a,b)\) plane, shown below the diagram.</p>`},
+ {id:'ols3',part:'C',t:'OLS drops the perpendicular again',ctl:['a3','b3','snap'],obj:'k2',hint:'Drag the diagram to rotate it. Jump to OLS sends you to the bottom of the bowl.',
+  text:T`<p>OLS drops the perpendicular from \(y\) onto the plane. The residual must be orthogonal to every direction in the plane, which gives two normal equations: \(\iota'e=\sum_i e_i=0\) and \(x'e=0\). The foot of the perpendicular is the bottom of the bowl.</p><p>\(P=X(X'X)^{-1}X'\) maps any point onto the plane, and \(M=I-P\) maps it onto the line perpendicular to the plane. \(\operatorname{tr}P=k=2\) and \(\operatorname{tr}M=n-k=1\): the residual can only move along one direction, so it has one degree of freedom.</p>`},
+ {id:'coef',part:'C',t:'Reading off the coefficients',ctl:['alone','reset'],obj:'k2',hint:'Drag to rotate. Tick the box to compare with x alone.',
+  text:T`<p>\(\hat\alpha\) and \(\hat\beta\) are the coordinates of \(Py\) along \(\iota\) and \(x\), read off with the parallelogram, not by dropping perpendiculars onto each arrow.</p><p>Regressing on \(x\) alone imposes \(a=0\), one slice through the bowl. Its lowest point is not the bottom of the bowl whenever \(x\) is not orthogonal to \(\iota\). Frisch–Waugh–Lovell removes the problem by demeaning first: \(\hat\beta=(x'M_\iota x)^{-1}x'M_\iota y\).</p>`}
+];
+const parts={A:'n = 2, k = 1',B:'n = 2, k = 2',C:'n = 3, k = 2'};
+const is3=id=>['s3d','plane','ols3','coef'].includes(id);
+
+function tex(s){return s.replace(/\\\((.+?)\\\)/g,(m,t)=>{try{return katex.renderToString(t,{output:'mathml',throwOnError:false})}catch(e){return t}})}
+const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
+const add=(a,b)=>a.map((v,i)=>v+b[i]), sub=(a,b)=>a.map((v,i)=>v-b[i]), mul=(a,k)=>a.map(v=>v*k);
+const norm=a=>Math.sqrt(dot(a,a)), unit=a=>{const n=norm(a);return n?mul(a,1/n):a};
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const f2=v=>(Math.abs(v)<0.005?0:v).toFixed(2);
+const vec=a=>'('+a.map(f2).join(', ')+')';
+const pad=v=>(v<-0.004?'':' ')+f2(v);
+const matv=(M,v)=>M.map(r=>dot(r,v));
+function mat(name,M){const w=name.length;return M.map((r,i)=>(i===0?name+' = ':' '.repeat(w+3))+'[ '+r.map(pad).join('  ')+' ]').join('\n')}
+function el(tag,at,p){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);if(p)p.appendChild(e);return e}
+function txt(p,x,y,s,col,cls,anchor){const t=el('text',{x,y,'text-anchor':anchor||'start',class:cls||''},p);t.textContent=s;t.style.fill=col||'var(--muted)';return t}
+function arrow(p,a,b,col,w,dash){const d=[b[0]-a[0],b[1]-a[1]],L=Math.hypot(d[0],d[1]);if(L<2)return;const u=[d[0]/L,d[1]/L],h=Math.min(11,L*.5),bb=[b[0]-u[0]*h,b[1]-u[1]*h];
+  el('line',{x1:a[0],y1:a[1],x2:bb[0],y2:bb[1],stroke:col,'stroke-width':w||2.2,'stroke-dasharray':dash||'none','stroke-linecap':'round'},p);
+  el('polygon',{points:`${b[0]},${b[1]} ${bb[0]-u[1]*5},${bb[1]+u[0]*5} ${bb[0]+u[1]*5},${bb[1]-u[0]*5}`,fill:col},p)}
+function seg(p,a,b,col,w,dash,op){el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:col,'stroke-width':w||1.5,'stroke-dasharray':dash||'none',opacity:op??1},p)}
+function dotm(p,a,col,r){el('circle',{cx:a[0],cy:a[1],r:r||4.5,fill:col},p)}
+function rightAngle(p,F,u,v,r,S){el('polygon',{points:[F,add(F,mul(u,r)),add(add(F,mul(u,r)),mul(v,r)),add(F,mul(v,r))].map(q=>S(q).join(',')).join(' '),fill:'none',stroke:'var(--fg)','stroke-width':1},p)}
+function ticks(lo,hi,k){const raw=(hi-lo)/k,s_=Math.pow(10,Math.floor(Math.log10(raw)));const m=[1,2,2.5,5,10].find(m=>m*s_>=raw)*s_;const out=[];for(let v=Math.ceil(lo/m-1e-9)*m;v<=hi+1e-9;v+=m)out.push(+v.toFixed(6));return out}
+const SUB=['₁','₂','₃'];
+
+/* ---------- regression helpers ---------- */
+function k1(){const x=st.x,y=st.y,xx=dot(x,x),bh=dot(x,y)/xx,F=mul(x,bh);
+  return{bh,F,e:sub(y,F),P:[[x[0]*x[0]/xx,x[0]*x[1]/xx],[x[1]*x[0]/xx,x[1]*x[1]/xx]]}}
+function k2info(){const y=st.y,x=st.x,colin=Math.abs(x[0]-x[1])<1e-6;let ex=null;if(!colin){const b=(y[1]-y[0])/(x[1]-x[0]);ex={a:y[0]-b*x[0],b}}return{colin,ex}}
+function ols3(){const n=3,sx=X3.reduce((a,b)=>a+b),sxx=dot(X3,X3),sy=Y3.reduce((a,b)=>a+b),sxy=dot(X3,Y3),det=n*sxx-sx*sx;
+  const a=(sxx*sy-sx*sxy)/det,b=(n*sxy-sx*sy)/det,Ai=[[sxx/det,-sx/det],[-sx/det,n/det]];
+  const P=[0,1,2].map(i=>[0,1,2].map(j=>{const ri=[1,X3[i]],rj=[1,X3[j]];return ri[0]*(Ai[0][0]*rj[0]+Ai[0][1]*rj[1])+ri[1]*(Ai[1][0]*rj[0]+Ai[1][1]*rj[1])}));
+  return{a,b,P,XX:[[n,sx],[sx,sxx]]}}
+const ssr3=(a,b)=>{const e=sub(Y3,add(mul(I3,a),mul(X3,b)));return dot(e,e)};
+function bRange(){const r=[0,1].filter(i=>Math.abs(st.x[i])>1e-6).map(i=>st.y[i]/st.x[i]);
+  if(!r.length)return[-1,3];const lo=Math.min(...r),hi=Math.max(...r),p=Math.max(0.25,0.3*(hi-lo));return[lo-p,hi+p]}
+function syncB(){const[a,b]=bRange();$('b').min=a;$('b').max=b;st.b=Math.max(a,Math.min(b,st.b))}
+function syncAB(){const o=ols3();const ar=[o.a-2,o.a+2],br=[o.b-1.25,o.b+1.25];
+  $('a3').min=ar[0].toFixed(2);$('a3').max=ar[1].toFixed(2);$('b3').min=br[0].toFixed(2);$('b3').max=br[1].toFixed(2);
+  st.a3=Math.max(+$('a3').min,Math.min(+$('a3').max,st.a3));st.b3=Math.max(+$('b3').min,Math.min(+$('b3').max,st.b3))}
+
+/* ---------- 2D observation space ---------- */
+const W=440,P=30,lo=-1,hi=4.5;
+const X=v=>P+(v-lo)/(hi-lo)*(W-2*P), Y=v=>W-P-(v-lo)/(hi-lo)*(W-2*P), S=p=>[X(p[0]),Y(p[1])];
+function tMax(d){let t=Infinity;d.forEach(c=>{if(c>1e-9)t=Math.min(t,(hi-.35)/c);else if(c<-1e-9)t=Math.min(t,(lo+.35)/c)});return t}
+function guides2(s,v,nm,col){
+  seg(s,S(v),S([v[0],0]),col,1.2,'3 3',.8);seg(s,S(v),S([0,v[1]]),col,1.2,'3 3',.8);
+  el('circle',{cx:X(v[0]),cy:Y(0),r:3,fill:col},s);el('circle',{cx:X(0),cy:Y(v[1]),r:3,fill:col},s);
+  txt(s,X(v[0]),Y(0)+(nm==='y'?30:44),nm+'₁ = '+f2(v[0]),col,'sm','middle');
+  txt(s,X(0)-(nm==='y'?26:26),Y(v[1])+(nm==='x'?14:4),nm+'₂',col,'sm','end')}
+function lineThrough(s,g,d,label){const u=unit(d);seg(g,S(mul(u,-30)),S(mul(u,30)),'var(--fit)',2.5,null,.5);
+  if(label){const lp=S(mul(u,tMax(u)*.92));txt(s,lp[0]+8,lp[1]+16,label,'var(--fit)')}}
+
+function draw2D(id){
+  const s=$('main');s.innerHTML='';
+  const cp=el('clipPath',{id:'clip2'},el('defs',{},s));el('rect',{x:P,y:P,width:W-2*P,height:W-2*P},cp);
+  for(let i=Math.ceil(lo);i<=hi;i++){seg(s,[X(i),P],[X(i),W-P],'var(--grid)',1);seg(s,[P,Y(i)],[W-P,Y(i)],'var(--grid)',1);
+    if(i>0){txt(s,X(i),Y(0)+15,i,null,'','middle');txt(s,X(0)-7,Y(i)+4,i,null,'','end')}}
+  seg(s,[P,Y(0)],[W-P,Y(0)],'var(--muted)',1.2);seg(s,[X(0),P],[X(0),W-P],'var(--muted)',1.2);
+  txt(s,W-P,Y(0)-7,'obs 1',null,'','end');txt(s,X(0)+7,P+12,'obs 2');
+  const g=el('g',{'clip-path':'url(#clip2)'},s);
+  const y=st.y,x=st.x,O=[0,0],{colin,ex}=k2info();
+  const showX=!['obs','ypt'].includes(id), showY=id!=='obs';
+  const k1ids=['xb','res','ols','P','M'], iotaIds=['iota','span','colin','colinfit'];
+  // spans
+  if(['span','colin','colinfit'].includes(id)){
+    if(colin)lineThrough(s,g,[1,1],'col(X)');
+    else{el('rect',{x:P,y:P,width:W-2*P,height:W-2*P,fill:'var(--fit)','fill-opacity':.07},g);txt(s,W-P-6,P+16,'col(X) = ℝ²','var(--fit)','','end')}}
+  if(k1ids.includes(id))lineThrough(s,g,x,'col(X)');
+  if(id==='M'){const n=[-x[1],x[0]];const u=unit(n);seg(g,S(mul(u,-30)),S(mul(u,30)),'var(--res)',2,null,.35);
+    const lp=S(mul(u,tMax(u)*.85));txt(s,lp[0]+8,lp[1]+4,'⊥ col(X)','var(--res)')}
+  // coordinate guides
+  if(id==='ypt'||id==='xpt')guides2(s,y,'y','var(--y)');
+  if(id==='xpt')guides2(s,x,'x','var(--x)');
+  if(id==='iota')guides2(s,[1,1],'ι','var(--iota)');
+  // vectors
+  if(iotaIds.includes(id)){arrow(s,S(O),S([1,1]),'var(--iota)',2.6);txt(s,S([1,1])[0]+8,S([1,1])[1]+16,id==='iota'?'ι = (1, 1)':'ι','var(--iota)','lab')}
+  if(showX){arrow(s,S(O),S(x),'var(--x)',2.4);txt(s,S(x)[0]+8,S(x)[1]-6,id==='P'?'x = Px':id==='M'?'x  (Mx = 0)':'x','var(--x)','lab')}
+  if(showY){arrow(s,S(O),S(y),'var(--y)',2.4);txt(s,S(y)[0]+8,S(y)[1]-6,'y','var(--y)','lab')}
+  // k = 1 fitting
+  if(k1ids.includes(id)&&id!=='xb'||id==='xb'){
+    const K=k1(),F=K.F,Pp=mul(x,st.b);
+    if(['ols','P','M'].includes(id)){
+      const ok=norm(K.e)>1e-6;
+      if(id==='M'){
+        arrow(s,S(O),S(F),'var(--fg)',2.6);arrow(s,S(O),S(K.e),'var(--res)',2.6);
+        seg(s,S(F),S(y),'var(--muted)',1,'4 3');seg(s,S(K.e),S(y),'var(--muted)',1,'4 3');
+        if(ok)rightAngle(s,O,unit(F),unit(K.e),.2,S);
+        txt(s,S(F)[0]-10,S(F)[1]-8,'Py','var(--fg)','lab','end');
+        txt(s,S(K.e)[0]+8,S(K.e)[1]+16,'My','var(--res)','lab');
+      } else {
+        if(ok)rightAngle(s,F,unit(x),unit(K.e),.17,S);
+        arrow(s,S(F),S(y),id==='P'?'var(--muted)':'var(--res)',id==='P'?1.4:2.2,id==='P'?'3 3':null);
+        if(id==='ols'){const m=S(mul(add(F,y),.5));txt(s,m[0]+6,m[1]-6,'e','var(--res)','lab')}
+        if(id==='ols'&&Math.abs(st.b-K.bh)>.02)seg(s,S(F),S(Pp),'var(--fit)',4,null,.8);
+        dotm(s,S(F),'var(--fg)',4.5);txt(s,S(F)[0]-10,S(F)[1]-10,id==='P'?'Py':'Xβ̂','var(--fg)','lab','end');
+      }
+    }
+    if(['xb','res','ols'].includes(id)){
+      if(id!=='xb')arrow(s,S(Pp),S(y),'var(--res)',2,id==='ols'?'5 4':null);
+      dotm(s,S(Pp),'var(--fit)',5.5);txt(s,S(Pp)[0]+10,S(Pp)[1]+16,'Xb','var(--fit)','lab')}
+  }
+  // k = 2 fitting
+  if(id==='span'||id==='colinfit'){
+    const A=mul([1,1],st.a2),Pp=add(A,mul(x,st.b2));
+    arrow(s,S(O),S(A),'var(--iota)',3,'6 4');arrow(s,S(A),S(Pp),'var(--x)',3,'6 4');
+    if(colin){const F=[mean(y),mean(y)];
+      if(norm(sub(y,F))>1e-6)rightAngle(s,F,unit([1,1]),unit(sub(y,F)),.17,S);
+      arrow(s,S(F),S(y),'var(--res)',2.2);dotm(s,S(F),'var(--fg)',4.5);txt(s,S(F)[0]+10,S(F)[1]+16,'Py = ȳι','var(--fg)','lab');
+      const m=S(mul(add(F,y),.5));txt(s,m[0]+6,m[1]-6,'My','var(--res)','lab')}
+    arrow(s,S(Pp),S(y),'var(--res)',2,'5 4');
+    dotm(s,S(Pp),'var(--fit)',5.5);txt(s,S(Pp)[0]-10,S(Pp)[1]-8,'aι + bx','var(--fit)','lab','end');
+  }
+}
+
+/* ---------- 3D observation space ---------- */
+const C3=[1.3,1.3,1.3],SC=60;
+function pr(p){const q=sub(p,C3),cy=Math.cos(st.yaw),sy=Math.sin(st.yaw),cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);
+  const x1=q[0]*cy-q[1]*sy,y1=q[0]*sy+q[1]*cy,up=q[2]*cp+y1*sp;return[W/2+SC*x1,W/2+12-SC*up]}
+function draw3D(id){
+  const s=$('main');s.innerHTML='';
+  el('rect',{x:0,y:0,width:W,height:W,fill:'transparent',style:'cursor:grab'},s);
+  for(let i=0;i<=3;i++){seg(s,pr([i,0,0]),pr([i,3,0]),'var(--grid)',1);seg(s,pr([0,i,0]),pr([3,i,0]),'var(--grid)',1)}
+  [[3.7,0,0],[0,3.7,0],[0,0,3.6]].forEach((e,i)=>{arrow(s,pr([0,0,0]),pr(e),'var(--muted)',1.2);const p=pr(e);txt(s,p[0]+6,p[1]-4,'obs '+(i+1))});
+  for(let i=1;i<=3;i++){[[i,0,0],[0,i,0],[0,0,i]].forEach(e=>{const p=pr(e);el('circle',{cx:p[0],cy:p[1],r:1.8,fill:'var(--muted)'},s)})}
+  const o=ols3(),O=pr([0,0,0]),pt=(a,b)=>add(mul(I3,a),mul(X3,b)),F=pt(o.a,o.b);
+  if(id!=='s3d'){
+    const s0=Math.min(-0.3,o.a-0.4,st.a3-0.3),s1=Math.max(1.9,o.a+0.4,st.a3+0.3),t0=Math.min(-0.3,o.b-0.3,st.b3-0.2),t1=Math.max(1.1,o.b+0.3,st.b3+0.2);
+    el('polygon',{points:[pt(s0,t0),pt(s1,t0),pt(s1,t1),pt(s0,t1)].map(p=>pr(p).join(',')).join(' '),fill:'var(--fit)','fill-opacity':.12,stroke:'var(--fit)','stroke-opacity':.45},s);
+    for(let k=0;k<=4;k++){const a=s0+(s1-s0)*k/4,b=t0+(t1-t0)*k/4;seg(s,pr(pt(a,t0)),pr(pt(a,t1)),'var(--fit)',1,null,.18);seg(s,pr(pt(s0,b)),pr(pt(s1,b)),'var(--fit)',1,null,.18)}
+    const lp=pr(pt(s1,t1));txt(s,lp[0]+6,lp[1],'col(X)','var(--fit)')}
+  if(id==='s3d'){const c='var(--y)',fl=[Y3[0],Y3[1],0];
+    seg(s,pr(Y3),pr(fl),c,1.2,'3 3',.8);seg(s,pr(fl),pr([Y3[0],0,0]),c,1.2,'3 3',.8);seg(s,pr(fl),pr([0,Y3[1],0]),c,1.2,'3 3',.8);seg(s,pr(Y3),pr([0,0,Y3[2]]),c,1.2,'3 3',.8);
+    [[Y3[0],0,0],[0,Y3[1],0],[0,0,Y3[2]]].forEach((p,i)=>{const q=pr(p);el('circle',{cx:q[0],cy:q[1],r:3,fill:c},s);txt(s,q[0]+(i===2?-8:4),q[1]+(i===2?4:16),'y'+SUB[i],c,'sm',i===2?'end':'start')})}
+  arrow(s,O,pr(I3),'var(--iota)',2.4);txt(s,pr(I3)[0]+6,pr(I3)[1]+14,id==='s3d'?'ι = (1, 1, 1)':'ι','var(--iota)','lab');
+  arrow(s,O,pr(X3),'var(--x)',2.4);txt(s,pr(X3)[0]+8,pr(X3)[1]-4,'x','var(--x)','lab');
+  if(id==='coef'){arrow(s,O,pr(mul(I3,o.a)),'var(--iota)',3.2,'6 4');arrow(s,pr(mul(I3,o.a)),pr(F),'var(--x)',3.2,'6 4');
+    const m1=pr(mul(I3,o.a/2)),m2=pr(add(mul(I3,o.a),mul(X3,o.b/2)));txt(s,m1[0]-8,m1[1]+4,'α̂ι','var(--iota)','lab','end');txt(s,m2[0]+6,m2[1]+16,'β̂x','var(--x)','lab');
+    if(st.alone){const bx=dot(X3,Y3)/dot(X3,X3),G=mul(X3,bx);seg(s,O,pr(mul(X3,1.25)),'var(--x)',1.5,'2 3',.8);
+      arrow(s,pr(G),pr(Y3),'var(--fit)',2,'4 3');dotm(s,pr(G),'var(--fit)',4.5);txt(s,pr(G)[0]-8,pr(G)[1]-6,'x alone','var(--fit)','','end')}}
+  if(id==='plane'||id==='ols3'){const A=mul(I3,st.a3),Pp=add(A,mul(X3,st.b3));seg(s,O,pr(A),'var(--iota)',1.5,'4 3',.8);seg(s,pr(A),pr(Pp),'var(--x)',1.5,'4 3',.8);
+    arrow(s,pr(Pp),pr(Y3),'var(--res)',2,id==='plane'?null:'5 4');dotm(s,pr(Pp),'var(--fit)',5.5);txt(s,pr(Pp)[0]-10,pr(Pp)[1]-8,'aι + bx','var(--fit)','lab','end')}
+  if(id==='ols3'||id==='coef'){const e=sub(Y3,F);if(norm(e)>1e-6){const xm=mean(X3);rightAngle(s,F,unit(e),unit(X3.map(c=>c-xm)),.22,pr)}
+    arrow(s,pr(F),pr(Y3),'var(--res)',2.4);dotm(s,pr(F),'var(--fg)',4.5);txt(s,pr(F)[0]+10,pr(F)[1]+16,'Py','var(--fg)','lab');
+    const m=pr(mul(add(F,Y3),.5));txt(s,m[0]+8,m[1]+4,'My','var(--res)','lab')}
+  arrow(s,O,pr(Y3),'var(--y)',2.4);txt(s,pr(Y3)[0]+8,pr(Y3)[1]-6,'y','var(--y)','lab');
+}
+
+/* ---------- scatter (draggable) ---------- */
+const SR={xl:-0.5,xh:4.5,yl:-1,yh:4.5};
+function drawScatter(svg,id,big){
+  svg.innerHTML='';const three=is3(id);
+  const xs=three?X3:st.x,ys=three?Y3:st.y,n=xs.length;
+  const Wd=big?440:300,Hd=big?440:210,pl=big?36:30,pr_=12,pt=12,pb=big?34:26;
+  const sx=v=>pl+(v-SR.xl)/(SR.xh-SR.xl)*(Wd-pl-pr_),sy=v=>Hd-pb-(v-SR.yl)/(SR.yh-SR.yl)*(Hd-pt-pb);
+  svg._inv=(px,py)=>[SR.xl+(px-pl)/(Wd-pl-pr_)*(SR.xh-SR.xl),SR.yl+(Hd-pb-py)/(Hd-pt-pb)*(SR.yh-SR.yl)];
+  const cid='clipS'+(big?'b':'s');const cp=el('clipPath',{id:cid},el('defs',{},svg));el('rect',{x:pl,y:pt,width:Wd-pl-pr_,height:Hd-pt-pb},cp);
+  if(big)for(let i=0;i<=4;i++){seg(svg,[sx(i),sy(SR.yl)],[sx(i),sy(SR.yh)],'var(--grid)',1);seg(svg,[sx(SR.xl),sy(i)],[sx(SR.xh),sy(i)],'var(--grid)',1)}
+  seg(svg,[sx(SR.xl),sy(0)],[sx(SR.xh),sy(0)],'var(--muted)',1);seg(svg,[sx(0),sy(SR.yl)],[sx(0),sy(SR.yh)],'var(--muted)',1);
+  const coords=['ypt','xpt','s3d'].includes(id);
+  if(!coords)for(let i=1;i<=4;i++){txt(svg,sx(i),sy(0)+14,i,null,'','middle');txt(svg,sx(0)-6,sy(i)+4,i,null,'','end')}
+  txt(svg,sx(SR.xh),sy(0)-6,'x',null,big?'lab':'','end');txt(svg,sx(0)+6,pt+12,'y',null,big?'lab':'');
+  const g=el('g',{'clip-path':`url(#${cid})`},svg);
+  if(coords)for(let i=0;i<n;i++){
+    seg(g,[sx(xs[i]),sy(ys[i])],[sx(0),sy(ys[i])],'var(--y)',1.2,'3 3',.8);txt(svg,sx(0)-5,sy(ys[i])+4,'y'+SUB[i],'var(--y)','sm','end');
+    if(id!=='ypt'){seg(g,[sx(xs[i]),sy(ys[i])],[sx(xs[i]),sy(0)],'var(--x)',1.2,'3 3',.8);txt(svg,sx(xs[i]),sy(0)+15,'x'+SUB[i],'var(--x)','sm','middle')}}
+  let line=null,line2=null,dash2=false,resid=false;
+  if(['xb','res','ols'].includes(id)){line=[0,st.b];resid=id!=='xb';if(id==='ols'){line2=[0,k1().bh];dash2=true}}
+  if(['P','M'].includes(id)){line=[0,k1().bh];resid=true}
+  if(['span','colinfit'].includes(id)){line=[st.a2,st.b2];resid=true}
+  if(['plane','ols3'].includes(id)){line=[st.a3,st.b3];resid=true;if(id==='ols3'){const o=ols3();line2=[o.a,o.b];dash2=true}}
+  if(id==='coef'){const o=ols3();line=[o.a,o.b];resid=true;if(st.alone)line2=[0,dot(X3,Y3)/dot(X3,X3)]}
+  const drawL=(l,col,dash,w)=>seg(g,[sx(SR.xl-1),sy(l[0]+l[1]*(SR.xl-1))],[sx(SR.xh+1),sy(l[0]+l[1]*(SR.xh+1))],col,w||2,dash);
+  if(line2)drawL(line2,id==='coef'?'var(--fit)':'var(--fg)','5 4',1.4);
+  if(line){drawL(line,'var(--fit)',null,2.2);if(resid)for(let i=0;i<n;i++){const yh_=line[0]+line[1]*xs[i];seg(g,[sx(xs[i]),sy(yh_)],[sx(xs[i]),sy(ys[i])],'var(--res)',2)}}
+  for(let i=0;i<n;i++){const c=[sx(xs[i]),sy(ys[i])];
+    el('circle',{cx:c[0],cy:c[1],r:big?7:5,fill:'var(--y)'},svg);
+    txt(svg,c[0]+(big?10:7),c[1]-(big?9:6),big?`obs ${i+1}: (${f2(xs[i])}, ${f2(ys[i])})`:String(i+1),'var(--muted)');
+    el('circle',{cx:c[0],cy:c[1],r:big?18:14,fill:'var(--y)','fill-opacity':0.001,'data-i':i,style:'cursor:grab'},svg)}
+}
+
+/* ---------- objective panel ---------- */
+function frame(s,xr,yr,xl,yl,Wd,Hd){const pl=50,pr_=16,pt=14,pb=34;
+  const sx=v=>pl+(v-xr[0])/(xr[1]-xr[0])*(Wd-pl-pr_),sy=v=>Hd-pb-(v-yr[0])/(yr[1]-yr[0])*(Hd-pt-pb);
+  ticks(xr[0],xr[1],6).forEach(t=>{seg(s,[sx(t),pt],[sx(t),Hd-pb],'var(--grid)',1);txt(s,sx(t),Hd-pb+15,t,null,'','middle')});
+  ticks(yr[0],yr[1],4).forEach(t=>{seg(s,[pl,sy(t)],[Wd-pr_,sy(t)],'var(--grid)',1);txt(s,pl-6,sy(t)+4,t,null,'','end')});
+  txt(s,Wd-pr_,Hd-4,xl,null,'lab','end');const yt=txt(s,14,(pt+Hd-pb)/2,yl,null,'lab','middle');yt.setAttribute('transform',`rotate(-90 14 ${(pt+Hd-pb)/2})`);
+  s._inv=(px,py)=>[xr[0]+(px-pl)/(Wd-pl-pr_)*(xr[1]-xr[0]),yr[0]+(Hd-pb-py)/(Hd-pt-pb)*(yr[1]-yr[0])];
+  const cp=el('clipPath',{id:'clipO'},el('defs',{},s));el('rect',{x:pl,y:pt,width:Wd-pl-pr_,height:Hd-pt-pb},cp);
+  return[sx,sy,el('g',{'clip-path':'url(#clipO)'},s),{pl,pr_,pt,pb}]}
+function drawCurve(id){
+  const s=$('obj');s.innerHTML='';const Wd=440,Hd=260;
+  const x=st.x,y=st.y,ssr=b=>{const e=sub(y,mul(x,b));return dot(e,e)};const b0=+$('b').min,b1=+$('b').max;
+  const K=k1(),smin=ssr(K.bh),smax=Math.max(ssr(b0),ssr(b1))*1.08;
+  const[sx,sy,g,m]=frame(s,[b0,b1],[0,smax],'b','SSR',Wd,Hd);
+  const pts=[];for(let k=0;k<=160;k++){const b=b0+(b1-b0)*k/160;pts.push(sx(b).toFixed(1)+','+sy(ssr(b)).toFixed(1))}
+  el('polyline',{points:pts.join(' '),fill:'none',stroke:'var(--fg)','stroke-width':2},g);
+  if(id==='ols'){seg(g,[sx(K.bh),m.pt],[sx(K.bh),Hd-m.pb],'var(--fg)',1,'3 3',.7);txt(s,sx(K.bh)+5,m.pt+12,'β̂ = '+f2(K.bh),'var(--fg)')}
+  const cur=ssr(st.b);
+  if(id==='ols'&&Math.abs(st.b-K.bh)>.01){seg(g,[sx(K.bh),sy(smin)],[sx(st.b),sy(smin)],'var(--muted)',1,'4 3');
+    seg(g,[sx(st.b),sy(smin)],[sx(st.b),sy(cur)],'var(--fit)',3);
+    const right=st.b>K.bh;txt(s,sx(st.b)+(right?8:-8),(sy(smin)+sy(cur))/2+4,'(b − β̂)²‖x‖²','var(--fit)','',right?'start':'end');
+    txt(s,sx(K.bh)+(right?-6:6),sy(smin)+16,'SSR(β̂)','var(--muted)','',right?'end':'start')}
+  if(id==='ols')dotm(g,[sx(K.bh),sy(smin)],'var(--fg)',3.5);
+  el('circle',{cx:sx(st.b),cy:sy(cur),r:7,fill:'var(--fit)',stroke:'var(--panel)','stroke-width':2},s);
+}
+function objRanges(){return{ar:[+$('a3').min,+$('a3').max],br:[+$('b3').min,+$('b3').max]}}
+function drawContours(id){
+  const s=$('obj');s.innerHTML='';const Wd=440,Hd=260;
+  const o=ols3(),{ar,br}=objRanges(),A=o.XX;
+  const exc=(a,b)=>{const d=[a-o.a,b-o.b];return d[0]*(A[0][0]*d[0]+A[0][1]*d[1])+d[1]*(A[1][0]*d[0]+A[1][1]*d[1])};
+  const cmax=Math.max(exc(ar[0],br[0]),exc(ar[1],br[0]),exc(ar[0],br[1]),exc(ar[1],br[1]));
+  const[sx,sy,g,m]=frame(s,ar,br,'a','b',Wd,Hd);
+  const NX=44,NY=24,cw=(Wd-m.pl-m.pr_)/NX,ch=(Hd-m.pt-m.pb)/NY;
+  for(let i=0;i<NX;i++)for(let j=0;j<NY;j++){const a=ar[0]+(i+.5)/NX*(ar[1]-ar[0]),b=br[1]-(j+.5)/NY*(br[1]-br[0]);
+    const t=Math.sqrt(Math.min(1,exc(a,b)/cmax));el('rect',{x:m.pl+i*cw,y:m.pt+j*ch,width:cw+.6,height:ch+.6,style:`fill:color-mix(in srgb, var(--fit) ${(62*(1-t)+3).toFixed(1)}%, var(--panel))`},g)}
+  ellipses(o,cmax,(a,b)=>[sx(a),sy(b)]).forEach(pts=>el('polyline',{points:pts,fill:'none',stroke:'var(--fg)','stroke-width':.8,opacity:.35},g));
+  if(id==='coef'&&st.alone){const bx=dot(X3,Y3)/dot(X3,X3);
+    if(ar[0]<=0&&ar[1]>=0){seg(g,[sx(0),m.pt],[sx(0),Hd-m.pb],'var(--x)',1.5,'5 4');txt(s,sx(0)+5,Hd-m.pb-6,'a = 0','var(--x)');
+      if(bx>=br[0]&&bx<=br[1]){el('circle',{cx:sx(0),cy:sy(bx),r:5,fill:'var(--x)',stroke:'var(--panel)','stroke-width':1.5},s);txt(s,sx(0)+8,sy(bx)-6,'x alone','var(--x)')}}
+    else txt(s,m.pl+6,m.pt+14,'a = 0 is outside this window','var(--x)')}
+  if(id!=='plane'){el('circle',{cx:sx(o.a),cy:sy(o.b),r:5,fill:'var(--fg)',stroke:'var(--panel)','stroke-width':1.5},s);txt(s,sx(o.a)+8,sy(o.b)+16,'(α̂, β̂)','var(--fg)')}
+  if(id!=='coef'){el('circle',{cx:sx(st.a3),cy:sy(st.b3),r:7,fill:'var(--fit)',stroke:'var(--panel)','stroke-width':2},s);txt(s,sx(st.a3)+10,sy(st.b3)-8,'SSR = '+f2(ssr3(st.a3,st.b3)),'var(--fit)')}
+}
+function ellipses(o,cmax,map){const A=o.XX,tr=A[0][0]+A[1][1],det=A[0][0]*A[1][1]-A[0][1]**2,dsc=Math.sqrt(Math.max(0,tr*tr/4-det)),l1=tr/2+dsc,l2=tr/2-dsc;
+  const v1=unit([A[0][1],l1-A[0][0]]),v2=[-v1[1],v1[0]],out=[];
+  for(let k=1;k<=6;k++){const c=cmax*(k/6)**2,r1=Math.sqrt(c/l1),r2=Math.sqrt(c/l2),pts=[];
+    for(let q=0;q<=96;q++){const th=q/96*2*Math.PI,d=add(mul(v1,r1*Math.cos(th)),mul(v2,r2*Math.sin(th)));pts.push(map(o.a+d[0],o.b+d[1]).map(v=>v.toFixed(1)).join(','))}
+    out.push(pts.join(' '))}return out}
+function drawBowl(id){
+  const s=$('obj');s.innerHTML='';const Wd=440,Hd=260;
+  el('rect',{x:0,y:0,width:Wd,height:Hd,fill:'transparent',style:'cursor:grab'},s);
+  const o=ols3(),{ar,br}=objRanges(),am=(ar[0]+ar[1])/2,ah=(ar[1]-ar[0])/2,bm=(br[0]+br[1])/2,bh=(br[1]-br[0])/2;
+  const zmax=Math.max(ssr3(ar[0],br[0]),ssr3(ar[1],br[0]),ssr3(ar[0],br[1]),ssr3(ar[1],br[1]));
+  const cy=Math.cos(st.yaw2),sy_=Math.sin(st.yaw2),cp=Math.cos(st.pitch2),sp=Math.sin(st.pitch2),SCL=92;
+  const pj=(a,b,z)=>{const u=(a-am)/ah,v=(b-bm)/bh,w=Math.min(z,zmax*1.02)/zmax*1.55-0.75;const x1=u*cy-v*sy_,y1=u*sy_+v*cy,up=w*cp+y1*sp;return[Wd/2+SCL*x1,Hd/2-4-SCL*up]};
+  // floor, contours, axes
+  const fl=[[ar[0],br[0]],[ar[1],br[0]],[ar[1],br[1]],[ar[0],br[1]]];
+  el('polygon',{points:fl.map(([a,b])=>pj(a,b,0).join(',')).join(' '),fill:'var(--grid)','fill-opacity':.5,stroke:'var(--rule)'},s);
+  const cmax=zmax-ssr3(o.a,o.b);
+  ellipses(o,cmax,(a,b)=>{const a_=Math.max(ar[0],Math.min(ar[1],a)),b_=Math.max(br[0],Math.min(br[1],b));return pj(a_,b_,0)}).forEach(pts=>el('polyline',{points:pts,fill:'none',stroke:'var(--muted)','stroke-width':.7,opacity:.45},s));
+  seg(s,pj(ar[0],br[0],0),pj(ar[0],br[0],zmax),'var(--muted)',1);
+  const la=pj(ar[1],br[0],0),lb=pj(ar[0],br[1],0),lz=pj(ar[0],br[0],zmax);
+  txt(s,la[0]+6,la[1]+12,'a','var(--muted)','lab');txt(s,lb[0]-6,lb[1]+12,'b','var(--muted)','lab','end');txt(s,lz[0]-6,lz[1],'SSR','var(--muted)','sm','end');
+  // wireframe
+  const N=16,M_=28;
+  for(let i=0;i<=N;i++){const a=ar[0]+(ar[1]-ar[0])*i/N,b=br[0]+(br[1]-br[0])*i/N,p1=[],p2=[];
+    for(let j=0;j<=M_;j++){const bb=br[0]+(br[1]-br[0])*j/M_,aa=ar[0]+(ar[1]-ar[0])*j/M_;p1.push(pj(a,bb,ssr3(a,bb)).join(','));p2.push(pj(aa,b,ssr3(aa,b)).join(','))}
+    el('polyline',{points:p1.join(' '),fill:'none',stroke:'var(--fit)','stroke-width':1,opacity:.5},s);el('polyline',{points:p2.join(' '),fill:'none',stroke:'var(--fit)','stroke-width':1,opacity:.5},s)}
+  if(id==='coef'&&st.alone&&ar[0]<=0&&ar[1]>=0){const pts=[];for(let j=0;j<=60;j++){const b=br[0]+(br[1]-br[0])*j/60;pts.push(pj(0,b,ssr3(0,b)).join(','))}
+    el('polyline',{points:pts.join(' '),fill:'none',stroke:'var(--x)','stroke-width':2.5},s);
+    const bx=dot(X3,Y3)/dot(X3,X3);if(bx>=br[0]&&bx<=br[1]){const q=pj(0,bx,ssr3(0,bx));el('circle',{cx:q[0],cy:q[1],r:5,fill:'var(--x)',stroke:'var(--panel)','stroke-width':1.5},s);txt(s,q[0]+8,q[1]-6,'x alone (a = 0)','var(--x)')}}
+  if(id!=='plane'){const q=pj(o.a,o.b,ssr3(o.a,o.b)),q0=pj(o.a,o.b,0);seg(s,q,q0,'var(--fg)',1,'3 3');el('circle',{cx:q[0],cy:q[1],r:5,fill:'var(--fg)',stroke:'var(--panel)','stroke-width':1.5},s);txt(s,q[0]+8,q[1]+14,'(α̂, β̂)','var(--fg)')}
+  if(id!=='coef'){const z=ssr3(st.a3,st.b3),q=pj(st.a3,st.b3,z),q0=pj(st.a3,st.b3,0);seg(s,q,q0,'var(--fit)',1.2,'3 3');el('circle',{cx:q0[0],cy:q0[1],r:3,fill:'var(--fit)'},s);
+    el('circle',{cx:q[0],cy:q[1],r:7,fill:'var(--fit)',stroke:'var(--panel)','stroke-width':2},s);txt(s,q[0]+10,q[1]-8,'SSR = '+f2(z),'var(--fit)')}
+}
+
+/* ---------- readout ---------- */
+function readout(id){
+  const L=[],y=st.y,x=st.x;
+  const k1line=()=>{const Pp=mul(x,st.b),e=sub(y,Pp);return{Pp,e}};
+  switch(id){
+  case 'scatter':L.push(`obs 1: (x₁, y₁) = (${f2(x[0])}, ${f2(y[0])})`,`obs 2: (x₂, y₂) = (${f2(x[1])}, ${f2(y[1])})`);break;
+  case 'ypt':L.push(`y = (y₁, y₂) = ${vec(y)}`);break;
+  case 'xpt':L.push(`y = (y₁, y₂) = ${vec(y)}`,`x = (x₁, x₂) = ${vec(x)}`);break;
+  case 'xb':{const{Pp}=k1line();L.push(`b = ${f2(st.b)}   Xb = b·x = ${vec(Pp)}`);break}
+  case 'res':{const{Pp,e}=k1line();L.push(`b = ${f2(st.b)}   Xb = ${vec(Pp)}`,`e = y − Xb = ${vec(e)}`,`SSR = e₁² + e₂² = ${f2(dot(e,e))}`);break}
+  case 'ols':{const{Pp,e}=k1line(),K=k1(),s0=dot(K.e,K.e);
+    L.push(`b = ${f2(st.b)}   Xb = ${vec(Pp)}   SSR = ${f2(dot(e,e))}`,`β̂ = x'y / x'x = ${f2(dot(x,y))} / ${f2(dot(x,x))} = ${f2(K.bh)}`,
+      `x'e at β̂ = ${f2(dot(x,K.e))}`,`SSR(b) = ${f2(s0)} + (${f2(st.b-K.bh)})² × ${f2(dot(x,x))} = ${f2(s0+(st.b-K.bh)**2*dot(x,x))}`);break}
+  case 'P':{const K=k1();L.push(mat('P',K.P)+'   = xx\'/x\'x',`Py    = ${vec(K.F)}  = Xβ̂ = ${f2(K.bh)}·x`,`Px    = ${vec(matv(K.P,x))}  = x`,`P(Py) = ${vec(matv(K.P,K.F))}  = Py`,`tr P = ${f2(K.P[0][0]+K.P[1][1])} = k`);break}
+  case 'M':{const K=k1(),Mm=[[1-K.P[0][0],-K.P[0][1]],[-K.P[1][0],1-K.P[1][1]]];
+    L.push(mat('M',Mm)+'   = I − P',`My = ${vec(matv(Mm,y))}  = e`,`Mx = ${vec(matv(Mm,x))}`,`‖y‖² = ${f2(dot(y,y))} = ${f2(dot(K.F,K.F))} + ${f2(dot(K.e,K.e))} = ‖Py‖² + ‖My‖²`,`tr M = ${f2(Mm[0][0]+Mm[1][1])} = n − k`);break}
+  case 'iota':L.push('ι = (1.00, 1.00)',`x = ${vec(x)}   y = ${vec(y)}`,'a·ι = (a, a): every prediction shifts by a');break;
+  case 'span':case 'colinfit':{const{colin,ex}=k2info(),Pp=add(mul([1,1],st.a2),mul(x,st.b2)),e=sub(y,Pp);
+    L.push(`a = ${f2(st.a2)}   b = ${f2(st.b2)}   aι + bx = ${vec(Pp)}`,`e = ${vec(e)}   SSR = ${f2(dot(e,e))}`);
+    if(colin){const m=mean(y);L.push(`x = ${f2(x[0])}·ι: best fit ȳι = ${vec([m,m])}, reached by every a + ${f2(x[0])}·b = ${f2(m)}`,mat('P',[[.5,.5],[.5,.5]])+'   = ιι\'/n',`My = M_ι y = ${vec(sub(y,[m,m]))}  (y demeaned)`)}
+    else L.push(`exact fit: a = ${f2(ex.a)}, b = ${f2(ex.b)}, SSR = 0`,mat('P',[[1,0],[0,1]])+'   = I,   M = 0');break}
+  case 'colin':{const{colin}=k2info();L.push(`ι = (1.00, 1.00)   x = ${vec(x)}`);L.push(colin?`x = ${f2(x[0])}·ι: same direction, col(X) is a line`:'x₁ ≠ x₂: not collinear, col(X) = ℝ²');break}
+  case 's3d':L.push(`ι = (1.00, 1.00, 1.00)`,`x = ${vec(X3)}`,`y = ${vec(Y3)}`);break;
+  case 'plane':{const Pp=add(mul(I3,st.a3),mul(X3,st.b3));L.push(`a = ${f2(st.a3)}   b = ${f2(st.b3)}`,`aι + bx = ${vec(Pp)}`,`SSR(a, b) = ${f2(ssr3(st.a3,st.b3))}`);break}
+  case 'ols3':{const o=ols3(),F=add(mul(I3,o.a),mul(X3,o.b)),e=sub(Y3,F);
+    L.push(`a = ${f2(st.a3)}   b = ${f2(st.b3)}   SSR = ${f2(ssr3(st.a3,st.b3))}`,`α̂ = ${f2(o.a)}   β̂ = ${f2(o.b)}   SSR = ${f2(dot(e,e))}`,
+      mat('P',o.P)+`   tr P = ${f2(o.P[0][0]+o.P[1][1]+o.P[2][2])}`,`Py = ${vec(F)}   My = ${vec(e)}`,`ι'My = ${f2(dot(I3,e))}   x'My = ${f2(dot(X3,e))}`);break}
+  case 'coef':{const o=ols3(),xm=mean(X3),ym=mean(Y3),dx=X3.map(v=>v-xm),dy=Y3.map(v=>v-ym);
+    L.push(`α̂ = ${f2(o.a)}   β̂ = ${f2(o.b)}`,`M_ι x = ${vec(dx)}   M_ι y = ${vec(dy)}`,`FWL: β̂ = (M_ι x)'y / (M_ι x)'(M_ι x)`,`        = ${f2(dot(dx,dy))} / ${f2(dot(dx,dx))} = ${f2(dot(dx,dy)/dot(dx,dx))}`);
+    if(st.alone)L.push(`x alone: b = x'y / x'x = ${f2(dot(X3,Y3))} / ${f2(dot(X3,X3))} = ${f2(dot(X3,Y3)/dot(X3,X3))}`);break}
+  }
+  $('readout').textContent=L.join('\n');
+}
+
+/* ---------- render ---------- */
+function render(){
+  const k=st.step,step=steps[k],id=step.id;
+  // collinear slides set x for you and restore it afterwards
+  if(step.colin){if(!st.xSaved&&Math.abs(st.x[0]-st.x[1])>1e-6){st.xSaved=[...st.x];st.x=[mean(st.x),mean(st.x)]}}
+  else if(st.xSaved){st.x=st.xSaved;st.xSaved=null}
+  [...$('nav').querySelectorAll('button')].forEach((b,i)=>{b.classList.toggle('on',i===k);b.classList.toggle('done',i<k);b.setAttribute('aria-current',i===k?'step':'false')});
+  $('stepnum').textContent=`Part ${step.part} · ${parts[step.part]} · Step ${k+1} of ${steps.length}`;
+  $('stitle').textContent=step.t;
+  $('stext').innerHTML=typeof katex!=='undefined'?tex(step.text):step.text.replace(/\\\(|\\\)/g,'');
+  $('hint').textContent=step.hint;
+  const show=step.ctl;
+  ['b','a2','b2','a3','b3'].forEach(c=>{$('c-'+c).hidden=!show.includes(c)});
+  $('snap').hidden=!show.includes('snap');$('reset').hidden=!show.includes('reset');
+  $('c-alone').hidden=!show.includes('alone');$('alone').checked=st.alone;
+  $('c-row').hidden=!['snap','reset','alone'].some(c=>show.includes(c));
+  $('inset').hidden=id==='scatter';
+  $('objp').hidden=!step.obj;$('objmode').hidden=step.obj!=='k2';
+  [...$('objmode').querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.m===st.objMode));
+  $('objlab').textContent=step.obj==='curve'?'OLS objective · SSR(b)':step.obj==='k2'?'OLS objective · SSR(a, b)':'';
+  $('prev').disabled=k===0;$('next').disabled=k===steps.length-1;
+  draw();
+}
+function draw(){const step=steps[st.step],id=step.id;
+  if(step.ctl.includes('b'))syncB();
+  if(is3(id))syncAB();
+  if(id==='scatter')drawScatter($('main'),id,true);
+  else{is3(id)?draw3D(id):draw2D(id);drawScatter($('scatter'),id,false)}
+  if(step.obj==='curve')drawCurve(id);
+  if(step.obj==='k2')st.objMode==='surf'?drawBowl(id):drawContours(id);
+  $('objhint').textContent=step.obj==='curve'?'Drag along the curve to change b.':step.obj==='k2'?(st.objMode==='surf'?'Drag to rotate the bowl. The rings on the floor are contours of equal SSR.':(step.ctl.includes('a3')?'Darker is lower SSR. Drag to pick (a, b).':'Darker is lower SSR.')):'';
+  readout(id);
+  ['b','a2','b2','a3','b3'].forEach(c=>{$(c).value=st[c];$(c+'o').textContent=f2(st[c])})}
+
+/* nav */
+let lastPart='';steps.forEach((s,i)=>{if(s.part!==lastPart){const p=document.createElement('span');p.className='part';p.textContent=parts[s.part];$('nav').appendChild(p);lastPart=s.part}
+  const b=document.createElement('button');b.textContent=i+1;b.title=s.t;b.setAttribute('aria-label',`Step ${i+1}: ${s.t}`);b.onclick=()=>{st.step=i;render()};$('nav').appendChild(b)});
+$('prev').onclick=()=>{if(st.step>0){st.step--;render()}};
+$('next').onclick=()=>{if(st.step<steps.length-1){st.step++;render()}};
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')$('next').click();if(e.key==='ArrowLeft')$('prev').click()});
+['b','a2','b2','a3','b3'].forEach(c=>$(c).addEventListener('input',()=>{st[c]=+$(c).value;draw()}));
+$('alone').addEventListener('change',()=>{st.alone=$('alone').checked;draw()});
+$('reset').onclick=()=>{st.y=[...Y2];st.x=[...X2];st.xSaved=null;X3.splice(0,3,...X3D);Y3.splice(0,3,...Y3D);render()};
+$('snap').onclick=()=>{const id=steps[st.step].id;
+  if(is3(id)){const o=ols3();st.a3=o.a;st.b3=o.b}
+  else if(id==='span'||id==='colinfit'){const {colin,ex}=k2info();if(!colin){st.a2=ex.a;st.b2=ex.b}else{st.a2=mean(st.y)-st.b2*st.x[0]}}
+  else st.b=k1().bh;
+  render()};
+[...$('objmode').querySelectorAll('button')].forEach(b=>b.onclick=()=>{st.objMode=b.dataset.m;render()});
+
+/* dragging */
+let drag=null;
+const svgPt=(svg,e)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
+function startDot(svg,e){const i=e.target.getAttribute&&e.target.getAttribute('data-i');if(i===null||i===undefined)return;drag={kind:'dot',i:+i,svg};e.preventDefault()}
+$('scatter').addEventListener('pointerdown',e=>startDot($('scatter'),e));
+$('main').addEventListener('pointerdown',e=>{const id=steps[st.step].id;
+  if(id==='scatter'){startDot($('main'),e);return}
+  if(is3(id)){drag={kind:'rot',x:e.clientX,y:e.clientY};e.preventDefault()}});
+$('obj').addEventListener('pointerdown',e=>{const step=steps[st.step];
+  if(step.obj==='curve'){drag={kind:'pick'};objPick(e)}
+  else if(step.obj==='k2'&&st.objMode==='surf'){drag={kind:'rot2',x:e.clientX,y:e.clientY}}
+  else if(step.obj==='k2'&&step.ctl.includes('a3')){drag={kind:'pick'};objPick(e)}
+  e.preventDefault()});
+function objPick(e){const svg=$('obj'),q=svgPt(svg,e),v=svg._inv(q.x,q.y),cl=(v,el)=>Math.max(+el.min,Math.min(+el.max,v));
+  if(steps[st.step].obj==='curve')st.b=cl(v[0],$('b'));else{st.a3=cl(v[0],$('a3'));st.b3=cl(v[1],$('b3'))}draw()}
+window.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  if(drag.kind==='pick'){objPick(e);return}
+  if(drag.kind==='rot'||drag.kind==='rot2'){const k=drag.kind==='rot'?'':'2';st['yaw'+k]+=(e.clientX-drag.x)*0.01;st['pitch'+k]=Math.max(-0.2,Math.min(1.4,st['pitch'+k]+(e.clientY-drag.y)*0.01));drag.x=e.clientX;drag.y=e.clientY;draw();return}
+  const q=svgPt(drag.svg,e);let [vx,vy]=drag.svg._inv(q.x,q.y);vx=Math.max(-0.4,Math.min(4.3,Math.round(vx*10)/10));vy=Math.max(-0.9,Math.min(4.3,Math.round(vy*10)/10));
+  const i=drag.i;
+  if(is3(steps[st.step].id)){const nx=[...X3];nx[i]=vx;if(Math.max(...nx)-Math.min(...nx)<0.05)return;X3[i]=vx;Y3[i]=vy}
+  else{const nx=[...st.x];nx[i]=vx;if(norm(nx)<0.2)return;st.x[i]=vx;st.y[i]=vy}
+  draw()});
+window.addEventListener('pointerup',()=>{drag=null});
+
+render();
+})();
+</script>
