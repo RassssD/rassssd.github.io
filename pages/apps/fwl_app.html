@@ -4,521 +4,409 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Frisch–Waugh–Lovell Theorem</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap');
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #ffffff;
-    --surface: #f7fafc;
-    --border: #e2e8f0;
-    --text: #2d3748;
-    --muted: #718096;
-    --accent: #2b6cb0;
-    --accent-dark: #1a4a8a;
-    --green: #276749;
-    --red: #9b2335;
-    --mono: 'Fira Code', monospace;
-    --sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  }
-
-  body {
-    font-family: var(--sans);
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  header {
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  header h1 {
-    font-size: 1.75rem;
-    font-weight: 600;
-    color: #1a202c;
-    margin-bottom: 1.2rem;
-  }
-
-  header h1 a {
-    color: #1a202c;
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 400;
-    color: var(--accent);
-    margin-right: 1rem;
-  }
-
-  .theorem-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: 4px;
-    padding: 1.2rem 1.4rem;
-    margin-bottom: 0.8rem;
-  }
-
-  .box-label {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-weight: 500;
-    margin-bottom: 0.6rem;
-  }
-
-  .theorem-box p { font-size: 0.92rem; line-height: 1.7; margin-bottom: 0.7rem; }
-  .theorem-box p:last-child { margin-bottom: 0; }
-
-  .thm-list { list-style: none; margin: 0.5rem 0 0.7rem; display: flex; flex-direction: column; gap: 0.45rem; }
-  .thm-list li { display: grid; grid-template-columns: 1.4rem 1fr; gap: 0.4rem; font-size: 0.9rem; line-height: 1.5; }
-  .thm-list li .num { font-family: var(--mono); font-size: 0.75rem; color: var(--accent); font-weight: 500; padding-top: 0.1rem; }
-  .thm-list li .eq { font-family: var(--mono); font-size: 0.8rem; color: var(--accent-dark); background: #ebf4ff; padding: 0.12rem 0.35rem; border-radius: 3px; display: inline; margin-right: 0.35rem; }
-
-  .intuition-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid #718096;
-    border-radius: 4px;
-    padding: 1rem 1.4rem;
-    font-size: 0.9rem;
-    line-height: 1.7;
-    color: var(--muted);
-  }
-
-  .intuition-box .box-label { color: var(--muted); }
-
-  .container {
-    display: grid;
-    grid-template-columns: 240px 1fr;
-    gap: 1.5rem;
-    align-items: start;
-  }
-
-  .controls {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.2rem;
-    position: sticky;
-    top: 1rem;
-  }
-
-  .controls-title {
-    font-size: 0.65rem;
-    font-family: var(--mono);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-    font-weight: 500;
-  }
-
-  .control-group { margin-bottom: 1rem; }
-  .control-group:last-child { margin-bottom: 0; }
-
-  .control-group label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.84rem;
-    margin-bottom: 0.3rem;
-    color: var(--text);
-  }
-
-  .control-group label span {
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  input[type=range] {
-    width: 100%;
-    -webkit-appearance: none;
-    height: 2px;
-    background: var(--border);
-    outline: none;
-    cursor: pointer;
-    border-radius: 1px;
-  }
-
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 13px; height: 13px;
-    background: var(--accent);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.1s;
-  }
-
-  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
-
-  .stats {
-    margin-top: 1.2rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8rem;
-    padding: 0.28rem 0;
-    border-bottom: 1px solid var(--border);
-    color: var(--muted);
-  }
-
-  .stat-row:last-child { border-bottom: none; }
-
-  .stat-row .val { font-family: var(--mono); font-size: 0.78rem; font-weight: 500; }
-  .val.red   { color: var(--red); }
-  .val.blue  { color: var(--accent); }
-  .val.green { color: var(--green); }
-
-  .plots {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-  }
-
-  .plot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-  .plot-cell { position: relative; }
-
-  .plot-label {
-    position: absolute;
-    top: 8px; left: 12px;
-    font-family: var(--mono);
-    font-size: 0.62rem;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    z-index: 10;
-    pointer-events: none;
-  }
-
-  .plot-cell.highlight { outline: 2px solid var(--accent); border-radius: 3px; }
-  .plot-cell.highlight .plot-label { color: var(--accent); }
-
-  .legend-bar {
-    display: flex;
-    gap: 1.5rem;
-    padding: 0.5rem 0.3rem;
-    border-top: 1px solid var(--border);
-    margin-top: 0.5rem;
-  }
-
-  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--muted); }
-  .legend-line { width: 22px; height: 2px; }
-  .legend-line.red  { background: var(--red); }
-  .legend-line.blue { background: var(--accent); }
-  .legend-line.dashed {
-    background: repeating-linear-gradient(90deg, var(--red) 0, var(--red) 4px, transparent 4px, transparent 7px);
-  }
-
-  .dist-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
-  .dist-header {
-    font-family: var(--mono);
-    font-size: 0.62rem;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-  }
-  .dist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+/* Layout: main figure + secondary figure left, narrative + controls + readout right; stacks on phone */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --fg:#1c2330; --muted:#5f6b7a; --grid:#e8ebf0; --rule:#d5dae2;
+  --y:#2457c5; --x:#c2620a; --x2:#16825a; --fit:#6b3fc0; --res:#cf2e2a;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --x2:#3fcf94; --fit:#b996ff; --res:#ff6b66; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --x2:#3fcf94; --fit:#b996ff; --res:#ff6b66; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
+a{color:inherit;text-underline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding-block:22px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:2px 0 0;color:var(--muted)}
+.steps{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.steps .part{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 4px 0 10px}
+.steps .part:first-child{margin-left:0}
+.steps button{width:30px;height:30px;padding:0;border-radius:50%;font-family:var(--mono);font-size:.8rem}
+.steps button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.steps button.done{border-color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.left{display:grid;gap:12px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px;min-width:0}
+.panel svg{display:block;width:100%;height:auto;user-select:none}
+.hint{margin:4px 2px 0;font-size:.8rem;color:var(--muted);min-height:1.2em}
+.side{display:grid;gap:12px;min-width:0}
+.stepnum{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h2{margin:0;font-size:1.2rem;text-wrap:balance}
+.text{max-width:62ch}
+.text p{margin:0 0 .6em}
+.text ol{margin:0 0 .6em;padding-left:1.4em}
+.text li{margin-bottom:.25em}
+math{font-size:1.06em}
+.controls{display:grid;gap:10px}
+.ctl{display:grid;grid-template-columns:4.5em 1fr 3.6em;gap:10px;align-items:center}
+.ctl label{font-family:var(--mono);font-size:.9rem}
+.ctl output{font-family:var(--mono);font-size:.85rem;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--fit)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-size:.85rem;padding:6px 12px;border-radius:6px;border:1px solid var(--rule);background:var(--panel);color:var(--fg);cursor:pointer}
+button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible{outline:2px solid var(--fit);outline-offset:2px}
+.readout{font-family:var(--mono);font-size:.82rem;line-height:1.7;font-variant-numeric:tabular-nums;border-left:2px solid var(--rule);padding-left:10px;overflow-x:auto;white-space:pre}
+.readout:empty{display:none}
+.plabel{font-size:.78rem;color:var(--muted);margin:0 0 4px 2px}
+.toggle{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.toggle button{border:0;border-radius:0;padding:3px 10px;font-size:.78rem}
+.toggle button.on{background:var(--fg);color:var(--bg)}
+.topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px}
+.pager{display:flex;gap:8px;margin-left:auto}
+.quad{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+@media (max-width:520px){.quad{grid-template-columns:1fr}}
+.cell{border:1px solid transparent;border-radius:6px;padding:4px;min-width:0}
+.cell.hi{border-color:var(--fit)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin:6px 2px 0;font-size:.8rem;color:var(--muted)}
+.legend:empty{display:none}
+.li{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:18px;height:0;border-top:2px solid var(--c)}
+.sw.dash{border-top-style:dashed}
+.sw.dot{width:9px;height:9px;border:0;border-radius:50%;background:var(--c)}
+.sw.area{height:10px;border:0;background:var(--c);opacity:.18}
+.tip{position:fixed;z-index:9;pointer-events:none;background:var(--fg);color:var(--bg);font-family:var(--mono);font-size:.75rem;padding:2px 6px;border-radius:4px;white-space:nowrap}
+footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+svg text{font-family:var(--mono);font-size:12px}
+svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:italic}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Frisch–Waugh–Lovell Theorem</h1>
-
-  <div class="theorem-box">
-    <div class="box-label">Theorem</div>
-    <p>Let the model be <span style="font-family:var(--mono);font-size:0.85rem;color:var(--accent-dark)">y = β₁X₁ + β₂X₂ + ε</span>. Let <span style="font-family:var(--mono);font-size:0.85rem;color:var(--accent-dark)">ỹ</span> and <span style="font-family:var(--mono);font-size:0.85rem;color:var(--accent-dark)">X̃₁</span> denote the residuals from regressing <span style="font-family:var(--mono)">y</span> and <span style="font-family:var(--mono)">X₁</span> on <span style="font-family:var(--mono)">X₂</span> respectively. Then there are three equivalent ways to obtain β̂₁:</p>
-    <ol class="thm-list">
-      <li><span class="num">1.</span><span><span class="eq">β̂₁ = (X′X)⁻¹X′y</span> — regress <em>y</em> on <em>X₁</em> and <em>X₂</em></span></li>
-      <li><span class="num">2.</span><span><span class="eq">β̂₁ = (X̃₁′X̃₁)⁻¹X̃₁′ỹ</span> — regress <em>ỹ</em> on <em>X̃₁</em></span></li>
-      <li><span class="num">3.</span><span><span class="eq">β̂₁ = (X̃₁′X̃₁)⁻¹X̃₁′y</span> — regress <em>y</em> on <em>X̃₁</em></span></li>
-    </ol>
+<div class="wrap">
+  <header>
+    <h1>Frisch–Waugh–Lovell Theorem</h1>
+    <p class="sub">The theorem, then what partialling out does to variance, one piece at a time. It picks up where <a href="regression-geometry.html">Regression Geometry</a> ends. Use the buttons or the ← → keys.</p>
+  </header>
+  <div class="topbar">
+    <nav class="steps" id="nav" aria-label="Steps"></nav>
+    <div class="pager"><button id="prev">← Previous</button><button id="next" class="primary">Next →</button></div>
   </div>
-
-  <div class="intuition-box">
-    <div class="box-label">Intuition</div>
-    <span style="font-family:var(--mono);font-size:0.82rem;color:var(--accent-dark)">ỹ</span> and <span style="font-family:var(--mono);font-size:0.82rem;color:var(--accent-dark)">X̃₁</span> are the parts of <em>y</em> and <em>X₁</em> orthogonal to <em>X₂</em> — the variation unexplained by the control. Regressing on these residuals isolates the pure partial effect of <em>X₁</em>. The raw univariate regression conflates this with the <em>X₁</em>–<em>X₂</em> correlation, producing omitted variable bias. The bottom-right panel illustrates method 2; the sampling distributions below show the consequence for bias.
-  </div>
-</header>
-
-<div class="container">
-  <aside class="controls">
-    <div class="controls-title">Parameters</div>
-    <div class="control-group">
-      <label>Sample size <span id="lbl-n">200</span></label>
-      <input type="range" id="sl-n" min="50" max="500" step="50" value="200">
-    </div>
-    <div class="control-group">
-      <label>True β₁ <span id="lbl-b1">2.0</span></label>
-      <input type="range" id="sl-b1" min="0" max="5" step="0.5" value="2">
-    </div>
-    <div class="control-group">
-      <label>Effect of X₂ on Y <span id="lbl-b2">3.0</span></label>
-      <input type="range" id="sl-b2" min="0" max="5" step="0.5" value="3">
-    </div>
-    <div class="control-group">
-      <label>X₁–X₂ correlation <span id="lbl-cr">1.5</span></label>
-      <input type="range" id="sl-cr" min="0" max="3" step="0.25" value="1.5">
-    </div>
-    <div class="control-group">
-      <label>Random seed <span id="lbl-sd">1</span></label>
-      <input type="range" id="sl-sd" min="1" max="100" step="1" value="1">
-    </div>
-
-    <div class="stats">
-      <div class="controls-title" style="margin-bottom:0.7rem">This sample</div>
-      <div class="stat-row">True β₁ <span class="val blue" id="st-true">—</span></div>
-      <div class="stat-row">Full model <span class="val green" id="st-full">—</span></div>
-      <div class="stat-row">FWL <span class="val green" id="st-fwl">—</span></div>
-      <div class="stat-row">Raw (OVB) <span class="val red" id="st-raw">—</span></div>
-      <div class="stat-row">Attenuation <span class="val" id="st-att">—</span></div>
-      <div class="stat-row">True × att. <span class="val" id="st-check">—</span></div>
-    </div>
-  </aside>
-
-  <main class="plots">
-    <div class="plot-grid">
-      <div class="plot-cell">
-        <div class="plot-label">Raw Y vs X₁</div>
-        <div id="p1"></div>
-      </div>
-      <div class="plot-cell">
-        <div class="plot-label">Residual Y vs X₁</div>
-        <div id="p2"></div>
-      </div>
-      <div class="plot-cell">
-        <div class="plot-label">Y vs Residual X₁</div>
-        <div id="p3"></div>
-      </div>
-      <div class="plot-cell highlight">
-        <div class="plot-label">★ FWL: Residual Y vs Residual X₁</div>
-        <div id="p4"></div>
-      </div>
-    </div>
-
-    <div class="legend-bar">
-      <div class="legend-item"><div class="legend-line red"></div> OLS fit</div>
-      <div class="legend-item"><div class="legend-line dashed"></div> 95% CI</div>
-      <div class="legend-item"><div class="legend-line blue"></div> True slope</div>
-    </div>
-
-    <div class="dist-section">
-      <div class="dist-header">Sampling distribution of β̂₁ across 500 simulations at current parameters</div>
-      <div class="dist-grid">
-        <div class="plot-cell highlight">
-          <div class="plot-label">★ Full model / FWL — unbiased</div>
-          <div id="d1"></div>
+  <div class="grid">
+    <div class="left">
+      <section class="panel">
+        <div class="plabel" id="mainlab"></div>
+        <svg id="main" viewBox="0 0 440 340" role="img" aria-label="Main figure"></svg>
+        <div class="quad" id="quad">
+          <div class="cell" id="qc0"><div class="plabel" id="ql0"></div><svg id="q0" viewBox="0 0 300 270" role="img" aria-label="y on X1"></svg></div>
+          <div class="cell" id="qc1"><div class="plabel" id="ql1"></div><svg id="q1" viewBox="0 0 300 270" role="img" aria-label="Residual y on X1"></svg></div>
+          <div class="cell" id="qc2"><div class="plabel" id="ql2"></div><svg id="q2" viewBox="0 0 300 270" role="img" aria-label="y on residual X1"></svg></div>
+          <div class="cell" id="qc3"><div class="plabel" id="ql3"></div><svg id="q3" viewBox="0 0 300 270" role="img" aria-label="Residual y on residual X1"></svg></div>
         </div>
-        <div class="plot-cell">
-          <div class="plot-label">Raw univariate — biased</div>
-          <div id="d2"></div>
+        <div class="legend" id="legend"></div>
+        <p class="hint" id="hint"></p>
+      </section>
+      <section class="panel" id="subp">
+        <div class="plabel" id="sublab"></div>
+        <svg id="sub" viewBox="0 0 440 220" role="img" aria-label="Secondary figure"></svg>
+        <div class="legend" id="sublegend"></div>
+      </section>
+    </div>
+    <section class="side">
+      <div>
+        <div class="stepnum" id="stepnum"></div>
+        <h2 id="stitle"></h2>
+      </div>
+      <div class="text" id="stext"></div>
+      <div class="controls">
+        <div class="ctl" id="c-b1"><label for="b1">β₁</label><input type="range" id="b1" min="0" max="5" step="0.1"><output id="b1o"></output></div>
+        <div class="ctl" id="c-b2"><label for="b2">β₂</label><input type="range" id="b2" min="-5" max="5" step="0.01"><output id="b2o"></output></div>
+        <div class="ctl" id="c-rho"><label for="rho">ρ</label><input type="range" id="rho" min="-0.95" max="0.95" step="0.01"><output id="rhoo"></output></div>
+        <div class="ctl" id="c-n"><label for="n">n</label><input type="range" id="n" min="50" max="500" step="50"><output id="no"></output></div>
+        <div class="ctl" id="c-seed"><label for="seed">seed</label><input type="range" id="seed" min="1" max="100" step="1"><output id="seedo"></output></div>
+        <div class="row" id="c-hold"><span class="plabel" style="margin:0">Hold fixed</span>
+          <div class="toggle" id="hold"><button data-m="x1">Var(X₁)</button><button data-m="nu">Var(ν)</button></div></div>
+        <div class="row">
+          <button id="mask">Set β₂ = −β₁δ</button>
+          <button id="r0">ρ = 0</button>
+          <button id="r1">ρ = 0.95</button>
+          <button id="reset">Reset</button>
         </div>
       </div>
-    </div>
-  </main>
+      <div class="readout" id="readout"></div>
+    </section>
+  </div>
+  <footer><span>Rasmus Duret · LSE</span><a href="https://rassssd.github.io">rassssd.github.io</a></footer>
 </div>
+<div class="tip" id="tip" hidden></div>
 
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
 <script>
-window.addEventListener('load', function () {
+(function(){
+const $=id=>document.getElementById(id);
+const NS='http://www.w3.org/2000/svg';
+const DEF={b1:2,b2:3,rho:0.7,n:200,seed:1,hold:'x1'};
+const st={step:0,...DEF};
+const SIG=1,NSIM=500,NMAX=500;
+const T=String.raw;
 
-  function mulberry32(seed) {
-    return function () {
-      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
+const steps=[
+ {id:'scatter',part:'A',t:'Two regressors, one effect',ctl:['b1','b2','rho','n','seed'],hint:'Move the sliders: the fitted slope leaves the true one whenever ρ and β₂ are both non-zero.',
+  text:T`<p>Suppose the outcome depends on two variables: \(y=\beta_1X_1+\beta_2X_2+\varepsilon\). We want \(\beta_1\), the effect of \(X_1\) holding \(X_2\) fixed. The data here are simulated, so the true value is known.</p><p>The plot shows the short regression of \(y\) on \(X_1\) alone. Throughout, \(\rho\) is the correlation between \(X_1\) and \(X_2\), \(\text{Var}(X_2)=1\) and \(\sigma^2=\text{Var}(\varepsilon)=1\).</p>`},
+ {id:'ovb',part:'A',t:'Omitted variable bias',sub:1,ctl:['b1','b2','rho'],hint:'Set β₂ or ρ to zero and the bias disappears.',
+  text:T`<p>Colour the dots by \(X_2\). Within one shade, the slope is close to \(\beta_1\). When \(\rho\) and \(\beta_2\) are positive, high-\(X_2\) dots have both higher \(X_1\) and higher \(y\), so the pooled slope picks up the difference between shades as well.</p><p>The short slope is \(\beta_1+\beta_2\,\text{Cov}(X_1,X_2)/\text{Var}(X_1)\). The bias needs both \(\beta_2\neq0\) and \(\rho\neq0\). Adding \(X_2\) as a regressor, the long regression, removes it.</p>`},
+ {id:'px1',part:'B',t:'Partial X₂ out of X₁',sub:1,ctl:['rho','n','seed'],hint:'The red segments are a sample of the residuals. Both panels share a vertical scale.',
+  text:T`<p>Regress \(X_1\) on \(X_2\) and keep the residual: \(\tilde X_1=M_2X_1\). This is the residual maker \(M\) from <a href="regression-geometry.html">Regression Geometry</a>, with \(X_2\) and an intercept as the regressors.</p><p>\(\tilde X_1\) is the part of \(X_1\) that \(X_2\) cannot predict. Plotted against \(X_2\) in the lower panel, it has no slope left, by construction.</p>`},
+ {id:'py',part:'B',t:'Partial X₂ out of y',sub:1,ctl:['b1','b2','rho'],hint:'The red segments are a sample of the residuals. Both panels share a vertical scale.',
+  text:T`<p>Do the same to the outcome: \(\tilde y=M_2y\). What remains is the part of \(y\) that \(X_2\) cannot predict.</p><p>Applying \(M_2\) to the model removes \(X_2\), because \(M_2X_2=0\): \(\tilde y=\beta_1\tilde X_1+M_2\varepsilon\). So \(\tilde y\) and \(\tilde X_1\) are still linked by \(\beta_1\), now with \(X_2\) out of the way.</p>`},
+ {id:'three',part:'B',t:'Three routes, one coefficient',quad:1,sub:1,ctl:['b1','b2','rho','n','seed'],hint:'All four panels share the same axes, so the narrower clouds really are narrower.',
+  text:T`<p>Every regression here has an intercept. The theorem gives three equivalent ways to obtain \(\hat\beta_1\):</p><ol><li>The long regression of \(y\) on \(X_1\) and \(X_2\): \(\hat\beta=(X'X)^{-1}X'y\), where \(\hat\beta_1\) is the entry for \(X_1\).</li><li>Residual on residual: \(\hat\beta_1=(\tilde X_1'\tilde X_1)^{-1}\tilde X_1'\tilde y\).</li><li>\(y\) on the residual: \(\hat\beta_1=(\tilde X_1'\tilde X_1)^{-1}\tilde X_1'y\).</li></ol><p>The match is exact in every sample, not just on average. Routes 2 and 3 agree because \(M_2\) is symmetric and \(M_2M_2=M_2\), so \(\tilde X_1'\tilde y=X_1'M_2y=\tilde X_1'y\).</p><p>\(\tilde y\) and \(\tilde X_1\) are the variation the control leaves unexplained, so regressing one on the other isolates the partial effect of \(X_1\).</p>`},
+ {id:'one',part:'B',t:'Partialling out one side only',quad:1,ctl:['b1','b2','rho','n','seed'],hint:'Compare the two outlined panels with the residual-on-residual panel.',
+  text:T`<p>Residualise only \(y\) (top right) and the slope is attenuated: it equals \(\hat\beta_1\,\text{Var}(\tilde X_1)/\text{Var}(X_1)\). \(X_1\) still carries the variation that \(X_2\) explains, and that variation is now unrelated to \(\tilde y\).</p><p>Residualise only \(X_1\) (bottom left) and the slope is right, because what \(X_2\) explains in \(y\) is orthogonal to \(\tilde X_1\). But it stays in the residual, so the standard error is too large whenever \(X_2\) explains part of \(y\).</p><p>Residual on residual removes it, and matches the long regression's standard error up to the degrees of freedom, \(n-2\) rather than \(n-3\).</p>`},
+ {id:'var',part:'C',t:'X̃₁ has less variance than X₁',sub:1,ctl:['rho','n','seed'],hint:'Move ρ, or drag the dot along the curve.',
+  text:T`<p>Residualising strips out the part of \(X_1\) that moves with \(X_2\). How much goes depends only on the correlation:</p><p>\(\text{Var}(\tilde X_1)=(1-\rho^2)\,\text{Var}(X_1).\)</p><p>The share lost is \(\rho^2\), so modest correlation costs little: \(\rho=0.5\) removes a quarter of the variance, while \(\rho=0.9\) removes 81%.</p>`},
+ {id:'split',part:'C',t:'Same correlation, different X₁',ctl:['rho','hold'],hint:'Move ρ and compare the bars. The toggle picks the case used from here on.',
+  text:T`<p>Write \(X_1=\delta X_2+\nu\): a part driven by \(X_2\), and a part of its own. Then \(\text{Var}(X_1)=\delta^2+\text{Var}(\nu)\), and \(\tilde X_1\) is the part \(\nu\).</p><p>\(\rho^2\) is the shared part's share, and the same share can arise in two ways. Either shared variation replaces \(X_1\)'s own variation, so \(\text{Var}(\tilde X_1)\) falls. Or it is added on top, so \(\text{Var}(X_1)\) grows and \(\text{Var}(\tilde X_1)\) stays put. The ratio is the same, but the variation left over is not.</p>`},
+ {id:'beta',part:'C',t:'The βs move ỹ, not X̃₁',ctl:['b1','b2','rho','mask'],hint:'Change β₁ and β₂: only the y bar moves. Then press the button to cancel the two channels.',
+  text:T`<p>\(\tilde X_1\) is computed without looking at \(y\), so \(\beta_1\) and \(\beta_2\) cannot affect its variance. They do decide what partialling out does to \(y\). Substituting \(X_1=\delta X_2+\nu\) gives</p><p>\(y=(\beta_2+\beta_1\delta)X_2+\beta_1\nu+\varepsilon.\)</p><p>\(\beta_2+\beta_1\delta\) is \(X_2\)'s total effect on \(y\): direct, plus through \(X_1\). Partialling out removes \((\beta_2+\beta_1\delta)^2\text{Var}(X_2)\) from \(\text{Var}(y)\). If the two channels cancel, \(X_2\) looks unrelated to \(y\) and nothing is removed from it. \(X_1\) is still stripped, and the short regression is still biased.</p>`},
+ {id:'noise',part:'D',t:'Less variation, noisier slope',sim:1,ctl:['rho','n','hold'],hint:'The x-axis stays fixed as ρ moves, so a wider curve means a noisier estimate.',
+  text:T`<p>\(\hat\beta_1\) is a regression on \(\tilde X_1\), so only \(\tilde X_1\)'s variation identifies it:</p><p>\(\text{Var}(\hat\beta_1)\approx\dfrac{\sigma^2}{n\,\text{Var}(\tilde X_1)}=\dfrac{\sigma^2}{n\,\text{Var}(X_1)}\cdot\dfrac{1}{1-\rho^2}.\)</p><p>The last factor is the variance inflation factor. With \(\text{Var}(X_1)\) fixed, it widens the distribution as \(|\rho|\) grows. Now switch to holding \(\text{Var}(\nu)\), the variance of \(X_1\)'s own part, fixed: the factor still rises, \(\text{Var}(X_1)\) rises with it, and the spread does not move. What costs precision is losing \(X_1\)'s own variation, not correlation as such.</p>`},
+ {id:'trade',part:'D',t:'Bias against precision',sim:1,sub:1,ctl:['b2','rho','n','hold'],hint:'The mean of each distribution is dotted. Drag the dot on the map to move ρ and β₂ together.',
+  text:T`<p>Dropping \(X_2\) biases the slope, but it does not always make it noisier. The two variances are</p><p>\(\dfrac{\sigma^2}{n\,\text{Var}(\tilde X_1)}\) long, \(\quad\dfrac{\sigma^2+\beta_2^2(1-\rho^2)}{n\,\text{Var}(X_1)}\) short.</p><p>The control does two things. It takes \(X_2\) out of the error, which helps more the larger \(|\beta_2|\) is, and it takes variation out of the regressor, which hurts more the larger \(|\rho|\) is. The long regression is more precise when</p><p>\(|\beta_2|/\sigma>|\rho|/(1-\rho^2).\)</p><p>Below that line, the short regression is tighter but centred in the wrong place.</p>`},
+ {id:'ext',part:'D',t:'The extremes',sim:1,sub:1,ctl:['rho','b2','n','hold','r0','r1'],hint:'The axes match the X₁ scale, so the cloud narrows as X̃₁ loses variance.',
+  text:T`<p>At \(\rho=0\), \(\tilde X_1\) is essentially \(X_1\), and the two regressions are centred on the same value. The control still earns its place: it removes \(X_2\) from the error, which shrinks the standard error.</p><p>As \(\rho\to\pm1\) with \(\text{Var}(X_1)\) fixed, \(\tilde X_1\) collapses towards zero. There is almost no variation left to identify \(\beta_1\). In the limit this is the perfect collinearity from <a href="regression-geometry.html">Regression Geometry</a>.</p>`}
+];
+const parts={A:'Why control',B:'The theorem',C:'Variance',D:'Consequences'};
+
+// Trailing punctuation stays on the formula's line
+function tex(s){return s.replace(/\\\((.+?)\\\)([.,:;]?)/g,(m,t,p)=>{let h=t;try{h=katex.renderToString(t,{output:'mathml',throwOnError:false})}catch(e){}return p?`<span style="white-space:nowrap">${h}${p}</span>`:h})}
+const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const f2=v=>(Math.abs(v)<0.005?0:v).toFixed(2);
+const f3=v=>(Math.abs(v)<0.0005?0:v).toFixed(3);
+const col=(s,w)=>s+' '.repeat(Math.max(0,w-s.replace(/[̂̃]/g,'').length));
+const halo=t=>{t.style.cssText+='paint-order:stroke;stroke:var(--panel);stroke-width:4px';return t};
+function el(tag,at,p){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);if(p)p.appendChild(e);return e}
+function txt(p,x,y,s,c,cls,anchor){const t=el('text',{x,y,'text-anchor':anchor||'start',class:cls||''},p);t.textContent=s;t.style.fill=c||'var(--muted)';return t}
+function seg(p,a,b,c,w,dash,op){el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:c,'stroke-width':w||1.5,'stroke-dasharray':dash||'none',opacity:op??1},p)}
+function marker(p,x,y,c){el('circle',{cx:x,cy:y,r:6,fill:c,stroke:'var(--panel)','stroke-width':2},p)}
+function ticks(lo,hi,k){const raw=(hi-lo)/k,s_=Math.pow(10,Math.floor(Math.log10(raw)));const m=[1,2,2.5,5,10].find(m=>m*s_>=raw)*s_;const out=[];for(let v=Math.ceil(lo/m-1e-9)*m;v<=hi+1e-9;v+=m)out.push(+v.toFixed(6));return out}
+const nice=v=>[1,1.5,2,2.5,3,4,5,6,8,10,12,15,20,25,30,40,50,60,80,100].find(m=>m>=v)||v;
+const sym=v=>{const m=nice(v);return[-m,m]};
+
+/* ---------- data ---------- */
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const boxMuller=r=>Math.sqrt(-2*Math.log(r()+1e-12))*Math.cos(2*Math.PI*r());
+// Var(X₂) = 1; ρ fixes the shared share, st.hold fixes which variance stays put
+function pars(){const r=st.rho,q=1-r*r,sx=st.hold==='x1'?1:1/Math.sqrt(q),s=sx*Math.sqrt(q),d=r*sx;
+  const tot=st.b2+st.b1*d,left=st.b1*st.b1*s*s+SIG*SIG;return{r,q,sx,s,d,tot,left,sy:Math.sqrt(tot*tot+left)}}
+// Draws are fixed per seed and only rescaled, so the points move smoothly with the sliders
+let Zseed=null,Z=null,SZ=null;
+function draws(seed){if(seed!==Zseed){const r=mulberry32(seed*1337+42);Z=[0,1,2].map(()=>Array.from({length:NMAX},()=>boxMuller(r)));Zseed=seed}return Z}
+function sample(){const{d,s}=pars(),n=st.n,[z2,zn,ze]=draws(st.seed);
+  const X2=z2.slice(0,n),X1=X2.map((v,i)=>d*v+s*zn[i]),y=X1.map((v,i)=>st.b1*v+st.b2*X2[i]+SIG*ze[i]);
+  return{n,X1,X2,y,tX1:resid(X2,X1),tY:resid(X2,y),iota:X1.map(()=>1)}}
+function fit(x,y){const n=x.length,mx=mean(x),my=mean(y);let sxy=0,sxx=0,ssr=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2}
+  const b=sxy/sxx,a=my-b*mx;for(let i=0;i<n;i++)ssr+=(y[i]-a-b*x[i])**2;
+  const s2=ssr/(n-2);return{a,b,ssr,mx,my,sxx,n,s2,se:Math.sqrt(s2/sxx)}}
+const resid=(x,y)=>{const f=fit(x,y);return y.map((v,i)=>v-f.a-f.b*x[i])};
+const varr=a=>{const m=mean(a);return a.reduce((s,v)=>s+(v-m)*(v-m),0)/a.length};
+function inv(A){const k=A.length,M=A.map((r,i)=>[...r,...r.map((_,j)=>+(i===j))]);
+  for(let c=0;c<k;c++){let p=c;for(let r=c+1;r<k;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;[M[c],M[p]]=[M[p],M[c]];
+    const d=M[c][c];M[c]=M[c].map(v=>v/d);for(let r=0;r<k;r++)if(r!==c){const f=M[r][c];M[r]=M[r].map((v,j)=>v-f*M[c][j])}}
+  return M.map(r=>r.slice(k))}
+// The long regression, from the normal equations: no residualising involved
+function ols(cols,y){const k=cols.length,XX=cols.map(a=>cols.map(b=>dot(a,b))),Xy=cols.map(c=>dot(c,y)),Ai=inv(XX),b=Ai.map(r=>dot(r,Xy));
+  const e=y.map((v,i)=>v-cols.reduce((s,c,j)=>s+b[j]*c[i],0)),s2=dot(e,e)/(y.length-k);return{b,se:Ai.map((r,i)=>Math.sqrt(s2*r[i]))}}
+let Skey='',Sres=null;
+function simulate(){const key=[st.n,st.b1,st.b2,st.rho,st.hold].join();if(key===Skey)return Sres;
+  if(!SZ){const r=mulberry32(7919);SZ=new Float64Array(NSIM*NMAX*3);for(let i=0;i<SZ.length;i++)SZ[i]=boxMuller(r)}
+  const{d,s}=pars(),n=st.n,bL=new Float64Array(NSIM),bS=new Float64Array(NSIM);
+  for(let k=0;k<NSIM;k++){const o=k*NMAX*3;let m1=0,m2=0,my=0,s11=0,s12=0,s22=0,s1y=0,s2y=0;
+    for(let i=0;i<n;i++){const x2=SZ[o+3*i],x1=d*x2+s*SZ[o+3*i+1],y=st.b1*x1+st.b2*x2+SIG*SZ[o+3*i+2];
+      m1+=x1;m2+=x2;my+=y;s11+=x1*x1;s12+=x1*x2;s22+=x2*x2;s1y+=x1*y;s2y+=x2*y}
+    s11-=m1*m1/n;s12-=m1*m2/n;s22-=m2*m2/n;s1y-=m1*my/n;s2y-=m2*my/n;
+    bL[k]=(s22*s1y-s12*s2y)/(s11*s22-s12*s12);bS[k]=s1y/s11}
+  const sm=b=>{const a=Array.from(b),m=mean(a);return{v:a,m,sd:Math.sqrt(varr(a)),rmse:Math.sqrt(a.reduce((t,v)=>t+(v-st.b1)**2,0)/a.length)}};
+  Skey=key;return Sres={L:sm(bL),S:sm(bS)}}
+function kde(vals){const n=vals.length,h=1.06*Math.sqrt(varr(vals))*Math.pow(n,-0.2),lo=Math.min(...vals)-3*h,hi=Math.max(...vals)+3*h;
+  const xs=Array.from({length:120},(_,i)=>lo+i*(hi-lo)/119);
+  return{xs,ys:xs.map(x=>{let t=0;for(let i=0;i<n;i++){const z=(x-vals[i])/h;t+=Math.exp(-.5*z*z)}return t/(n*h*Math.sqrt(2*Math.PI))})}}
+function normal(m,sd,lo,hi){const xs=Array.from({length:120},(_,i)=>lo+i*(hi-lo)/119);
+  return{xs,ys:xs.map(x=>Math.exp(-.5*((x-m)/sd)**2)/(sd*Math.sqrt(2*Math.PI)))}}
+
+/* ---------- chart pieces ---------- */
+function frame(s,xr,yr,xl,yl,Wd,Hd,o={}){s.innerHTML='';s.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);s._pts=[];
+  const pl=o.pl??46,pr_=14,pt=12,pb=38,fx=o.fx||(v=>v);
+  const sx=v=>pl+(v-xr[0])/(xr[1]-xr[0])*(Wd-pl-pr_),sy=v=>Hd-pb-(v-yr[0])/(yr[1]-yr[0])*(Hd-pt-pb);
+  ticks(xr[0],xr[1],o.kx||6).forEach(t=>{seg(s,[sx(t),pt],[sx(t),Hd-pb],'var(--grid)',1);txt(s,sx(t),Hd-pb+15,fx(t),null,'','middle')});
+  if(!o.noy)ticks(yr[0],yr[1],o.ky||5).forEach(t=>{seg(s,[pl,sy(t)],[Wd-pr_,sy(t)],'var(--grid)',1);txt(s,pl-6,sy(t)+4,t,null,'','end')});
+  seg(s,[pl,Hd-pb],[Wd-pr_,Hd-pb],'var(--muted)',1);
+  txt(s,Wd-pr_,Hd-4,xl,'var(--fg)','lab','end');
+  if(yl){const m=(pt+Hd-pb)/2,t=txt(s,12,m,yl,'var(--fg)','lab','middle');t.setAttribute('transform',`rotate(-90 12 ${m})`)}
+  s._inv=(px,py)=>[xr[0]+(px-pl)/(Wd-pl-pr_)*(xr[1]-xr[0]),yr[0]+(Hd-pb-py)/(Hd-pt-pb)*(yr[1]-yr[0])];
+  const cid='clip-'+s.id,cp=el('clipPath',{id:cid},el('defs',{},s));el('rect',{x:pl,y:pt,width:Wd-pl-pr_,height:Hd-pt-pb},cp);
+  return[sx,sy,el('g',{'clip-path':`url(#${cid})`},s),{pl,pr_,pt,pb}]}
+function scatter(s,x,y,o){const[sx,sy,g]=frame(s,o.xr,o.yr,o.xl,o.yl,o.W||440,o.H||340),n=x.length,lo=o.xr[0],hi=o.xr[1];
+  if(o.band){const f=o.band,xs=Array.from({length:60},(_,i)=>lo+i*(hi-lo)/59),w=v=>1.96*Math.sqrt(f.s2*(1/f.n+(v-f.mx)**2/f.sxx));
+    const up=xs.map(v=>sx(v).toFixed(1)+','+sy(f.a+f.b*v+w(v)).toFixed(1)),dn=xs.map(v=>sx(v).toFixed(1)+','+sy(f.a+f.b*v-w(v)).toFixed(1)).reverse();
+    el('polygon',{points:up.concat(dn).join(' '),fill:'var(--fit)','fill-opacity':.14},g)}
+  for(let i=0;i<n;i++){const cx=sx(x[i]),cy=sy(y[i]);el('circle',{cx,cy,r:o.r||2.6,fill:o.fill?o.fill(i):'var(--muted)','fill-opacity':o.fill?.85:.4},g);s._pts.push([cx,cy,`(${f2(x[i])}, ${f2(y[i])})`])}
+  if(o.resid){const f=o.resid;for(let i=0;i<n;i+=Math.max(1,Math.round(n/40)))seg(g,[sx(x[i]),sy(f.a+f.b*x[i])],[sx(x[i]),sy(y[i])],'var(--res)',1.2)}
+  (o.lines||[]).forEach(l=>seg(g,[sx(lo),sy(l.a+l.b*lo)],[sx(hi),sy(l.a+l.b*hi)],l.c,2,l.dash))}
+function density(s,cs,o){const H=o.H||300,[sx,sy,g,m]=frame(s,o.xr,[0,o.ymax],o.xl,'density',440,H,{noy:1,pl:24});
+  cs.forEach(c=>{const pts=c.xs.map((x,i)=>sx(x).toFixed(1)+','+sy(c.ys[i]).toFixed(1)),e=c.xs.length-1;
+    if(c.area)el('polygon',{points:`${sx(c.xs[0])},${sy(0)} ${pts.join(' ')} ${sx(c.xs[e])},${sy(0)}`,fill:c.c,'fill-opacity':.1},g);
+    el('polyline',{points:pts.join(' '),fill:'none',stroke:c.c,'stroke-width':2,'stroke-dasharray':c.dash||'none','stroke-linejoin':'round'},g);
+    c.xs.forEach((x,i)=>{if(i%3===0)s._pts.push([sx(x),sy(c.ys[i]),`${c.name}: ${f3(x)}`])})});
+  (o.v||[]).forEach(l=>{seg(g,[sx(l.x),sy(0)],[sx(l.x),m.pt],l.c,l.w||1.2,l.dash);if(l.t)txt(s,sx(l.x)+5,m.pt+12,l.t,'var(--fg)')})}
+// One horizontal stacked bar: 2px surface gap, 4px rounded data-end, square baseline
+function stack(s,sx,y,h,segs){const live=segs.filter(p=>p.v>1e-9);let v=0;
+  live.forEach((p,i)=>{const last=i===live.length-1,x0=sx(v)+(i?1:0),x1=sx(v+p.v)-(last?0:1),r=last&&x1-x0>5?4:0;v+=p.v;if(x1<=x0)return;
+    el('path',{d:`M${x0} ${y}H${x1-r}Q${x1} ${y} ${x1} ${y+r}V${y+h-r}Q${x1} ${y+h} ${x1-r} ${y+h}H${x0}Z`,fill:p.c,'data-tip':`${p.tip}: ${f2(p.show??p.v)}`},s);
+    if(p.lab&&p.lab.length*7.3+10<x1-x0)txt(s,x0+6,y+h/2+4,p.lab,'var(--panel)')})}
+function bars(s,rows,o){const[sx,,,m]=frame(s,[0,o.max],[0,1],o.xl,'',440,58+rows.length*50,{noy:1,pl:16,fx:o.fx,kx:5});
+  rows.forEach((r,i)=>{const y=m.pt+6+i*50;halo(txt(s,m.pl,y+11,r.label,'var(--fg)'));stack(s,sx,y+18,20,r.segs)})}
+function strip(s,rows,o){const vals=rows.map(r=>r.v),lo=Math.min(...vals),hi=Math.max(...vals),w=Math.max(.4,(hi-lo)*.25),Hd=58+rows.length*26;
+  const[sx,,g,m]=frame(s,[lo-w,hi+w],[0,1],'coefficient on X₁','',440,Hd,{noy:1,pl:124,kx:5});
+  rows.forEach((r,i)=>{const y=m.pt+14+i*26;seg(s,[m.pl,y],[440-m.pr_,y],'var(--grid)',1);txt(s,m.pl-8,y+4,r.label,'var(--fg)','','end');marker(g,sx(r.v),y,r.c);s._pts.push([sx(r.v),y,`${r.label}: ${f3(r.v)}`])})}
+function legend(id,items){const e=$(id);e.innerHTML='';items.forEach(([k,c,t])=>{const i=document.createElement('span'),sw=document.createElement('i');i.className='li';sw.className='sw '+k;sw.style.setProperty('--c',c);i.append(sw,t);e.append(i)})}
+const FIT=['line','var(--fit)','OLS fit'],TRUE=['dash','var(--fg)','True β₁'],OBS=['dot','var(--muted)','Observation'];
+const trueLine=f=>({a:f.my-st.b1*f.mx,b:st.b1,c:'var(--fg)',dash:'5 4'});
+const fitLine=f=>({a:f.a,b:f.b,c:'var(--fit)'});
+
+/* ---------- figures ---------- */
+function quad(D,labels,hi){const p=pars(),xr=sym(3.2*p.sx),yr=sym(3.2*p.sy);
+  [[D.X1,D.y,'X₁','y'],[D.X1,D.tY,'X₁','ỹ'],[D.tX1,D.y,'X̃₁','y'],[D.tX1,D.tY,'X̃₁','ỹ']].forEach(([x,y,xl,yl],i)=>{const f=fit(x,y);
+    $('ql'+i).textContent=`${labels[i]}${yl} on ${xl} · β̂ = ${f3(f.b)}`;$('qc'+i).classList.toggle('hi',hi.includes(i));
+    scatter($('q'+i),x,y,{xr,yr,xl,yl,W:300,H:270,r:2.2,band:f,lines:[fitLine(f),trueLine(f)]})});
+  legend('legend',[OBS,FIT,['area','var(--fit)','95% CI'],TRUE])}
+function simDensity(s,S,o){const kL=kde(S.L.v),kS=kde(S.S.v),sd=Math.max(S.L.sd,S.S.sd),lo=Math.min(st.b1,S.S.m,S.L.m)-4*sd,hi=Math.max(st.b1,S.S.m,S.L.m)+4*sd;
+  density(s,[{...kL,c:'var(--fit)',area:1,name:'Long'},{...kS,c:'var(--res)',area:1,dash:'6 3',name:'Short'}],{xr:[lo,hi],ymax:Math.max(...kL.ys,...kS.ys)*1.12,xl:'β̂₁',H:o.H,
+    v:[{x:st.b1,c:'var(--fg)',dash:'5 4',t:'true β₁',w:1.6},{x:S.L.m,c:'var(--fit)',dash:'1 3'},{x:S.S.m,c:'var(--res)',dash:'1 3'}]})}
+const LS=[['line','var(--fit)','Long regression'],['dash','var(--res)','Short regression']];
+function figure(id,D,S){const p=pars(),m=$('main'),s2=$('sub'),xr=sym(3.2*p.sx),yr=sym(3.2*p.sy),x2r=[-3.5,3.5];
+  $('mainlab').textContent='';$('sublab').textContent='';legend('legend',[]);legend('sublegend',[]);
+  const short=fit(D.X1,D.y),long=ols([D.iota,D.X1,D.X2],D.y);
+  switch(id){
+  case 'scatter':$('mainlab').textContent='Short regression · y on X₁ alone';
+    scatter(m,D.X1,D.y,{xr,yr,xl:'X₁',yl:'y',lines:[fitLine(short),trueLine(short)]});legend('legend',[OBS,FIT,TRUE]);break;
+  case 'ovb':{const shade=[22,40,58,78,100],q=[...D.X2].sort((a,b)=>a-b),cut=[.2,.4,.6,.8].map(f=>q[Math.floor(f*q.length)]);
+    $('mainlab').textContent='Short regression, dots shaded by X₂';$('sublab').textContent='Coefficient on X₁ · this sample';
+    scatter(m,D.X1,D.y,{xr,yr,xl:'X₁',yl:'y',r:3,fill:i=>`color-mix(in srgb,var(--x2) ${shade[cut.filter(c=>D.X2[i]>c).length]}%,var(--panel))`,lines:[fitLine(short),trueLine(short)]});
+    legend('legend',[['dot','color-mix(in srgb,var(--x2) 25%,var(--panel))','Low X₂'],['dot','var(--x2)','High X₂'],FIT,TRUE]);
+    strip(s2,[{label:'True β₁',v:st.b1,c:'var(--fg)'},{label:'Short slope',v:short.b,c:'var(--res)'}]);break}
+  case 'px1':case 'py':{const v=id==='py'?D.y:D.X1,t=id==='py'?D.tY:D.tX1,nm=id==='py'?['y','ỹ']:['X₁','X̃₁'],r=id==='py'?yr:xr,f=fit(D.X2,v);
+    $('mainlab').textContent=`${nm[0]} on X₂`;$('sublab').textContent=`What is left: ${nm[1]} against X₂`;
+    scatter(m,D.X2,v,{xr:x2r,yr:r,xl:'X₂',yl:nm[0],lines:[fitLine(f)],resid:f,H:260});
+    scatter(s2,D.X2,t,{xr:x2r,yr:r,xl:'X₂',yl:nm[1],H:260,fill:()=>id==='py'?'var(--y)':'var(--x)'});legend('legend',[OBS,FIT,['line','var(--res)','Residual']]);break}
+  case 'three':quad(D,['','','','★ '],[3]);$('sublab').textContent='The three routes against the short regression · this sample';
+    strip(s2,[{label:'Long',v:long.b[1],c:'var(--fit)'},{label:'ỹ on X̃₁',v:fit(D.tX1,D.tY).b,c:'var(--fit)'},{label:'y on X̃₁',v:fit(D.tX1,D.y).b,c:'var(--fit)'},{label:'True β₁',v:st.b1,c:'var(--fg)'},{label:'Short',v:short.b,c:'var(--res)'}]);break;
+  case 'one':quad(D,['','','','★ '],[1,2]);break;
+  case 'var':{const a=kde(D.X1),b=kde(D.tX1);$('mainlab').textContent='Distribution of X₁ and X̃₁ · same axis';$('sublab').textContent='Share of variance that survives';
+    density(m,[{...a,c:'var(--muted)',name:'X₁'},{...b,c:'var(--x)',area:1,name:'X̃₁'}],{xr,ymax:Math.max(...a.ys,...b.ys)*1.1,xl:'value',H:280});
+    legend('legend',[['line','var(--muted)','X₁'],['line','var(--x)','X̃₁']]);
+    const[sx,sy,g]=frame(s2,[-1,1],[0,1],'ρ','Var(X̃₁) / Var(X₁)',440,220,{ky:4,pl:60}),rs=Array.from({length:81},(_,i)=>-1+i/40),pts=rs.map(r=>sx(r).toFixed(1)+','+sy(1-r*r).toFixed(1));
+    el('polygon',{points:`${sx(-1)},${sy(0)} ${pts.join(' ')} ${sx(1)},${sy(0)}`,fill:'var(--x)','fill-opacity':.1},g);el('polyline',{points:pts.join(' '),fill:'none',stroke:'var(--x)','stroke-width':2},g);
+    marker(s2,sx(p.r),sy(p.q),'var(--x)');halo(txt(s2,sx(p.r)+(p.r>0?-12:12),sy(p.q)+(p.q>.8?24:-12),'1 − ρ² = '+f2(p.q),'var(--fg)','',p.r>0?'end':'start'));break}
+  case 'split':{const r2=p.r*p.r,mk=(lab,sh,own)=>({label:lab,segs:[{v:sh,c:'var(--x2)',tip:'Shared with X₂, δ²',lab:f2(sh)},{v:own,c:'var(--x)',tip:'Own, Var(ν)',lab:f2(own)}]});
+    $('mainlab').textContent='Var(X₁), split into shared and own variation';
+    bars(m,[mk(`Hold Var(X₁) = 1${st.hold==='x1'?' · in use':''}`,r2,1-r2),mk(`Hold Var(ν) = 1${st.hold==='nu'?' · in use':''}`,r2/(1-r2),1)],{max:nice(1/(1-r2)),xl:'variance'});
+    legend('legend',[['dot','var(--x2)','Shared with X₂ (δ²)'],['dot','var(--x)','Own (Var ν, which is what X̃₁ keeps)']]);break}
+  case 'beta':{const vx=p.sx*p.sx,sh=p.d*p.d/vx,ry=p.tot*p.tot/(p.sy*p.sy),pc=v=>Math.round(v*100)+'%';
+    $('mainlab').textContent='Share of each variable’s variance removed by partialling out X₂';
+    bars(m,[{label:`X₁ · Var = ${f2(vx)}`,segs:[{v:sh,c:'var(--x2)',tip:'Removed',show:p.d*p.d,lab:pc(sh)},{v:1-sh,c:'var(--x)',tip:'Left in X̃₁',show:p.s*p.s,lab:pc(1-sh)}]},
+      {label:`y · Var = ${f2(p.sy*p.sy)}`,segs:[{v:ry,c:'var(--x2)',tip:'Removed',show:p.tot*p.tot,lab:pc(ry)},{v:1-ry,c:'var(--y)',tip:'Left in ỹ',show:p.left,lab:pc(1-ry)}]}],{max:1,xl:'share of variance',fx:v=>v*100+'%'});
+    legend('legend',[['dot','var(--x2)','Removed by X₂'],['dot','var(--x)','Left in X̃₁'],['dot','var(--y)','Left in ỹ']]);break}
+  case 'noise':{const sd0=SIG/Math.sqrt(st.n),w=11*sd0,xr2=[st.b1-w,st.b1+w],k=kde(S.L.v),b=normal(st.b1,sd0,xr2[0],xr2[1]);
+    $('mainlab').textContent=`Sampling distribution of the long β̂₁ across ${NSIM} simulations`;
+    density(m,[{...b,c:'var(--muted)',dash:'6 3',name:'ρ = 0'},{...k,c:'var(--fit)',area:1,name:'Long'}],{xr:xr2,ymax:1.3/(sd0*Math.sqrt(2*Math.PI)),xl:'β̂₁',H:300,v:[{x:st.b1,c:'var(--fg)',dash:'5 4',t:'true β₁',w:1.6}]});
+    legend('legend',[['line','var(--fit)','Long regression, current ρ'],['dash','var(--muted)','Baseline, ρ = 0']]);break}
+  case 'trade':{$('mainlab').textContent=`Sampling distributions across ${NSIM} simulations`;$('sublab').textContent='Which regression is more precise · both axes in absolute value';
+    simDensity(m,S,{H:280});legend('legend',LS);
+    const[sx,sy,g]=frame(s2,[0,1],[0,5],'|ρ|','|β₂| / σ',440,230,{ky:5}),rs=Array.from({length:60},(_,i)=>i/59*.905),pts=rs.map(r=>[sx(r),sy(r/(1-r*r))]).map(q=>q.map(v=>v.toFixed(1)).join(','));
+    el('polygon',{points:`${sx(0)},${sy(0)} ${pts.join(' ')} ${sx(1)},${sy(5)} ${sx(1)},${sy(0)}`,fill:'var(--res)','fill-opacity':.1},g);
+    el('polygon',{points:`${sx(0)},${sy(5)} ${sx(0)},${sy(0)} ${pts.join(' ')}`,fill:'var(--fit)','fill-opacity':.1},g);
+    el('polyline',{points:pts.join(' '),fill:'none',stroke:'var(--fg)','stroke-width':2},g);
+    txt(s2,sx(.03),sy(4.5),'long more precise','var(--fg)');txt(s2,sx(.97),sy(.45),'short more precise','var(--fg)','','end');
+    marker(s2,sx(Math.abs(p.r)),sy(Math.abs(st.b2)),'var(--fg)');break}
+  case 'ext':{const f=fit(D.tX1,D.tY);$('mainlab').textContent='★ ỹ on X̃₁';$('sublab').textContent=`Sampling distributions across ${NSIM} simulations`;
+    scatter(m,D.tX1,D.tY,{xr,yr:sym(3.2*Math.sqrt(p.left)),xl:'X̃₁',yl:'ỹ',lines:[fitLine(f),trueLine(f)],H:290});legend('legend',[OBS,FIT,TRUE]);
+    simDensity(s2,S,{H:210});legend('sublegend',LS);break}
   }
+}
 
-  function boxMuller(rand) {
-    var u1 = rand(), u2 = rand();
-    return Math.sqrt(-2 * Math.log(u1 + 1e-12)) * Math.cos(2 * Math.PI * u2);
+/* ---------- readout ---------- */
+function readout(id,D,S){const L=[],p=pars(),short=fit(D.X1,D.y),l=ols([D.iota,D.X1,D.X2],D.y),n=st.n,vX=varr(D.X1),vT=varr(D.tX1),rs=fit(D.tX1,D.tY),ry=fit(D.tX1,D.y),ax=fit(D.X1,D.tY);
+  const c=(a,w=18)=>col(a,w);
+  switch(id){
+  case 'scatter':L.push(`true β₁ = ${f3(st.b1)}`,`short slope = ${f3(short.b)}`);break;
+  case 'ovb':{const g=fit(D.X1,D.X2).b;L.push(c('short slope',13)+`= ${f3(short.b)}`,c('β̂₁ + β̂₂·γ̂',13)+`= ${f3(l.b[1])} + ${f3(l.b[2])} × ${f3(g)} = ${f3(l.b[1]+l.b[2]*g)}`,c('population',13)+`= ${f2(st.b1)} + ${f2(st.b2)} × ${f2(p.r/p.sx)} = ${f2(st.b1+st.b2*p.r/p.sx)}`,`γ̂ = Cov(X₁, X₂) / Var(X₁), slope of X₂ on X₁`);break}
+  case 'px1':L.push(`slope of X₁ on X₂ = ${f3(fit(D.X2,D.X1).b)}`,`slope of X̃₁ on X₂ = ${f3(fit(D.X2,D.tX1).b)}`);break;
+  case 'py':L.push(`slope of y on X₂ = ${f3(fit(D.X2,D.y).b)}`,`slope of ỹ on X₂ = ${f3(fit(D.X2,D.tY).b)}`);break;
+  case 'three':L.push(c('true β₁')+f3(st.b1),c('1. long')+f3(l.b[1]),c('2. ỹ on X̃₁')+f3(rs.b),c('3. y on X̃₁')+f3(ry.b),c('short, y on X₁')+f3(short.b)+'  biased');break;
+  case 'one':L.push(c('')+'slope    SE',c('long')+f3(l.b[1])+'   '+f3(l.se[1]),c('ỹ on X̃₁')+f3(rs.b)+'   '+f3(rs.se),c('y on X̃₁')+f3(ry.b)+'   '+f3(ry.se),c('ỹ on X₁')+f3(ax.b)+'   '+f3(ax.se),'',`Var(X̃₁)/Var(X₁) = ${f3(vT/vX)}`,`β̂₁ × ${f3(vT/vX)} = ${f3(l.b[1]*vT/vX)}, slope of ỹ on X₁`);break;
+  case 'var':{const r=fit(D.X2,D.X1).b*Math.sqrt(varr(D.X2)/vX);L.push(c('Var(X₁)',9)+`= ${f3(vX)}`,c('Var(X̃₁)',9)+`= ${f3(vT)}`,c('ratio',9)+`= ${f3(vT/vX)} = 1 − r²,  sample r = ${f3(r)}`);break}
+  case 'split':{const q=p.q,r2=p.r*p.r;L.push(c('')+'δ²      Var(ν)  Var(X₁)',c('hold Var(X₁)')+[r2,q,1].map(v=>col(f2(v),8)).join(''),c('hold Var(ν)')+[r2/q,1,1/q].map(v=>col(f2(v),8)).join(''),`share removed in both: ρ² = ${f2(r2)}`);break}
+  case 'beta':L.push(`δ = ${f2(p.d)}   total effect β₂ + β₁δ = ${f2(p.tot)}`,`Var(y)  = ${f2(p.sy*p.sy)}  (sample ${f2(varr(D.y))})`,`Var(ỹ)  = ${f2(p.left)}  (sample ${f2(varr(D.tY))})`,`removed = ${f2(p.tot*p.tot)}`,`Var(X̃₁)/Var(X₁) = ${f2(p.q)}, whatever the βs`);break;
+  case 'noise':L.push(c('SD across simulations',23)+`= ${f3(S.L.sd)}`,c('σ / √(n Var(X̃₁))',23)+`= ${f3(SIG/Math.sqrt(n*p.s*p.s))}`,c('baseline at ρ = 0',23)+`= ${f3(SIG/Math.sqrt(n))}`,c('VIF = 1 / (1 − ρ²)',23)+`= ${f2(1/p.q)}`,`Var(X₁) = ${f2(p.sx*p.sx)}   Var(X̃₁) = ${f2(p.s*p.s)}`);break;
+  case 'trade':{const a=Math.abs(st.b2)/SIG,b=Math.abs(p.r)/p.q;L.push(c('')+'long    short',c('mean')+col(f3(S.L.m),8)+f3(S.S.m),c('SD, simulated')+col(f3(S.L.sd),8)+f3(S.S.sd),c('SD, formula')+col(f3(SIG/Math.sqrt(n*p.s*p.s)),8)+f3(Math.sqrt((SIG*SIG+st.b2*st.b2*p.q)/(n*p.sx*p.sx))),c('RMSE')+col(f3(S.L.rmse),8)+f3(S.S.rmse),'',`|β₂|/σ = ${f2(a)}   |ρ|/(1−ρ²) = ${f2(b)}`,a>b?'long regression is more precise':'short regression is more precise');break}
+  case 'ext':L.push(c('')+'long    short',c('slope')+col(f3(l.b[1]),8)+f3(short.b),c('SE, this sample')+col(f3(l.se[1]),8)+f3(short.se),c('SD, simulated')+col(f3(S.L.sd),8)+f3(S.S.sd),'',`Var(X̃₁) = ${f3(vT)}   VIF = ${f2(1/p.q)}`);break;
   }
+  $('readout').textContent=L.join('\n');
+}
 
-  function rnorm(n, rand) {
-    return Array.from({length: n}, function() { return boxMuller(rand); });
-  }
+/* ---------- render ---------- */
+function render(){
+  const k=st.step,step=steps[k],show=step.ctl;
+  [...$('nav').querySelectorAll('button')].forEach((b,i)=>{b.classList.toggle('on',i===k);b.classList.toggle('done',i<k);b.setAttribute('aria-current',i===k?'step':'false')});
+  $('stepnum').textContent=`Part ${step.part} · ${parts[step.part]} · Step ${k+1} of ${steps.length}`;
+  $('stitle').textContent=step.t;
+  $('stext').innerHTML=typeof katex!=='undefined'?tex(step.text):step.text.replace(/\\\(|\\\)/g,'');
+  $('hint').textContent=step.hint;
+  ['b1','b2','rho','n','seed','hold'].forEach(c=>{$('c-'+c).hidden=!show.includes(c)});
+  ['mask','r0','r1'].forEach(c=>{$(c).hidden=!show.includes(c)});
+  $('main').toggleAttribute('hidden',!!step.quad);$('quad').hidden=!step.quad;$('subp').hidden=!step.sub;
+  $('sub').style.touchAction=['var','trade'].includes(step.id)?'none':'';$('sub').style.cursor=$('sub').style.touchAction?'grab':'';
+  $('prev').disabled=k===0;$('next').disabled=k===steps.length-1;
+  draw();
+}
+function draw(){const step=steps[st.step],D=sample(),S=step.sim?simulate():null;
+  figure(step.id,D,S);readout(step.id,D,S);
+  ['b1','b2','rho','n','seed'].forEach(c=>{$(c).value=st[c];$(c+'o').textContent=['n','seed'].includes(c)?st[c]:f2(st[c])});
+  [...$('hold').querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.m===st.hold))}
 
-  function mean(arr) { return arr.reduce(function(a,b){return a+b;},0) / arr.length; }
+/* nav */
+let lastPart='';steps.forEach((s,i)=>{if(s.part!==lastPart){const p=document.createElement('span');p.className='part';p.textContent=parts[s.part];$('nav').appendChild(p);lastPart=s.part}
+  const b=document.createElement('button');b.textContent=i+1;b.title=s.t;b.setAttribute('aria-label',`Step ${i+1}: ${s.t}`);b.onclick=()=>{st.step=i;render()};$('nav').appendChild(b)});
+$('prev').onclick=()=>{if(st.step>0){st.step--;render()}};
+$('next').onclick=()=>{if(st.step<steps.length-1){st.step++;render()}};
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')$('next').click();if(e.key==='ArrowLeft')$('prev').click()});
+['b1','b2','rho','n','seed'].forEach(c=>$(c).addEventListener('input',()=>{st[c]=+$(c).value;draw()}));
+[...$('hold').querySelectorAll('button')].forEach(b=>b.onclick=()=>{st.hold=b.dataset.m;draw()});
+$('mask').onclick=()=>{st.b2=clamp(-st.b1*pars().d,-5,5);draw()};
+$('r0').onclick=()=>{st.rho=0;st.hold='x1';draw()};
+$('r1').onclick=()=>{st.rho=0.95;st.hold='x1';draw()};
+$('reset').onclick=()=>{Object.assign(st,DEF);render()};
 
-  function ols(x, y) {
-    var mx = mean(x), my = mean(y), sxy = 0, sxx = 0;
-    for (var i = 0; i < x.length; i++) {
-      sxy += (x[i]-mx)*(y[i]-my);
-      sxx += (x[i]-mx)*(x[i]-mx);
-    }
-    var b = sxy/sxx;
-    return {a: my - b*mx, b: b};
-  }
+/* dragging and tooltips */
+let drag=false;
+const svgPt=(svg,e)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
+function pick(e){const s=$('sub'),q=svgPt(s,e),v=s._inv(q.x,q.y);
+  if(steps[st.step].id==='var')st.rho=+clamp(v[0],-.95,.95).toFixed(2);
+  else{st.rho=+(clamp(v[0],0,.95)*(st.rho<0?-1:1)).toFixed(2);st.b2=+(clamp(v[1],0,5)*(st.b2<0?-1:1)).toFixed(2)}
+  draw()}
+$('sub').addEventListener('pointerdown',e=>{if(['var','trade'].includes(steps[st.step].id)){drag=true;pick(e);e.preventDefault()}});
+window.addEventListener('pointerup',()=>{drag=false});
+window.addEventListener('pointermove',e=>{if(drag){pick(e);return}
+  const t=e.target,tip=$('tip');let s=t.getAttribute&&t.getAttribute('data-tip');
+  if(!s){const svg=t.closest&&t.closest('svg');if(svg&&svg._pts&&svg._pts.length){const q=svgPt(svg,e);let best=400;svg._pts.forEach(p=>{const d=(p[0]-q.x)**2+(p[1]-q.y)**2;if(d<best){best=d;s=p[2]}})}}
+  tip.hidden=!s;if(s){tip.textContent=s;tip.style.left=Math.min(e.clientX+12,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=Math.max(4,e.clientY-30)+'px'}});
 
-  function residuals(x, y) {
-    var fit = ols(x, y);
-    return y.map(function(yi, i){ return yi - fit.a - fit.b*x[i]; });
-  }
-
-  function variance(arr) {
-    var m = mean(arr);
-    return arr.reduce(function(s,v){ return s + (v-m)*(v-m); }, 0) / arr.length;
-  }
-
-  function confBand(x, y) {
-    var n = x.length, fit = ols(x, y);
-    var yhat = x.map(function(xi){ return fit.a + fit.b*xi; });
-    var sse = y.reduce(function(s,yi,i){ return s + (yi-yhat[i])*(yi-yhat[i]); }, 0);
-    var s2 = sse/(n-2), mx = mean(x);
-    var sxx = x.reduce(function(s,xi){ return s + (xi-mx)*(xi-mx); }, 0);
-    var xmin = Math.min.apply(null,x), xmax = Math.max.apply(null,x);
-    var xs = Array.from({length:100}, function(_,i){ return xmin + i*(xmax-xmin)/99; });
-    var t = 1.96;
-    var upper = xs.map(function(xi){ return fit.a+fit.b*xi + t*Math.sqrt(s2*(1/n+(xi-mx)*(xi-mx)/sxx)); });
-    var lower = xs.map(function(xi){ return fit.a+fit.b*xi - t*Math.sqrt(s2*(1/n+(xi-mx)*(xi-mx)/sxx)); });
-    return {xs:xs, upper:upper, lower:lower, a:fit.a, b:fit.b};
-  }
-
-  function kde(vals) {
-    var n = vals.length, s = Math.sqrt(variance(vals));
-    var h = 1.06 * s * Math.pow(n, -0.2);
-    var vmin = Math.min.apply(null,vals) - 3*h, vmax = Math.max.apply(null,vals) + 3*h;
-    var xs = Array.from({length:200}, function(_,i){ return vmin + i*(vmax-vmin)/199; });
-    var ys = xs.map(function(x){
-      return vals.reduce(function(s,v){ var z=(x-v)/h; return s+Math.exp(-0.5*z*z); }, 0) / (n*h*Math.sqrt(2*Math.PI));
-    });
-    return {xs:xs, ys:ys};
-  }
-
-  function simulate(n, b1, b2, corr, nsim) {
-    var bFull = [], bRaw = [];
-    for (var s = 0; s < nsim; s++) {
-      var rand = mulberry32(s * 7919 + 1);
-      var X2=rnorm(n,rand), eps1=rnorm(n,rand), epsY=rnorm(n,rand);
-      var X1=X2.map(function(v,i){return corr*v+eps1[i];});
-      var Y=X1.map(function(v,i){return b1*v+b2*X2[i]+epsY[i];});
-      var tX1=residuals(X2,X1), tY=residuals(X2,Y);
-      bFull.push(ols(tX1,tY).b); bRaw.push(ols(X1,Y).b);
-    }
-    return {bFull:bFull, bRaw:bRaw};
-  }
-
-  var ACCENT='#2b6cb0', ACCENT_DARK='#1a4a8a', GREEN='#276749', RED='#9b2335';
-  var SZ=330, DSZ_H=220;
-  var initialized={};
-
-  function plotLayout(w, h) {
-    return {
-      margin:{t:36,r:12,b:40,l:44}, width:w, height:h,
-      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
-      xaxis:{title:{text:'X',font:{size:11,family:'Fira Code'}}, gridcolor:'#e2e8f0', zerolinecolor:'#cbd5e0', tickfont:{size:9,color:'#718096'}},
-      yaxis:{title:{text:'Y',font:{size:11,family:'Fira Code'}}, gridcolor:'#e2e8f0', zerolinecolor:'#cbd5e0', tickfont:{size:9,color:'#718096'}}
-    };
-  }
-
-  function makePlot(divId, x, y, betaTrue) {
-    var cb=confBand(x,y);
-    var xmin=Math.min.apply(null,x), xmax=Math.max.apply(null,x);
-    var traces=[
-      {x:x,y:y,mode:'markers',type:'scatter',marker:{color:'rgba(113,128,150,0.25)',size:4},showlegend:false,hovertemplate:'(%{x:.2f}, %{y:.2f})<extra></extra>'},
-      {x:cb.xs,y:cb.upper,mode:'lines',line:{color:RED,width:1,dash:'dot'},showlegend:false,hoverinfo:'skip'},
-      {x:cb.xs,y:cb.lower,mode:'lines',line:{color:RED,width:1,dash:'dot'},fill:'tonexty',fillcolor:'rgba(155,35,53,0.07)',showlegend:false,hoverinfo:'skip'},
-      {x:cb.xs,y:cb.xs.map(function(xi){return cb.a+cb.b*xi;}),mode:'lines',line:{color:RED,width:2},showlegend:false,hovertemplate:'Slope: '+cb.b.toFixed(3)+'<extra></extra>'},
-      {x:[xmin,xmax],y:[cb.a+betaTrue*xmin,cb.a+betaTrue*xmax],mode:'lines',line:{color:ACCENT,width:2},showlegend:false,hovertemplate:'True β: '+betaTrue+'<extra></extra>'}
-    ];
-    var layout=plotLayout(SZ,SZ);
-    layout.annotations=[{x:0.97,y:0.97,xref:'paper',yref:'paper',xanchor:'right',yanchor:'top',
-      text:'β̂ = <b>'+cb.b.toFixed(3)+'</b>',showarrow:false,
-      font:{size:11,color:RED,family:'Fira Code'},bgcolor:'rgba(255,255,255,0.9)',borderpad:3}];
-    var config={displayModeBar:false,responsive:false};
-    if (!initialized[divId]){Plotly.newPlot(divId,traces,layout,config);initialized[divId]=true;}
-    else Plotly.react(divId,traces,layout);
-  }
-
-  function makeDistPlot(divId, vals, betaTrue, color) {
-    var k=kde(vals), m=mean(vals), maxY=Math.max.apply(null,k.ys);
-    var col=color==='red'?RED:GREEN;
-    var traces=[
-      {x:k.xs,y:k.ys,mode:'lines',fill:'tozeroy',fillcolor:color==='red'?'rgba(155,35,53,0.1)':'rgba(39,103,73,0.1)',
-       line:{color:col,width:2},showlegend:false,hovertemplate:'β̂: %{x:.3f}<extra></extra>'},
-      {x:[betaTrue,betaTrue],y:[0,maxY*1.1],mode:'lines',line:{color:ACCENT,width:2,dash:'dash'},showlegend:false,hovertemplate:'True β₁: '+betaTrue+'<extra></extra>'},
-      {x:[m,m],y:[0,maxY*1.1],mode:'lines',line:{color:col,width:1.5,dash:'dot'},showlegend:false,hovertemplate:'Mean β̂: '+m.toFixed(3)+'<extra></extra>'}
-    ];
-    var layout=plotLayout(SZ,DSZ_H);
-    layout.xaxis.title.text='β̂₁'; layout.yaxis.title.text='Density';
-    layout.annotations=[
-      {x:0.97,y:0.97,xref:'paper',yref:'paper',xanchor:'right',yanchor:'top',
-       text:'mean = <b>'+m.toFixed(3)+'</b>',showarrow:false,
-       font:{size:11,color:col,family:'Fira Code'},bgcolor:'rgba(255,255,255,0.9)',borderpad:3},
-      {x:betaTrue,y:maxY*1.15,xref:'x',yref:'y',text:'true',showarrow:false,
-       font:{size:9,color:ACCENT,family:'Fira Code'}}
-    ];
-    var config={displayModeBar:false,responsive:false};
-    if (!initialized[divId]){Plotly.newPlot(divId,traces,layout,config);initialized[divId]=true;}
-    else Plotly.react(divId,traces,layout);
-  }
-
-  function update() {
-    var n=+document.getElementById('sl-n').value;
-    var b1=+document.getElementById('sl-b1').value;
-    var b2=+document.getElementById('sl-b2').value;
-    var corr=+document.getElementById('sl-cr').value;
-    var seed=+document.getElementById('sl-sd').value;
-
-    document.getElementById('lbl-n').textContent=n;
-    document.getElementById('lbl-b1').textContent=b1.toFixed(1);
-    document.getElementById('lbl-b2').textContent=b2.toFixed(1);
-    document.getElementById('lbl-cr').textContent=corr.toFixed(2);
-    document.getElementById('lbl-sd').textContent=seed;
-
-    var rand=mulberry32(seed*1337+42);
-    var X2=rnorm(n,rand), eps1=rnorm(n,rand), epsY=rnorm(n,rand);
-    var X1=X2.map(function(v,i){return corr*v+eps1[i];});
-    var Y=X1.map(function(v,i){return b1*v+b2*X2[i]+epsY[i];});
-    var tildeY=residuals(X2,Y), tildeX1=residuals(X2,X1);
-
-    var bRaw=ols(X1,Y).b, bFWL=ols(tildeX1,tildeY).b, bFull=ols(tildeX1,Y).b;
-    var att=variance(tildeX1)/variance(X1);
-
-    makePlot('p1',X1,Y,b1); makePlot('p2',X1,tildeY,b1);
-    makePlot('p3',tildeX1,Y,b1); makePlot('p4',tildeX1,tildeY,b1);
-
-    document.getElementById('st-true').textContent=b1.toFixed(3);
-    document.getElementById('st-full').textContent=bFull.toFixed(3);
-    document.getElementById('st-fwl').textContent=bFWL.toFixed(3);
-    document.getElementById('st-raw').textContent=bRaw.toFixed(3);
-    document.getElementById('st-att').textContent=att.toFixed(3);
-    document.getElementById('st-check').textContent=(b1*att).toFixed(3);
-
-    var sims=simulate(n,b1,b2,corr,500);
-    makeDistPlot('d1',sims.bFull,b1,'green');
-    makeDistPlot('d2',sims.bRaw,b1,'red');
-  }
-
-  ['sl-n','sl-b1','sl-b2','sl-cr','sl-sd'].forEach(function(id){
-    document.getElementById(id).addEventListener('input',update);
-  });
-  update();
-});
+render();
+})();
 </script>
-<footer style="max-width:1200px;margin:2rem auto 0;padding-top:1rem;border-top:1px solid #e2e8f0;font-size:0.78rem;color:#718096;font-family:'Fira Code',monospace;display:flex;justify-content:space-between;align-items:center;">
-  <span>Rasmus Duret · LSE</span>
-  <a href="https://rassssd.github.io" style="color:#2b6cb0;text-decoration:none;border-bottom:1px solid transparent;transition:border-color 0.2s;" onmouseover="this.style.borderBottomColor='#2b6cb0'" onmouseout="this.style.borderBottomColor='transparent'">rassssd.github.io</a>
-</footer>
 </body>
 </html>
