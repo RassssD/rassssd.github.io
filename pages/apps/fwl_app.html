@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <style>
-/* Layout: main figure + secondary figure left, narrative + controls + readout right; stacks on phone */
+/* Layout: figures left, narrative + controls + readout right; stacks on phone */
 :root{
   --bg:#f5f6f8; --panel:#ffffff; --fg:#1c2330; --muted:#5f6b7a; --grid:#e8ebf0; --rule:#d5dae2;
   --y:#2457c5; --x:#c2620a; --x2:#16825a; --fit:#6b3fc0; --res:#cf2e2a;
@@ -23,21 +23,24 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
 a{color:inherit;text-underline-offset:2px}
-.wrap{max-width:1120px;margin:0 auto;padding-block:22px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
 h1{font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
 .sub{margin:2px 0 0;color:var(--muted)}
-.steps{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.steps .part{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 4px 0 10px}
+.steps{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.steps .part{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 3px 0 8px}
 .steps .part:first-child{margin-left:0}
-.steps button{width:30px;height:30px;padding:0;border-radius:50%;font-family:var(--mono);font-size:.8rem}
+.steps button{width:27px;height:27px;padding:0;border-radius:50%;font-family:var(--mono);font-size:.74rem}
 .steps button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .steps button.done{border-color:var(--muted)}
 .grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
-@media (max-width:820px){.grid{grid-template-columns:1fr}}
-.left{display:grid;gap:12px;min-width:0}
+.grid.wide{grid-template-columns:minmax(0,1.8fr) minmax(0,1fr)}
+@media (max-width:820px){.grid,.grid.wide{grid-template-columns:1fr}}
 .panel{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px;min-width:0}
 .panel svg{display:block;width:100%;height:auto;user-select:none}
-.hint{margin:4px 2px 0;font-size:.8rem;color:var(--muted);min-height:1.2em}
+.figs{display:grid;grid-template-columns:repeat(var(--cols,1),minmax(0,1fr));gap:8px}
+@media (max-width:520px){.figs{grid-template-columns:1fr}.figs .cell{grid-column:auto!important}}
+.cell{min-width:0}
+.hint{margin:6px 2px 0;font-size:.8rem;color:var(--muted);min-height:1.2em}
 .side{display:grid;gap:12px;min-width:0}
 .stepnum{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 h2{margin:0;font-size:1.2rem;text-wrap:balance}
@@ -45,8 +48,13 @@ h2{margin:0;font-size:1.2rem;text-wrap:balance}
 .text p{margin:0 0 .6em}
 .text ol{margin:0 0 .6em;padding-left:1.4em}
 .text li{margin-bottom:.25em}
+.text strong{font-weight:600}
+.text .key{margin:.7em 0;padding:7px 11px;border-left:3px solid var(--fit);border-radius:0 6px 6px 0;background:color-mix(in srgb,var(--fit) 9%,transparent)}
+.text .eq{margin:.6em 0;text-align:center;font-size:1.06em}
+.cell.hi{outline:2px solid var(--fit);outline-offset:2px;border-radius:4px}
 math{font-size:1.06em}
 .controls{display:grid;gap:10px}
+.controls:not(:has(:not([hidden]))){display:none}
 .ctl{display:grid;grid-template-columns:4.5em 1fr 3.6em;gap:10px;align-items:center}
 .ctl label{font-family:var(--mono);font-size:.9rem}
 .ctl output{font-family:var(--mono);font-size:.85rem;text-align:right;font-variant-numeric:tabular-nums}
@@ -58,23 +66,17 @@ button:disabled{opacity:.4;cursor:default}
 button:focus-visible,input:focus-visible{outline:2px solid var(--fit);outline-offset:2px}
 .readout{font-family:var(--mono);font-size:.82rem;line-height:1.7;font-variant-numeric:tabular-nums;border-left:2px solid var(--rule);padding-left:10px;overflow-x:auto;white-space:pre}
 .readout:empty{display:none}
-.plabel{font-size:.78rem;color:var(--muted);margin:0 0 4px 2px}
-.toggle{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
-.toggle button{border:0;border-radius:0;padding:3px 10px;font-size:.78rem}
-.toggle button.on{background:var(--fg);color:var(--bg)}
+.plabel{font-size:.8rem;color:var(--fg);margin:0 0 2px 2px;font-weight:600}
+.plabel:empty{display:none}
 .topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px}
 .pager{display:flex;gap:8px;margin-left:auto}
-.quad{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-@media (max-width:520px){.quad{grid-template-columns:1fr}}
-.cell{border:1px solid transparent;border-radius:6px;padding:4px;min-width:0}
-.cell.hi{border-color:var(--fit)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin:6px 2px 0;font-size:.8rem;color:var(--muted)}
 .legend:empty{display:none}
 .li{display:inline-flex;align-items:center;gap:6px}
 .sw{display:inline-block;width:18px;height:0;border-top:2px solid var(--c)}
 .sw.dash{border-top-style:dashed}
 .sw.dot{width:9px;height:9px;border:0;border-radius:50%;background:var(--c)}
-.sw.area{height:10px;border:0;background:var(--c);opacity:.18}
+.sw.area{height:10px;border:0;background:var(--c);opacity:.3}
 .tip{position:fixed;z-index:9;pointer-events:none;background:var(--fg);color:var(--bg);font-family:var(--mono);font-size:.75rem;padding:2px 6px;border-radius:4px;white-space:nowrap}
 footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:.78rem;color:var(--muted)}
 svg text{font-family:var(--mono);font-size:12px}
@@ -88,32 +90,18 @@ svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:itali
 <div class="wrap">
   <header>
     <h1>Frisch–Waugh–Lovell Theorem</h1>
-    <p class="sub">The theorem, then what partialling out does to variance, one piece at a time. It picks up where <a href="regression-geometry.html">Regression Geometry</a> ends. Use the buttons or the ← → keys.</p>
+    <p class="sub">What it means to control for a variable, built up one piece at a time. It picks up where <a href="regression-geometry.html">Regression Geometry</a> ends. Use the buttons or the ← → keys.</p>
   </header>
   <div class="topbar">
     <nav class="steps" id="nav" aria-label="Steps"></nav>
     <div class="pager"><button id="prev">← Previous</button><button id="next" class="primary">Next →</button></div>
   </div>
-  <div class="grid">
-    <div class="left">
-      <section class="panel">
-        <div class="plabel" id="mainlab"></div>
-        <svg id="main" viewBox="0 0 440 340" role="img" aria-label="Main figure"></svg>
-        <div class="quad" id="quad">
-          <div class="cell" id="qc0"><div class="plabel" id="ql0"></div><svg id="q0" viewBox="0 0 300 270" role="img" aria-label="y on X1"></svg></div>
-          <div class="cell" id="qc1"><div class="plabel" id="ql1"></div><svg id="q1" viewBox="0 0 300 270" role="img" aria-label="Residual y on X1"></svg></div>
-          <div class="cell" id="qc2"><div class="plabel" id="ql2"></div><svg id="q2" viewBox="0 0 300 270" role="img" aria-label="y on residual X1"></svg></div>
-          <div class="cell" id="qc3"><div class="plabel" id="ql3"></div><svg id="q3" viewBox="0 0 300 270" role="img" aria-label="Residual y on residual X1"></svg></div>
-        </div>
-        <div class="legend" id="legend"></div>
-        <p class="hint" id="hint"></p>
-      </section>
-      <section class="panel" id="subp">
-        <div class="plabel" id="sublab"></div>
-        <svg id="sub" viewBox="0 0 440 220" role="img" aria-label="Secondary figure"></svg>
-        <div class="legend" id="sublegend"></div>
-      </section>
-    </div>
+  <div class="grid" id="layout">
+    <section class="panel">
+      <div class="figs" id="fig"></div>
+      <div class="legend" id="legend"></div>
+      <p class="hint" id="hint"></p>
+    </section>
     <section class="side">
       <div>
         <div class="stepnum" id="stepnum"></div>
@@ -121,17 +109,17 @@ svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:itali
       </div>
       <div class="text" id="stext"></div>
       <div class="controls">
-        <div class="ctl" id="c-b1"><label for="b1">β₁</label><input type="range" id="b1" min="0" max="5" step="0.1"><output id="b1o"></output></div>
-        <div class="ctl" id="c-b2"><label for="b2">β₂</label><input type="range" id="b2" min="-5" max="5" step="0.01"><output id="b2o"></output></div>
+        <div class="ctl" id="c-b1"><label for="b1">β₁</label><input type="range" id="b1" min="0" max="4" step="0.1"><output id="b1o"></output></div>
+        <div class="ctl" id="c-b2"><label for="b2">β₂</label><input type="range" id="b2" min="-4" max="4" step="0.01"><output id="b2o"></output></div>
         <div class="ctl" id="c-rho"><label for="rho">ρ</label><input type="range" id="rho" min="-0.95" max="0.95" step="0.01"><output id="rhoo"></output></div>
-        <div class="ctl" id="c-n"><label for="n">n</label><input type="range" id="n" min="50" max="500" step="50"><output id="no"></output></div>
-        <div class="ctl" id="c-seed"><label for="seed">seed</label><input type="range" id="seed" min="1" max="100" step="1"><output id="seedo"></output></div>
-        <div class="row" id="c-hold"><span class="plabel" style="margin:0">Hold fixed</span>
-          <div class="toggle" id="hold"><button data-m="x1">Var(X₁)</button><button data-m="nu">Var(ν)</button></div></div>
-        <div class="row">
-          <button id="mask">Set β₂ = −β₁δ</button>
-          <button id="r0">ρ = 0</button>
-          <button id="r1">ρ = 0.95</button>
+        <div class="ctl" id="c-ra"><label for="ra">ρ low</label><input type="range" id="ra" min="0" max="0.95" step="0.01"><output id="rao"></output></div>
+        <div class="ctl" id="c-rb"><label for="rb">ρ high</label><input type="range" id="rb" min="0" max="0.95" step="0.01"><output id="rbo"></output></div>
+        <div class="ctl" id="c-n"><label for="n">n</label><input type="range" id="n" min="20" max="500" step="10"><output id="no"></output></div>
+        <div class="ctl" id="c-t"><label for="t">shift</label><input type="range" id="t" min="0" max="1" step="0.01"><output id="to"></output></div>
+        <div class="ctl" id="c-push"><label for="push">outlier</label><input type="range" id="push" min="-5" max="5" step="0.1"><output id="pusho"></output></div>
+        <div class="row" id="c-row">
+          <button id="mask">Set β₂ = −β₁ρ</button>
+          <button id="new">New sample</button>
           <button id="reset">Reset</button>
         </div>
       </div>
@@ -146,38 +134,66 @@ svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:itali
 (function(){
 const $=id=>document.getElementById(id);
 const NS='http://www.w3.org/2000/svg';
-const DEF={b1:2,b2:3,rho:0.7,n:200,seed:1,hold:'x1'};
-const st={step:0,...DEF};
-const SIG=1,NSIM=500,NMAX=500;
+// Var(X₁) = Var(X₂) = Var(ε) = 1 throughout, so ρ is also the slope of X₁ on X₂
+const LOW=0.3,HIGH=0.9,TOP=0.95;
+const DEF={b1:2,b2:3,rho:0.7,ra:LOW,rb:HIGH,n:200,seed:1,t:0,push:0};
+let st={step:0,...DEF};
+const NSIM=500,NMAX=500;
 const T=String.raw;
 
 const steps=[
- {id:'scatter',part:'A',t:'Two regressors, one effect',ctl:['b1','b2','rho','n','seed'],hint:'Move the sliders: the fitted slope leaves the true one whenever ρ and β₂ are both non-zero.',
-  text:T`<p>Suppose the outcome depends on two variables: \(y=\beta_1X_1+\beta_2X_2+\varepsilon\). We want \(\beta_1\), the effect of \(X_1\) holding \(X_2\) fixed. The data here are simulated, so the true value is known.</p><p>The plot shows the short regression of \(y\) on \(X_1\) alone. Throughout, \(\rho\) is the correlation between \(X_1\) and \(X_2\), \(\text{Var}(X_2)=1\) and \(\sigma^2=\text{Var}(\varepsilon)=1\).</p>`},
- {id:'ovb',part:'A',t:'Omitted variable bias',sub:1,ctl:['b1','b2','rho'],hint:'Set β₂ or ρ to zero and the bias disappears.',
-  text:T`<p>Colour the dots by \(X_2\). Within one shade, the slope is close to \(\beta_1\). When \(\rho\) and \(\beta_2\) are positive, high-\(X_2\) dots have both higher \(X_1\) and higher \(y\), so the pooled slope picks up the difference between shades as well.</p><p>The short slope is \(\beta_1+\beta_2\,\text{Cov}(X_1,X_2)/\text{Var}(X_1)\). The bias needs both \(\beta_2\neq0\) and \(\rho\neq0\). Adding \(X_2\) as a regressor, the long regression, removes it.</p>`},
- {id:'px1',part:'B',t:'Partial X₂ out of X₁',sub:1,ctl:['rho','n','seed'],hint:'The red segments are a sample of the residuals. Both panels share a vertical scale.',
-  text:T`<p>Regress \(X_1\) on \(X_2\) and keep the residual: \(\tilde X_1=M_2X_1\). This is the residual maker \(M\) from <a href="regression-geometry.html">Regression Geometry</a>, with \(X_2\) and an intercept as the regressors.</p><p>\(\tilde X_1\) is the part of \(X_1\) that \(X_2\) cannot predict. Plotted against \(X_2\) in the lower panel, it has no slope left, by construction.</p>`},
- {id:'py',part:'B',t:'Partial X₂ out of y',sub:1,ctl:['b1','b2','rho'],hint:'The red segments are a sample of the residuals. Both panels share a vertical scale.',
-  text:T`<p>Do the same to the outcome: \(\tilde y=M_2y\). What remains is the part of \(y\) that \(X_2\) cannot predict.</p><p>Applying \(M_2\) to the model removes \(X_2\), because \(M_2X_2=0\): \(\tilde y=\beta_1\tilde X_1+M_2\varepsilon\). So \(\tilde y\) and \(\tilde X_1\) are still linked by \(\beta_1\), now with \(X_2\) out of the way.</p>`},
- {id:'three',part:'B',t:'Three routes, one coefficient',quad:1,sub:1,ctl:['b1','b2','rho','n','seed'],hint:'All four panels share the same axes, so the narrower clouds really are narrower.',
-  text:T`<p>Every regression here has an intercept. The theorem gives three equivalent ways to obtain \(\hat\beta_1\):</p><ol><li>The long regression of \(y\) on \(X_1\) and \(X_2\): \(\hat\beta=(X'X)^{-1}X'y\), where \(\hat\beta_1\) is the entry for \(X_1\).</li><li>Residual on residual: \(\hat\beta_1=(\tilde X_1'\tilde X_1)^{-1}\tilde X_1'\tilde y\).</li><li>\(y\) on the residual: \(\hat\beta_1=(\tilde X_1'\tilde X_1)^{-1}\tilde X_1'y\).</li></ol><p>The match is exact in every sample, not just on average. Routes 2 and 3 agree because \(M_2\) is symmetric and \(M_2M_2=M_2\), so \(\tilde X_1'\tilde y=X_1'M_2y=\tilde X_1'y\).</p><p>\(\tilde y\) and \(\tilde X_1\) are the variation the control leaves unexplained, so regressing one on the other isolates the partial effect of \(X_1\).</p>`},
- {id:'one',part:'B',t:'Partialling out one side only',quad:1,ctl:['b1','b2','rho','n','seed'],hint:'Compare the two outlined panels with the residual-on-residual panel.',
-  text:T`<p>Residualise only \(y\) (top right) and the slope is attenuated: it equals \(\hat\beta_1\,\text{Var}(\tilde X_1)/\text{Var}(X_1)\). \(X_1\) still carries the variation that \(X_2\) explains, and that variation is now unrelated to \(\tilde y\).</p><p>Residualise only \(X_1\) (bottom left) and the slope is right, because what \(X_2\) explains in \(y\) is orthogonal to \(\tilde X_1\). But it stays in the residual, so the standard error is too large whenever \(X_2\) explains part of \(y\).</p><p>Residual on residual removes it, and matches the long regression's standard error up to the degrees of freedom, \(n-2\) rather than \(n-3\).</p>`},
- {id:'var',part:'C',t:'X̃₁ has less variance than X₁',sub:1,ctl:['rho','n','seed'],hint:'Move ρ, or drag the dot along the curve.',
-  text:T`<p>Residualising strips out the part of \(X_1\) that moves with \(X_2\). How much goes depends only on the correlation:</p><p>\(\text{Var}(\tilde X_1)=(1-\rho^2)\,\text{Var}(X_1).\)</p><p>The share lost is \(\rho^2\), so modest correlation costs little: \(\rho=0.5\) removes a quarter of the variance, while \(\rho=0.9\) removes 81%.</p>`},
- {id:'split',part:'C',t:'Same correlation, different X₁',ctl:['rho','hold'],hint:'Move ρ and compare the bars. The toggle picks the case used from here on.',
-  text:T`<p>Write \(X_1=\delta X_2+\nu\): a part driven by \(X_2\), and a part of its own. Then \(\text{Var}(X_1)=\delta^2+\text{Var}(\nu)\), and \(\tilde X_1\) is the part \(\nu\).</p><p>\(\rho^2\) is the shared part's share, and the same share can arise in two ways. Either shared variation replaces \(X_1\)'s own variation, so \(\text{Var}(\tilde X_1)\) falls. Or it is added on top, so \(\text{Var}(X_1)\) grows and \(\text{Var}(\tilde X_1)\) stays put. The ratio is the same, but the variation left over is not.</p>`},
- {id:'beta',part:'C',t:'The βs move ỹ, not X̃₁',ctl:['b1','b2','rho','mask'],hint:'Change β₁ and β₂: only the y bar moves. Then press the button to cancel the two channels.',
-  text:T`<p>\(\tilde X_1\) is computed without looking at \(y\), so \(\beta_1\) and \(\beta_2\) cannot affect its variance. They do decide what partialling out does to \(y\). Substituting \(X_1=\delta X_2+\nu\) gives</p><p>\(y=(\beta_2+\beta_1\delta)X_2+\beta_1\nu+\varepsilon.\)</p><p>\(\beta_2+\beta_1\delta\) is \(X_2\)'s total effect on \(y\): direct, plus through \(X_1\). Partialling out removes \((\beta_2+\beta_1\delta)^2\text{Var}(X_2)\) from \(\text{Var}(y)\). If the two channels cancel, \(X_2\) looks unrelated to \(y\) and nothing is removed from it. \(X_1\) is still stripped, and the short regression is still biased.</p>`},
- {id:'noise',part:'D',t:'Less variation, noisier slope',sim:1,ctl:['rho','n','hold'],hint:'The x-axis stays fixed as ρ moves, so a wider curve means a noisier estimate.',
-  text:T`<p>\(\hat\beta_1\) is a regression on \(\tilde X_1\), so only \(\tilde X_1\)'s variation identifies it:</p><p>\(\text{Var}(\hat\beta_1)\approx\dfrac{\sigma^2}{n\,\text{Var}(\tilde X_1)}=\dfrac{\sigma^2}{n\,\text{Var}(X_1)}\cdot\dfrac{1}{1-\rho^2}.\)</p><p>The last factor is the variance inflation factor. With \(\text{Var}(X_1)\) fixed, it widens the distribution as \(|\rho|\) grows. Now switch to holding \(\text{Var}(\nu)\), the variance of \(X_1\)'s own part, fixed: the factor still rises, \(\text{Var}(X_1)\) rises with it, and the spread does not move. What costs precision is losing \(X_1\)'s own variation, not correlation as such.</p>`},
- {id:'trade',part:'D',t:'Bias against precision',sim:1,sub:1,ctl:['b2','rho','n','hold'],hint:'The mean of each distribution is dotted. Drag the dot on the map to move ρ and β₂ together.',
-  text:T`<p>Dropping \(X_2\) biases the slope, but it does not always make it noisier. The two variances are</p><p>\(\dfrac{\sigma^2}{n\,\text{Var}(\tilde X_1)}\) long, \(\quad\dfrac{\sigma^2+\beta_2^2(1-\rho^2)}{n\,\text{Var}(X_1)}\) short.</p><p>The control does two things. It takes \(X_2\) out of the error, which helps more the larger \(|\beta_2|\) is, and it takes variation out of the regressor, which hurts more the larger \(|\rho|\) is. The long regression is more precise when</p><p>\(|\beta_2|/\sigma>|\rho|/(1-\rho^2).\)</p><p>Below that line, the short regression is tighter but centred in the wrong place.</p>`},
- {id:'ext',part:'D',t:'The extremes',sim:1,sub:1,ctl:['rho','b2','n','hold','r0','r1'],hint:'The axes match the X₁ scale, so the cloud narrows as X̃₁ loses variance.',
-  text:T`<p>At \(\rho=0\), \(\tilde X_1\) is essentially \(X_1\), and the two regressions are centred on the same value. The control still earns its place: it removes \(X_2\) from the error, which shrinks the standard error.</p><p>As \(\rho\to\pm1\) with \(\text{Var}(X_1)\) fixed, \(\tilde X_1\) collapses towards zero. There is almost no variation left to identify \(\beta_1\). In the limit this is the perfect collinearity from <a href="regression-geometry.html">Regression Geometry</a>.</p>`}
+ {id:'map',part:'A',t:'Where we’re going',fig:[1,1,1],cols:3,wide:1,ctl:[],hint:'Darker dots have higher X₂. As ρ rises, they gather on the right.',
+  text:T`<p>We want the effect of \(X_1\) on \(y\), but \(X_1\) moves together with a second variable, \(X_2\).</p><p class="key">The true effect is <strong>2 in all three panels</strong>, yet the fitted slope drifts away as the correlation \(\rho\) rises.</p><p>This walkthrough asks why that happens, how controlling for \(X_2\) fixes it, and what the fix costs.</p>`},
+ {id:'one',part:'A',t:'One regressor',fig:[1],set:{b2:0,rho:0},ctl:['b1'],hint:'Move β₁. The fitted slope follows it.',
+  text:T`<p>Start with the easy case. \(X_1\) is the only thing that moves \(y\), apart from noise:</p><p class="eq">\(y=\beta_1X_1+\varepsilon\)</p><p class="key">Regressing \(y\) on \(X_1\) <strong>recovers \(\beta_1\)</strong>, up to sampling noise.</p>`},
+ {id:'add',part:'A',t:'Add a second variable',fig:[1],set:{rho:0},ctl:['b2'],hint:'Move β₂. The cloud gets thicker, but the slope stays near β₁.',
+  text:T`<p>Now a second variable also moves \(y\), with effect \(\beta_2\):</p><p class="eq">\(y=\beta_1X_1+\beta_2X_2+\varepsilon\)</p><p>For now \(X_2\) is unrelated to \(X_1\). From the point of view of a regression on \(X_1\) alone, \(X_2\) is just more noise.</p><p class="key">The cloud thickens, but <strong>the slope is still right</strong>.</p>`},
+ {id:'corr',part:'A',t:'Let them move together: omitted variable bias',fig:[1],ctl:['rho','b2'],hint:'Move ρ and β₂ and watch the red wedge. Set either one to zero and it closes.',
+  text:T`<p>Now let \(X_1\) and \(X_2\) have correlation \(\rho\). When \(X_1\) is high, \(X_2\) tends to be high too, and that pushes \(y\) up by \(\beta_2\). The regression on \(X_1\) alone, the <strong>short regression</strong>, credits this to \(X_1\):</p><p class="eq">\(\text{short slope}=\beta_1+\beta_2\rho\)</p><p class="key">The red wedge is the <strong>omitted variable bias</strong>: the part of the slope that really belongs to \(X_2\).</p>`},
+ {id:'need',part:'A',t:'The bias takes both β₂ and ρ',fig:[1,1,1,1],cols:2,wide:1,ctl:['b2','rho'],hint:'Each panel switches an ingredient on or off. The sliders set the non-zero values.',
+  text:T`<p>With \(\beta_2=0\), \(X_2\) does nothing to \(y\), so there is nothing to pick up.</p><p>With \(\rho=0\), \(X_2\) moves \(y\) but is no more common at high \(X_1\) than at low \(X_1\). It adds noise, not bias.</p><p class="key">Only the outlined panel has <strong>both</strong> ingredients, and only it has a wedge: bias \(=\beta_2\rho\).</p>`},
+ {id:'groups',part:'A',t:'Look within groups of X₂',fig:[1],set:{groups:1,n:300,seed:11},ctl:['rho','new'],hint:'Move ρ: the pooled line moves, the three group lines stay close to the true slope.',
+  text:T`<p>To see what went wrong, let \(X_2\) take only three values: low, middle and high.</p><p>Within a group \(X_2\) does not change, so it cannot be behind any link between \(X_1\) and \(y\).</p><p class="key">Each group's own line has a slope <strong>close to the true \(\beta_1\)</strong>. The pooled line differs because it also runs <em>across</em> groups.</p><p><strong>Try it:</strong> set \(\rho\) to −0.9. The pooled slope turns negative while every group's slope stays positive. This reversal is <strong>Simpson's paradox</strong>. In the 1964 Civil Rights Act vote in the House, a larger share of Republicans than Democrats voted yes overall, yet a larger share of Democrats did within both North and South.</p>`},
+ {id:'shift',part:'A',t:'Line the groups up',fig:[1],set:{groups:1,n:300,seed:11},ctl:['t'],hint:'Move shift from 0 to 100%. Rings mark each group’s centre.',
+  text:T`<p>Holding \(X_2\) fixed means comparing only within groups. One way to do that with a single regression: subtract each group's mean from both \(X_1\) and \(y\).</p><p>Once the groups are lined up, the differences across them are gone, and the pooled slope becomes the within-group slope.</p><p class="key">That is the whole idea of the theorem: <strong>remove what \(X_2\) explains from both variables, then regress what is left</strong>.</p>`},
+ {id:'px1',part:'B',t:'Partial X₂ out of X₁',fig:[1,1],ctl:['rho'],hint:'Red segments are a sample of the residuals. Both panels share the same axes.',
+  text:T`<p>When \(X_2\) is continuous there are no groups to demean, so subtract the fitted line instead. Regress \(X_1\) on \(X_2\) and keep the residual:</p><p class="eq">\(\tilde X_1=M_2X_1\)</p><p>This is the residual maker from <a href="regression-geometry.html">Regression Geometry</a>, with \(X_2\) and an intercept as the regressors.</p><p class="key">\(\tilde X_1\) is <strong>the part of \(X_1\) that \(X_2\) cannot predict</strong>, so its slope on \(X_2\) is zero by construction.</p>`},
+ {id:'py',part:'B',t:'Partial X₂ out of y',fig:[1,1],ctl:['rho','b2'],hint:'Red segments are a sample of the residuals. Both panels share the same axes.',
+  text:T`<p>Do the same to the outcome: \(\tilde y=M_2y\). Applying \(M_2\) to the model removes \(X_2\), because \(M_2X_2=0\):</p><p class="eq">\(\tilde y=\beta_1\tilde X_1+M_2\varepsilon\)</p><p class="key">\(\tilde y\) and \(\tilde X_1\) are still linked by \(\beta_1\), <strong>now with \(X_2\) out of the way</strong>.</p>`},
+ {id:'rr',part:'B',t:'Regress one residual on the other',fig:[1,1],cols:2,wide:1,ctl:['b2','rho','new'],hint:'Drag β₂ and ρ and compare the two lines.',
+  text:T`<p>The right panel regresses \(\tilde y\) on \(\tilde X_1\). The left panel is the short regression, for comparison.</p><p class="key">Move \(\beta_2\) and \(\rho\). The left line swings, but <strong>the right line stays put</strong>. That stillness is the result: once \(X_2\) is partialled out, the slope no longer depends on it.</p><p>\(\beta_2\) has <strong>no effect at all</strong> on the right, because \(M_2\) removes \(X_2\) exactly. \(\rho\) only moves it a little, through noise.</p><p>The right slope is also <strong>exactly</strong> the coefficient on \(X_1\) in the long regression of \(y\) on \(X_1\) and \(X_2\), in every sample. That is the Frisch–Waugh–Lovell theorem.</p>`},
+ {id:'onlyx',part:'B',t:'Residualise only X₁',fig:[1,1],cols:2,wide:1,ctl:['rho'],hint:'Same slope in both panels. Compare how far the dots sit from the line.',
+  text:T`<p>Does \(y\) need cleaning too? For the slope, no. Regressing \(y\) itself on \(\tilde X_1\) gives the same number, because the part of \(y\) that \(X_2\) explains is orthogonal to \(\tilde X_1\).</p><p class="key"><strong>Same slope, wrong standard error.</strong> The part of \(y\) that \(X_2\) explains stays in the residual, so the dots sit further from the line.</p>`},
+ {id:'onlyy',part:'B',t:'Residualise only y',fig:[1,1],cols:2,wide:1,ctl:['rho'],hint:'Move ρ: the left slope falls further below the true one.',
+  text:T`<p>Now clean \(y\) but leave \(X_1\) alone. \(X_1\) still contains the part that moves with \(X_2\), and that part is now unrelated to \(\tilde y\). It only stretches the horizontal axis, which flattens the line:</p><p class="eq">\(\text{slope}=\hat\beta_1\,\text{Var}(\tilde X_1)/\text{Var}(X_1)\)</p><p class="key"><strong>This slope is wrong.</strong> \(X_1\) is the side that must be residualised.</p>`},
+ {id:'thm',part:'B',t:'The theorem',fig:[1,1,1,1],cols:2,wide:1,ctl:['b1','b2','rho','new'],hint:'All four panels share the same axes. Each caption gives the residual SD.',
+  text:T`<p>Every regression here has an intercept. Three routes give the same \(\hat\beta_1\):</p><ol><li>The long regression: \(\hat\beta=(X'X)^{-1}X'y\), where \(\hat\beta_1\) is the entry for \(X_1\).</li><li>Residual on residual: \(\hat\beta_1=(\tilde X_1'\tilde X_1)^{-1}\tilde X_1'\tilde y\).</li><li>\(y\) on the residual: \(\hat\beta_1=(\tilde X_1'\tilde X_1)^{-1}\tilde X_1'y\).</li></ol><p>Routes 2 and 3 agree because \(M_2\) is symmetric and \(M_2M_2=M_2\), so \(\tilde X_1'\tilde y=X_1'M_2y=\tilde X_1'y\).</p><p class="key"><strong>The outlined panel has the least residual variance.</strong> With \(X_2\) gone from both axes, only the noise \(\varepsilon\) is left, so its residual SD is close to \(\sigma=1\).</p>`},
+ {id:'low',part:'C',t:'Low correlation: X̃₁ keeps most of X₁',fig:[1,1],set:{rho:LOW},ctl:['rho'],hint:'Starts at ρ = 0.3. Move ρ to see the orange dots and the orange bar react.',
+  text:T`<p>The grey dots are \(X_1\). The purple line is what \(X_2\) predicts. The orange dots are \(\tilde X_1\): the same observations with that line subtracted.</p><p><strong>The bars on the right</strong> show each variable's span: from two standard deviations below its mean to two above, which covers about 95% of the dots.</p><p><strong>The histogram</strong> shows the same two variables as counts. Each bar is the number of the 200 observations with a value in that range. A narrower histogram means less variation.</p><p class="key">At \(\rho=0.3\) the line is almost flat, so subtracting it changes little: <strong>the two spans nearly match</strong>.</p>`},
+ {id:'high',part:'C',t:'High correlation: X̃₁ keeps little',fig:[1,1],set:{rho:HIGH},ctl:['rho'],hint:'Starts at ρ = 0.9, on the same axes as the previous slide.',
+  text:T`<p>At \(\rho=0.9\) the line is steep, because \(X_2\) predicts most of \(X_1\). Subtracting it collapses the dots into a narrow band.</p><p class="key">\(X_1\) itself spans just as wide as before. <strong>What is left over, \(\tilde X_1\), spans far less</strong>, and its histogram is much narrower.</p>`},
+ {id:'both',part:'C',t:'Low and high together',fig:[1,1,1,1,2],cols:2,wide:1,ctl:['ra','rb'],hint:'Top: dots. Middle: histograms. Bottom: the rule behind both. Move either ρ.',
+  text:T`<p>The two cases are one rule. Residualising removes the share of \(X_1\)'s variance that \(X_2\) explains, and that share is \(\rho^2\):</p><p class="eq">\(\text{Var}(\tilde X_1)=(1-\rho^2)\,\text{Var}(X_1)\)</p><p>The bottom panel plots the share left over for every \(\rho\), with your two values marked.</p><p class="key">Modest correlation costs little: \(\rho=0.3\) removes 9% of the variance. <strong>The cost accelerates near 1</strong>: \(\rho=0.9\) removes 81%.</p>`},
+ {id:'beta',part:'C',t:'What the βs change',fig:[1,1],cols:2,wide:1,ctl:['b1','b2','rho','mask'],hint:'Move β₁ and β₂: the left panel never changes. Then press the button.',
+  text:T`<p class="key">\(\tilde X_1\) is built without looking at \(y\), so <strong>\(\beta_1\) and \(\beta_2\) cannot change it</strong>. Only \(\rho\) moves the left panel.</p><p>They do decide how much partialling out takes from \(y\). The line through \(y\) has slope \(\beta_2+\beta_1\rho\): \(X_2\)'s direct effect, plus its effect through \(X_1\). The steeper that line, the more \(y\) shrinks.</p><p>If the two channels cancel, the line is flat and \(y\) loses nothing. \(X_1\) still shrinks, and the short regression is still biased.</p>`},
+ {id:'fanlo',part:'D',t:'Low correlation: a wide base',fig:[1,1],set:{rho:LOW,n:60},ctl:['rho','n','new'],hint:'Both axes use the same scale, so the shape of the cloud is real. New sample redraws the dots and moves the red line.',
+  text:T`<p>\(\hat\beta_1\) is the slope through the \(\tilde X_1\) cloud, so only \(\tilde X_1\)'s variation identifies it. To see how reliable it is, repeat the whole exercise.</p><p><strong>Draw a fresh sample, run the regression, note the slope. Do that 500 times.</strong></p><p>The thin lines in the top panel are 40 of those fits. The histogram is all 500 estimated slopes: each bar counts the samples whose slope fell in that range. The red line marks the sample shown in the dots.</p><p class="key">At \(\rho=0.3\) the cloud is wide. A line on a wide base is hard to tilt, so <strong>the slopes bunch tightly</strong>.</p>`},
+ {id:'fanhi',part:'D',t:'High correlation: a nearly vertical cloud',fig:[1,1],set:{rho:HIGH,n:60},ctl:['rho','n','new'],hint:'Same axes as the previous slide, equal scale on both. The thin lines fan out much further.',
+  text:T`<p>At \(\rho=0.9\) the \(\tilde X_1\) cloud is narrow, almost vertical. The line now rests on a narrow base, so small movements in a few dots tilt it a lot.</p><p class="key">The slopes are still centred on the truth, but <strong>they spread about twice as wide</strong>.</p><p>The fan of lines is the uncertainty the shaded 95% confidence band estimates from a single sample.</p>`},
+ {id:'push',part:'D',t:'Side by side: add one outlier',fig:[1,1,1,1],cols:2,wide:1,set:{ra:0,rb:TOP,n:30,push:4},ctl:['push','ra','rb','new'],hint:'Move the outlier slider. The same observation shifts by the same amount in both panels.',
+  text:T`<p>Turn one observation into an <strong>outlier</strong>: take the point furthest from the centre and shift it up or down by the same amount in both panels. The dashed line is the fit without the outlier, and the red wedge is how far it moved the line.</p><p class="key">With \(\rho=0.95\), <strong>the same outlier moves the slope about three times as far</strong>. With so little \(\tilde X_1\) variation, every observation carries more weight.</p><p>The histograms show this slope among 500 samples, on the same axis. Across samples this gives</p><p class="eq">\(\text{Var}(\hat\beta_1)\approx\dfrac{\sigma^2}{n\,\text{Var}(\tilde X_1)}=\dfrac{\sigma^2}{n}\cdot\dfrac{1}{1-\rho^2}\)</p><p>The last factor is the <strong>variance inflation factor</strong>.</p>`},
+ {id:'lz',part:'D',t:'Long against short: no correlation',fig:[1,1,2],cols:2,wide:1,set:{rho:0},ctl:['rho','b2'],hint:'Starts at ρ = 0. The histogram collects the slopes from 500 samples.',
+  text:T`<p>Controlling also has a benefit. Compare the two regressions when \(X_2\) is unrelated to \(X_1\) but still moves \(y\).</p><p>Both are centred on the truth, since there is no bias to fix. The short regression leaves \(X_2\) in its error, so its cloud is thick. The long regression removes it and loses nothing, because \(\tilde X_1\) is essentially \(X_1\).</p><p class="key">Here controlling is free: <strong>the long regression is simply more precise</strong>.</p>`},
+ {id:'lh',part:'D',t:'Long against short: high correlation',fig:[1,1,2],cols:2,wide:1,set:{rho:TOP},ctl:['rho','b2'],hint:'Starts at ρ = 0.95. The histogram collects the slopes from 500 samples.',
+  text:T`<p>At high correlation the picture reverses. The short regression has plenty of variation in \(X_1\), so its slope is tight, around the wrong value.</p><p>The long regression is centred on the truth, but it has only a sliver of \(\tilde X_1\) to work with, so it is noisier than the short regression.</p><p class="key"><strong>Short: tighter, but wrong. Long: right, but noisier.</strong></p>`},
+ {id:'lboth',part:'D',t:'Long against short, together',fig:[1,1,1,1],cols:2,wide:1,set:{ra:0,rb:TOP},ctl:['ra','rb','b2'],hint:'All panels use the same axes. Move β₂ towards zero and watch the short regression.',
+  text:T`<p>The control does two things. It takes \(X_2\) out of the error, which helps more the larger \(|\beta_2|\) is. It also takes variation out of the regressor, which hurts more the larger \(|\rho|\) is.</p><p class="key">On variance alone, the long regression wins when \(|\beta_2|/\sigma>|\rho|/(1-\rho^2)\). <strong>But variance ignores where the distribution is centred.</strong></p>`},
+ {id:'bv',part:'D',t:'Scoring both: bias and variance',fig:[1],set:{rho:0.7,b2:0.5,n:100},ctl:['b2','rho','n'],hint:'Move β₂ and watch the red bias bar grow.',
+  text:T`<p>Each regression can miss the truth in two ways. It can be centred in the wrong place, which is <strong>bias</strong>, or it can scatter widely, which is <strong>variance</strong>.</p><p>Mean squared error adds the two. It is the average squared distance of the estimates from the true value:</p><p class="eq">\(\text{MSE}=\text{bias}^2+\text{variance}\)</p><p class="key">The long regression scores on variance only. <strong>The short regression has less variance here, but pays for its bias.</strong></p>`},
+ {id:'mse',part:'D',t:'When is it worth controlling?',fig:[1],set:{rho:0.7,b2:0.1,n:100},ctl:['b2','rho','n'],hint:'Move n: more data shrinks variance but not bias, so the crossing moves left.',
+  text:T`<p>The chart scores both regressions for every \(|\beta_2|\). The long regression has no bias, so its MSE is flat. The short regression's MSE adds the shaded bias term, \((\beta_2\rho)^2\), to its variance.</p><p>Left of the crossing the short regression wins. Right of it the long regression wins.</p><p class="key"><strong>The short regression only wins while \(|\beta_2|\) is small</strong>, and that window closes as \(n\) grows. Unless \(X_2\) barely matters, control for it.</p>`}
 ];
-const parts={A:'Why control',B:'The theorem',C:'Variance',D:'Consequences'};
+const parts={A:'The problem',B:'Partialling out',C:'Variance',D:'The cost'};
 
 // Trailing punctuation stays on the formula's line
 function tex(s){return s.replace(/\\\((.+?)\\\)([.,:;]?)/g,(m,t,p)=>{let h=t;try{h=katex.renderToString(t,{output:'mathml',throwOnError:false})}catch(e){}return p?`<span style="white-space:nowrap">${h}${p}</span>`:h})}
@@ -186,28 +202,26 @@ const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const f2=v=>(Math.abs(v)<0.005?0:v).toFixed(2);
 const f3=v=>(Math.abs(v)<0.0005?0:v).toFixed(3);
+const pct=v=>Math.round(v*100)+'%';
 const col=(s,w)=>s+' '.repeat(Math.max(0,w-s.replace(/[̂̃]/g,'').length));
 const halo=t=>{t.style.cssText+='paint-order:stroke;stroke:var(--panel);stroke-width:4px';return t};
 function el(tag,at,p){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);if(p)p.appendChild(e);return e}
 function txt(p,x,y,s,c,cls,anchor){const t=el('text',{x,y,'text-anchor':anchor||'start',class:cls||''},p);t.textContent=s;t.style.fill=c||'var(--muted)';return t}
 function seg(p,a,b,c,w,dash,op){el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:c,'stroke-width':w||1.5,'stroke-dasharray':dash||'none',opacity:op??1},p)}
-function marker(p,x,y,c){el('circle',{cx:x,cy:y,r:6,fill:c,stroke:'var(--panel)','stroke-width':2},p)}
+function marker(p,x,y,c,r){el('circle',{cx:x,cy:y,r:r||6,fill:c,stroke:'var(--panel)','stroke-width':2},p)}
 function ticks(lo,hi,k){const raw=(hi-lo)/k,s_=Math.pow(10,Math.floor(Math.log10(raw)));const m=[1,2,2.5,5,10].find(m=>m*s_>=raw)*s_;const out=[];for(let v=Math.ceil(lo/m-1e-9)*m;v<=hi+1e-9;v+=m)out.push(+v.toFixed(6));return out}
-const nice=v=>[1,1.5,2,2.5,3,4,5,6,8,10,12,15,20,25,30,40,50,60,80,100].find(m=>m>=v)||v;
-const sym=v=>{const m=nice(v);return[-m,m]};
 
 /* ---------- data ---------- */
 function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const boxMuller=r=>Math.sqrt(-2*Math.log(r()+1e-12))*Math.cos(2*Math.PI*r());
-// Var(X₂) = 1; ρ fixes the shared share, st.hold fixes which variance stays put
-function pars(){const r=st.rho,q=1-r*r,sx=st.hold==='x1'?1:1/Math.sqrt(q),s=sx*Math.sqrt(q),d=r*sx;
-  const tot=st.b2+st.b1*d,left=st.b1*st.b1*s*s+SIG*SIG;return{r,q,sx,s,d,tot,left,sy:Math.sqrt(tot*tot+left)}}
 // Draws are fixed per seed and only rescaled, so the points move smoothly with the sliders
 let Zseed=null,Z=null,SZ=null;
 function draws(seed){if(seed!==Zseed){const r=mulberry32(seed*1337+42);Z=[0,1,2].map(()=>Array.from({length:NMAX},()=>boxMuller(r)));Zseed=seed}return Z}
-function sample(){const{d,s}=pars(),n=st.n,[z2,zn,ze]=draws(st.seed);
-  const X2=z2.slice(0,n),X1=X2.map((v,i)=>d*v+s*zn[i]),y=X1.map((v,i)=>st.b1*v+st.b2*X2[i]+SIG*ze[i]);
-  return{n,X1,X2,y,tX1:resid(X2,X1),tY:resid(X2,y),iota:X1.map(()=>1)}}
+function mk(o={}){const p={...st,...o},r=p.rho,s=Math.sqrt(1-r*r),n=p.n,[z2,zn,ze]=draws(p.seed);
+  // Three equally likely values with unit variance, for the grouped slides
+  const X2=p.groups?z2.slice(0,n).map((_,i)=>(i%3-1)*Math.sqrt(1.5)):z2.slice(0,n);
+  const X1=X2.map((v,i)=>r*v+s*zn[i]),y=X1.map((v,i)=>p.b1*v+p.b2*X2[i]+ze[i]);
+  return{n,X1,X2,y,tX1:resid(X2,X1),tY:resid(X2,y),iota:X1.map(()=>1),g:X1.map((_,i)=>i%3)}}
 function fit(x,y){const n=x.length,mx=mean(x),my=mean(y);let sxy=0,sxx=0,ssr=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2}
   const b=sxy/sxx,a=my-b*mx;for(let i=0;i<n;i++)ssr+=(y[i]-a-b*x[i])**2;
   const s2=ssr/(n-2);return{a,b,ssr,mx,my,sxx,n,s2,se:Math.sqrt(s2/sxx)}}
@@ -220,145 +234,224 @@ function inv(A){const k=A.length,M=A.map((r,i)=>[...r,...r.map((_,j)=>+(i===j))]
 // The long regression, from the normal equations: no residualising involved
 function ols(cols,y){const k=cols.length,XX=cols.map(a=>cols.map(b=>dot(a,b))),Xy=cols.map(c=>dot(c,y)),Ai=inv(XX),b=Ai.map(r=>dot(r,Xy));
   const e=y.map((v,i)=>v-cols.reduce((s,c,j)=>s+b[j]*c[i],0)),s2=dot(e,e)/(y.length-k);return{b,se:Ai.map((r,i)=>Math.sqrt(s2*r[i]))}}
-let Skey='',Sres=null;
-function simulate(){const key=[st.n,st.b1,st.b2,st.rho,st.hold].join();if(key===Skey)return Sres;
+const long=D=>ols([D.iota,D.X1,D.X2],D.y);
+const Scache=new Map;
+function simulate(o={}){const p={...st,...o},key=[p.n,p.b1,p.b2,p.rho].join();if(Scache.has(key))return Scache.get(key);
   if(!SZ){const r=mulberry32(7919);SZ=new Float64Array(NSIM*NMAX*3);for(let i=0;i<SZ.length;i++)SZ[i]=boxMuller(r)}
-  const{d,s}=pars(),n=st.n,bL=new Float64Array(NSIM),bS=new Float64Array(NSIM);
-  for(let k=0;k<NSIM;k++){const o=k*NMAX*3;let m1=0,m2=0,my=0,s11=0,s12=0,s22=0,s1y=0,s2y=0;
-    for(let i=0;i<n;i++){const x2=SZ[o+3*i],x1=d*x2+s*SZ[o+3*i+1],y=st.b1*x1+st.b2*x2+SIG*SZ[o+3*i+2];
+  const s=Math.sqrt(1-p.rho*p.rho),n=p.n,bL=new Float64Array(NSIM),bS=new Float64Array(NSIM);
+  for(let k=0;k<NSIM;k++){const o_=k*NMAX*3;let m1=0,m2=0,my=0,s11=0,s12=0,s22=0,s1y=0,s2y=0;
+    for(let i=0;i<n;i++){const x2=SZ[o_+3*i],x1=p.rho*x2+s*SZ[o_+3*i+1],y=p.b1*x1+p.b2*x2+SZ[o_+3*i+2];
       m1+=x1;m2+=x2;my+=y;s11+=x1*x1;s12+=x1*x2;s22+=x2*x2;s1y+=x1*y;s2y+=x2*y}
     s11-=m1*m1/n;s12-=m1*m2/n;s22-=m2*m2/n;s1y-=m1*my/n;s2y-=m2*my/n;
     bL[k]=(s22*s1y-s12*s2y)/(s11*s22-s12*s12);bS[k]=s1y/s11}
-  const sm=b=>{const a=Array.from(b),m=mean(a);return{v:a,m,sd:Math.sqrt(varr(a)),rmse:Math.sqrt(a.reduce((t,v)=>t+(v-st.b1)**2,0)/a.length)}};
-  Skey=key;return Sres={L:sm(bL),S:sm(bS)}}
-function kde(vals){const n=vals.length,h=1.06*Math.sqrt(varr(vals))*Math.pow(n,-0.2),lo=Math.min(...vals)-3*h,hi=Math.max(...vals)+3*h;
-  const xs=Array.from({length:120},(_,i)=>lo+i*(hi-lo)/119);
-  return{xs,ys:xs.map(x=>{let t=0;for(let i=0;i<n;i++){const z=(x-vals[i])/h;t+=Math.exp(-.5*z*z)}return t/(n*h*Math.sqrt(2*Math.PI))})}}
-function normal(m,sd,lo,hi){const xs=Array.from({length:120},(_,i)=>lo+i*(hi-lo)/119);
-  return{xs,ys:xs.map(x=>Math.exp(-.5*((x-m)/sd)**2)/(sd*Math.sqrt(2*Math.PI)))}}
+  const sm=b=>{const a=Array.from(b),m=mean(a),sd=Math.sqrt(varr(a));return{v:a,m,sd,mse:a.reduce((t,v)=>t+(v-p.b1)**2,0)/a.length}};
+  if(Scache.size>40)Scache.clear();const R={L:sm(bL),S:sm(bS)};Scache.set(key,R);return R}
+// Population moments of the two regressions
+function theory(o={}){const p={...st,...o},q=1-p.rho*p.rho,bias=p.b2*p.rho,vL=1/(p.n*q),vS=(1+p.b2*p.b2*q)/p.n;return{q,bias,vL,vS,mL:vL,mS:vS+bias*bias}}
 
 /* ---------- chart pieces ---------- */
 function frame(s,xr,yr,xl,yl,Wd,Hd,o={}){s.innerHTML='';s.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);s._pts=[];
-  const pl=o.pl??46,pr_=14,pt=12,pb=38,fx=o.fx||(v=>v);
+  const pl=o.pl??50,pr_=o.pr??14,pt=10,pb=40,fx=o.fx||(v=>v),fy=o.fy||(v=>v);
   const sx=v=>pl+(v-xr[0])/(xr[1]-xr[0])*(Wd-pl-pr_),sy=v=>Hd-pb-(v-yr[0])/(yr[1]-yr[0])*(Hd-pt-pb);
-  ticks(xr[0],xr[1],o.kx||6).forEach(t=>{seg(s,[sx(t),pt],[sx(t),Hd-pb],'var(--grid)',1);txt(s,sx(t),Hd-pb+15,fx(t),null,'','middle')});
-  if(!o.noy)ticks(yr[0],yr[1],o.ky||5).forEach(t=>{seg(s,[pl,sy(t)],[Wd-pr_,sy(t)],'var(--grid)',1);txt(s,pl-6,sy(t)+4,t,null,'','end')});
-  seg(s,[pl,Hd-pb],[Wd-pr_,Hd-pb],'var(--muted)',1);
-  txt(s,Wd-pr_,Hd-4,xl,'var(--fg)','lab','end');
-  if(yl){const m=(pt+Hd-pb)/2,t=txt(s,12,m,yl,'var(--fg)','lab','middle');t.setAttribute('transform',`rotate(-90 12 ${m})`)}
-  s._inv=(px,py)=>[xr[0]+(px-pl)/(Wd-pl-pr_)*(xr[1]-xr[0]),yr[0]+(Hd-pb-py)/(Hd-pt-pb)*(yr[1]-yr[0])];
+  ticks(xr[0],xr[1],o.kx||5).forEach(t=>{seg(s,[sx(t),pt],[sx(t),Hd-pb],'var(--grid)',1);txt(s,sx(t),Hd-pb+15,fx(t),null,'','middle')});
+  ticks(yr[0],yr[1],o.ky||4).forEach(t=>{seg(s,[pl,sy(t)],[Wd-pr_,sy(t)],'var(--grid)',1);txt(s,pl-6,sy(t)+4,fy(t),null,'','end')});
+  if(xr[0]<0&&xr[1]>0)seg(s,[sx(0),pt],[sx(0),Hd-pb],'var(--muted)',1,null,.55);
+  if(yr[0]<0&&yr[1]>0)seg(s,[pl,sy(0)],[Wd-pr_,sy(0)],'var(--muted)',1,null,.55);
+  seg(s,[pl,Hd-pb],[Wd-pr_,Hd-pb],'var(--fg)',1.2);seg(s,[pl,pt],[pl,Hd-pb],'var(--fg)',1.2);
+  txt(s,(pl+Wd-pr_)/2,Hd-5,xl,'var(--fg)','lab','middle');
+  if(yl){const m=(pt+Hd-pb)/2,t=txt(s,13,m,yl,'var(--fg)','lab','middle');t.setAttribute('transform',`rotate(-90 13 ${m})`)}
   const cid='clip-'+s.id,cp=el('clipPath',{id:cid},el('defs',{},s));el('rect',{x:pl,y:pt,width:Wd-pl-pr_,height:Hd-pt-pb},cp);
-  return[sx,sy,el('g',{'clip-path':`url(#${cid})`},s),{pl,pr_,pt,pb}]}
-function scatter(s,x,y,o){const[sx,sy,g]=frame(s,o.xr,o.yr,o.xl,o.yl,o.W||440,o.H||340),n=x.length,lo=o.xr[0],hi=o.xr[1];
+  return[sx,sy,el('g',{'clip-path':`url(#${cid})`},s),{pl,pr_,pt,pb,Wd,Hd}]}
+// Direct label for a line: placed where it leaves the plot, on the side the line slopes away from
+function lineLabel(s,sx,sy,xr,yr,l,Wd,right){const lo=l.lo??xr[0],hi=l.hi??xr[1];let xa=hi,ya=l.a+l.b*xa;
+  if(ya>yr[1])xa=(yr[1]-l.a)/l.b;else if(ya<yr[0])xa=(yr[0]-l.a)/l.b;
+  const cx=(lo+hi)/2,under=l.pos==='lo',x=cx+(xa-cx)*(under?(Wd<400?.15:.5):.88),y=l.a+l.b*x,away=under===(l.b>=0),w=l.lab.length*7.3;
+  halo(txt(s,away?Math.min(sx(x)+6,right-w):Math.max(sx(x)-6,w+54),sy(y)+(under?18:-10),l.lab,'var(--fg)','',away?'start':'end'))}
+function scatter(s,layers,o){const Wd=o.W||440,Hd=o.H||340,lo=o.xr[0],hi=o.xr[1],[sx,sy,g,m]=frame(s,o.xr,o.yr,o.xl,o.yl,Wd,Hd,{pr:o.pr,pl:o.pl});
   if(o.band){const f=o.band,xs=Array.from({length:60},(_,i)=>lo+i*(hi-lo)/59),w=v=>1.96*Math.sqrt(f.s2*(1/f.n+(v-f.mx)**2/f.sxx));
     const up=xs.map(v=>sx(v).toFixed(1)+','+sy(f.a+f.b*v+w(v)).toFixed(1)),dn=xs.map(v=>sx(v).toFixed(1)+','+sy(f.a+f.b*v-w(v)).toFixed(1)).reverse();
-    el('polygon',{points:up.concat(dn).join(' '),fill:'var(--fit)','fill-opacity':.14},g)}
-  for(let i=0;i<n;i++){const cx=sx(x[i]),cy=sy(y[i]);el('circle',{cx,cy,r:o.r||2.6,fill:o.fill?o.fill(i):'var(--muted)','fill-opacity':o.fill?.85:.4},g);s._pts.push([cx,cy,`(${f2(x[i])}, ${f2(y[i])})`])}
-  if(o.resid){const f=o.resid;for(let i=0;i<n;i+=Math.max(1,Math.round(n/40)))seg(g,[sx(x[i]),sy(f.a+f.b*x[i])],[sx(x[i]),sy(y[i])],'var(--res)',1.2)}
-  (o.lines||[]).forEach(l=>seg(g,[sx(lo),sy(l.a+l.b*lo)],[sx(hi),sy(l.a+l.b*hi)],l.c,2,l.dash))}
-function density(s,cs,o){const H=o.H||300,[sx,sy,g,m]=frame(s,o.xr,[0,o.ymax],o.xl,'density',440,H,{noy:1,pl:24});
-  cs.forEach(c=>{const pts=c.xs.map((x,i)=>sx(x).toFixed(1)+','+sy(c.ys[i]).toFixed(1)),e=c.xs.length-1;
-    if(c.area)el('polygon',{points:`${sx(c.xs[0])},${sy(0)} ${pts.join(' ')} ${sx(c.xs[e])},${sy(0)}`,fill:c.c,'fill-opacity':.1},g);
-    el('polyline',{points:pts.join(' '),fill:'none',stroke:c.c,'stroke-width':2,'stroke-dasharray':c.dash||'none','stroke-linejoin':'round'},g);
-    c.xs.forEach((x,i)=>{if(i%3===0)s._pts.push([sx(x),sy(c.ys[i]),`${c.name}: ${f3(x)}`])})});
-  (o.v||[]).forEach(l=>{seg(g,[sx(l.x),sy(0)],[sx(l.x),m.pt],l.c,l.w||1.2,l.dash);if(l.t)txt(s,sx(l.x)+5,m.pt+12,l.t,'var(--fg)')})}
-// One horizontal stacked bar: 2px surface gap, 4px rounded data-end, square baseline
-function stack(s,sx,y,h,segs){const live=segs.filter(p=>p.v>1e-9);let v=0;
-  live.forEach((p,i)=>{const last=i===live.length-1,x0=sx(v)+(i?1:0),x1=sx(v+p.v)-(last?0:1),r=last&&x1-x0>5?4:0;v+=p.v;if(x1<=x0)return;
-    el('path',{d:`M${x0} ${y}H${x1-r}Q${x1} ${y} ${x1} ${y+r}V${y+h-r}Q${x1} ${y+h} ${x1-r} ${y+h}H${x0}Z`,fill:p.c,'data-tip':`${p.tip}: ${f2(p.show??p.v)}`},s);
-    if(p.lab&&p.lab.length*7.3+10<x1-x0)txt(s,x0+6,y+h/2+4,p.lab,'var(--panel)')})}
-function bars(s,rows,o){const[sx,,,m]=frame(s,[0,o.max],[0,1],o.xl,'',440,58+rows.length*50,{noy:1,pl:16,fx:o.fx,kx:5});
-  rows.forEach((r,i)=>{const y=m.pt+6+i*50;halo(txt(s,m.pl,y+11,r.label,'var(--fg)'));stack(s,sx,y+18,20,r.segs)})}
-function strip(s,rows,o){const vals=rows.map(r=>r.v),lo=Math.min(...vals),hi=Math.max(...vals),w=Math.max(.4,(hi-lo)*.25),Hd=58+rows.length*26;
-  const[sx,,g,m]=frame(s,[lo-w,hi+w],[0,1],'coefficient on X₁','',440,Hd,{noy:1,pl:124,kx:5});
-  rows.forEach((r,i)=>{const y=m.pt+14+i*26;seg(s,[m.pl,y],[440-m.pr_,y],'var(--grid)',1);txt(s,m.pl-8,y+4,r.label,'var(--fg)','','end');marker(g,sx(r.v),y,r.c);s._pts.push([sx(r.v),y,`${r.label}: ${f3(r.v)}`])})}
-function legend(id,items){const e=$(id);e.innerHTML='';items.forEach(([k,c,t])=>{const i=document.createElement('span'),sw=document.createElement('i');i.className='li';sw.className='sw '+k;sw.style.setProperty('--c',c);i.append(sw,t);e.append(i)})}
-const FIT=['line','var(--fit)','OLS fit'],TRUE=['dash','var(--fg)','True β₁'],OBS=['dot','var(--muted)','Observation'];
-const trueLine=f=>({a:f.my-st.b1*f.mx,b:st.b1,c:'var(--fg)',dash:'5 4'});
-const fitLine=f=>({a:f.a,b:f.b,c:'var(--fit)'});
+    el('polygon',{points:up.concat(dn).join(' '),fill:'var(--fit)','fill-opacity':.16},g)}
+  // Wedge between two lines, for a bias or a shift
+  const G=o.gap,on=(l,x)=>l.a+l.b*x;
+  if(G)el('polygon',{points:[[lo,G.L],[hi,G.L],[hi,G.F],[lo,G.F]].map(([x,l])=>sx(x).toFixed(1)+','+sy(on(l,x)).toFixed(1)).join(' '),fill:'var(--res)','fill-opacity':.16},g);
+  (o.fan||[]).forEach(b=>seg(g,[sx(lo),sy(b*lo)],[sx(hi),sy(b*hi)],'var(--fit)',1,null,.28));
+  layers.forEach(L=>{const n=L.x.length;for(let i=0;i<n;i++){const cx=sx(L.x[i]),cy=sy(L.y[i]);
+    el('circle',{cx,cy,r:L.r||o.r||2.6,fill:L.fill?L.fill(i):L.c||'var(--muted)','fill-opacity':L.op??.45},g);s._pts.push([cx,cy,`(${f2(L.x[i])}, ${f2(L.y[i])})`])}});
+  if(o.resid){const f=o.resid,x=layers[0].x,y=layers[0].y;for(let i=0;i<x.length;i+=Math.max(1,Math.round(x.length/40)))seg(g,[sx(x[i]),sy(f.a+f.b*x[i])],[sx(x[i]),sy(y[i])],'var(--res)',1.2)}
+  (o.lines||[]).forEach(l=>seg(g,[sx(l.lo??lo),sy(l.a+l.b*(l.lo??lo))],[sx(l.hi??hi),sy(l.a+l.b*(l.hi??hi))],l.c,l.w||2,l.dash));
+  (o.rings||[]).forEach(r=>el('circle',{cx:sx(r[0]),cy:sy(r[1]),r:7,fill:'none',stroke:r[2],'stroke-width':2.5},g));
+  (o.hot||[]).forEach(h=>marker(g,sx(h[0]),sy(h[1]),'var(--res)',5));
+  (o.lines||[]).forEach(l=>{if(l.lab)lineLabel(s,sx,sy,o.xr,o.yr,l,Wd,Wd-m.pr_)});
+  if(G&&G.x!=null){const a=sy(on(G.L,G.x)),b=sy(on(G.F,G.x));seg(g,[sx(G.x),a],[sx(G.x),b],'var(--res)',3);if(G.lab)halo(txt(s,sx(G.x)-8,(a+b)/2+4,G.lab,'var(--fg)','','end'))}
+  // Span bars in the right margin: mean ± 2 SD
+  (o.spans||[]).forEach((b,i)=>{const x=Wd-m.pr_+13+i*21,a=sy(b.m+2*b.sd),c=sy(b.m-2*b.sd);seg(s,[x,a],[x,c],b.c,3);seg(s,[x-4,a],[x+4,a],b.c,2);seg(s,[x-4,c],[x+4,c],b.c,2);txt(s,x,a-6,b.name,'var(--fg)','','middle');s._pts.push([x,(a+c)/2,`${b.name}: mean ± 2 SD, width ${f2(4*b.sd)}`])})}
+function counts(v,xr,b){const w=(xr[1]-xr[0])/b,c=new Array(b).fill(0);v.forEach(x=>{const i=Math.floor((x-xr[0])/w);if(i>=0&&i<b)c[i]++});return c}
+function hist(s,ser,o){const Wd=o.W||440,Hd=o.H||190,b=o.bins||32,[x0,x1]=o.xr,w=(x1-x0)/b,C=ser.map(q=>counts(q.v,o.xr,b)),ymax=o.ymax||Math.max(...C.flat())*1.15;
+  const[sx,sy,g,m]=frame(s,o.xr,[0,ymax],o.xl,'count',Wd,Hd,{ky:3,pl:o.pl??50,pr:o.pr});
+  ser.forEach((q,k)=>C[k].forEach((c,i)=>{if(!c)return;const a=x0+i*w;el('rect',{x:sx(a)+.4,y:sy(c),width:Math.max(.6,sx(a+w)-sx(a)-.8),height:sy(0)-sy(c),fill:q.c,'fill-opacity':q.op??.55},g);s._pts.push([sx(a+w/2),sy(c),`${q.name}: ${c} between ${f2(a)} and ${f2(a+w)}`])}));
+  (o.v||[]).forEach(l=>{seg(g,[sx(l.x),sy(0)],[sx(l.x),m.pt],l.c,l.dash==='none'?2.4:1.6,l.dash==='none'?null:l.dash||'5 4');
+    if(l.t){const flip=sx(l.x)+l.t.length*7.3+8>Wd-m.pr_;halo(txt(s,sx(l.x)+(flip?-5:5),m.pt+13+(l.row||0)*15,l.t,'var(--fg)','',flip?'end':'start'))}});
+  return[sx,sy,g,m]}
+function legend(items){const e=$('legend');e.innerHTML='';items.forEach(([k,c,t])=>{const i=document.createElement('span'),sw=document.createElement('i');i.className='li';sw.className='sw '+k;sw.style.setProperty('--c',c);i.append(sw,t);e.append(i)})}
+const OBS=['dot','var(--muted)','Observation'],FIT=['line','var(--fit)','OLS fit'],TRUE=['dash','var(--fg)','True β₁'],CI=['area','var(--fit)','95% CI'];
+const LS=[['area','var(--fit)','Long regression'],['area','var(--res)','Short regression'],TRUE];
+const trueLine=f=>({a:f.my-st.b1*f.mx,b:st.b1,c:'var(--fg)',dash:'5 4',lab:'true '+f2(st.b1)});
+const fitLine=(f,c,lab)=>({a:f.a,b:f.b,c:c||'var(--fit)',lab:lab||'slope '+f2(f.b)});
+// True and fitted line together: the steeper one is labelled above, the other below
+const both=(f,c,lab)=>{const up=f.b>st.b1;return[{...trueLine(f),pos:up?'lo':'hi'},{...fitLine(f,c,lab),pos:up?'hi':'lo'}]};
+const XR=[-4,4],X2R=[-3.5,3.5],YR=[-16,16],RY=[-8,8],shade=['color-mix(in srgb,var(--x2) 28%,var(--panel))','color-mix(in srgb,var(--x2) 60%,var(--panel))','var(--x2)'];
 
 /* ---------- figures ---------- */
-function quad(D,labels,hi){const p=pars(),xr=sym(3.2*p.sx),yr=sym(3.2*p.sy);
-  [[D.X1,D.y,'X₁','y'],[D.X1,D.tY,'X₁','ỹ'],[D.tX1,D.y,'X̃₁','y'],[D.tX1,D.tY,'X̃₁','ỹ']].forEach(([x,y,xl,yl],i)=>{const f=fit(x,y);
-    $('ql'+i).textContent=`${labels[i]}${yl} on ${xl} · β̂ = ${f3(f.b)}`;$('qc'+i).classList.toggle('hi',hi.includes(i));
-    scatter($('q'+i),x,y,{xr,yr,xl,yl,W:300,H:270,r:2.2,band:f,lines:[fitLine(f),trueLine(f)]})});
-  legend('legend',[OBS,FIT,['area','var(--fit)','95% CI'],TRUE])}
-function simDensity(s,S,o){const kL=kde(S.L.v),kS=kde(S.S.v),sd=Math.max(S.L.sd,S.S.sd),lo=Math.min(st.b1,S.S.m,S.L.m)-4*sd,hi=Math.max(st.b1,S.S.m,S.L.m)+4*sd;
-  density(s,[{...kL,c:'var(--fit)',area:1,name:'Long'},{...kS,c:'var(--res)',area:1,dash:'6 3',name:'Short'}],{xr:[lo,hi],ymax:Math.max(...kL.ys,...kS.ys)*1.12,xl:'β̂₁',H:o.H,
-    v:[{x:st.b1,c:'var(--fg)',dash:'5 4',t:'true β₁',w:1.6},{x:S.L.m,c:'var(--fit)',dash:'1 3'},{x:S.S.m,c:'var(--res)',dash:'1 3'}]})}
-const LS=[['line','var(--fit)','Long regression'],['dash','var(--res)','Short regression']];
-function figure(id,D,S){const p=pars(),m=$('main'),s2=$('sub'),xr=sym(3.2*p.sx),yr=sym(3.2*p.sy),x2r=[-3.5,3.5];
-  $('mainlab').textContent='';$('sublab').textContent='';legend('legend',[]);legend('sublegend',[]);
-  const short=fit(D.X1,D.y),long=ols([D.iota,D.X1,D.X2],D.y);
+let P=[];
+// Full-width panels: wider on desktop, so their text stays a normal size when stacked on a phone
+const wideW=()=>innerWidth<520?340:650;
+const cap=(i,t)=>{P[i].previousSibling.textContent=t};
+const outline=i=>P[i].parentNode.classList.add('hi');
+const sd=a=>Math.sqrt(varr(a));
+const resSD=f=>Math.sqrt(f.s2);
+const byX2=D=>{const q=[...D.X2].sort((a,b)=>a-b),c=[q[Math.floor(q.length/3)],q[Math.floor(2*q.length/3)]];return i=>shade[c.filter(v=>D.X2[i]>v).length]};
+function overlay(s,D,o){const v=o.y?D.y:D.X1,t=o.y?D.tY:D.tX1,f=fit(D.X2,v);
+  scatter(s,[{x:D.X2,y:v,c:'var(--muted)',op:.4},{x:D.X2,y:t,c:o.y?'var(--y)':'var(--x)',op:.7}],{xr:X2R,yr:o.yr,xl:'X₂',yl:o.yl,W:o.W,H:o.H,pr:50,
+    lines:[fitLine(f,null,'slope '+f2(f.b))],spans:[{m:mean(v),sd:sd(v),c:'var(--muted)',name:o.y?'y':'X₁'},{m:0,sd:sd(t),c:o.y?'var(--y)':'var(--x)',name:o.y?'ỹ':'X̃₁'}]})}
+const xhist=(s,D,o={})=>hist(s,[{v:D.X1,c:'var(--muted)',name:'X₁',op:.45},{v:D.tX1,c:'var(--x)',name:'X̃₁',op:.6}],{xr:XR,xl:'value of the variable',ymax:84,H:o.H||170,W:o.W});
+const fan=(S,k=40)=>S.L.v.slice(0,k);
+// Equal scale on both axes for the ỹ on X̃₁ clouds, so a narrow cloud looks narrow
+const EQ=[-5,5],EQ6=[-6,6],HXR=[.5,3.5],HB=48;
+// Histogram of estimated slopes on the shared axis, keeping the same height across slides where it fits
+function slopeHist(s,S,o){const xr=o.xr||HXR,bins=o.bins||HB,peak=Math.max(...counts(S.L.v,xr,bins));hist(s,[{v:S.L.v,c:'var(--fit)',name:'Long'}],{xr,bins,xl:'estimated slope β̂₁',ymax:Math.max(110,peak*1.15),H:o.H||170,W:o.W,v:o.v})}
+function lsHist(s,S,xr,o={}){return hist(s,[{v:S.S.v,c:'var(--res)',name:'Short'},{v:S.L.v,c:'var(--fit)',name:'Long'}],{xr,bins:o.bins||60,xl:'estimated slope β̂₁',ymax:o.ymax,H:o.H||190,W:o.W,v:[{x:st.b1,c:'var(--fg)',t:'true β₁'},...(o.v||[])]})}
+function pairStep(){const r=st.rho,D=mk(),fS=fit(D.X1,D.y),fL=fit(D.tX1,D.tY),S=simulate(),pad=Math.max(.8,4*Math.max(S.L.sd,S.S.sd)),lo=Math.min(st.b1,S.S.m)-pad,hi=Math.max(st.b1,S.S.m)+pad;
+  cap(0,`Short regression: y on X₁ · ρ = ${f2(r)}`);cap(1,'Long regression: ỹ on X̃₁');cap(2,'Histogram: estimated slope in each of 500 simulated samples');
+  scatter(P[0],[{x:D.X1,y:D.y}],{xr:XR,yr:YR,xl:'X₁',yl:'y',W:300,H:270,lines:both(fS,'var(--res)')});
+  scatter(P[1],[{x:D.tX1,y:D.tY}],{xr:XR,yr:YR,xl:'X̃₁',yl:'ỹ',W:300,H:270,lines:both(fL)});
+  lsHist(P[2],S,[lo,hi],{W:wideW(),H:190,bins:64});legend(LS)}
+const curveLabel=(s,x,y,t,anchor)=>halo(txt(s,x,y,t,'var(--fg)','',anchor||'start'));
+function figure(id){const D=mk(),short=fit(D.X1,D.y);
+  legend([]);
   switch(id){
-  case 'scatter':$('mainlab').textContent='Short regression · y on X₁ alone';
-    scatter(m,D.X1,D.y,{xr,yr,xl:'X₁',yl:'y',lines:[fitLine(short),trueLine(short)]});legend('legend',[OBS,FIT,TRUE]);break;
-  case 'ovb':{const shade=[22,40,58,78,100],q=[...D.X2].sort((a,b)=>a-b),cut=[.2,.4,.6,.8].map(f=>q[Math.floor(f*q.length)]);
-    $('mainlab').textContent='Short regression, dots shaded by X₂';$('sublab').textContent='Coefficient on X₁ · this sample';
-    scatter(m,D.X1,D.y,{xr,yr,xl:'X₁',yl:'y',r:3,fill:i=>`color-mix(in srgb,var(--x2) ${shade[cut.filter(c=>D.X2[i]>c).length]}%,var(--panel))`,lines:[fitLine(short),trueLine(short)]});
-    legend('legend',[['dot','color-mix(in srgb,var(--x2) 25%,var(--panel))','Low X₂'],['dot','var(--x2)','High X₂'],FIT,TRUE]);
-    strip(s2,[{label:'True β₁',v:st.b1,c:'var(--fg)'},{label:'Short slope',v:short.b,c:'var(--res)'}]);break}
-  case 'px1':case 'py':{const v=id==='py'?D.y:D.X1,t=id==='py'?D.tY:D.tX1,nm=id==='py'?['y','ỹ']:['X₁','X̃₁'],r=id==='py'?yr:xr,f=fit(D.X2,v);
-    $('mainlab').textContent=`${nm[0]} on X₂`;$('sublab').textContent=`What is left: ${nm[1]} against X₂`;
-    scatter(m,D.X2,v,{xr:x2r,yr:r,xl:'X₂',yl:nm[0],lines:[fitLine(f)],resid:f,H:260});
-    scatter(s2,D.X2,t,{xr:x2r,yr:r,xl:'X₂',yl:nm[1],H:260,fill:()=>id==='py'?'var(--y)':'var(--x)'});legend('legend',[OBS,FIT,['line','var(--res)','Residual']]);break}
-  case 'three':quad(D,['','','','★ '],[3]);$('sublab').textContent='The three routes against the short regression · this sample';
-    strip(s2,[{label:'Long',v:long.b[1],c:'var(--fit)'},{label:'ỹ on X̃₁',v:fit(D.tX1,D.tY).b,c:'var(--fit)'},{label:'y on X̃₁',v:fit(D.tX1,D.y).b,c:'var(--fit)'},{label:'True β₁',v:st.b1,c:'var(--fg)'},{label:'Short',v:short.b,c:'var(--res)'}]);break;
-  case 'one':quad(D,['','','','★ '],[1,2]);break;
-  case 'var':{const a=kde(D.X1),b=kde(D.tX1);$('mainlab').textContent='Distribution of X₁ and X̃₁ · same axis';$('sublab').textContent='Share of variance that survives';
-    density(m,[{...a,c:'var(--muted)',name:'X₁'},{...b,c:'var(--x)',area:1,name:'X̃₁'}],{xr,ymax:Math.max(...a.ys,...b.ys)*1.1,xl:'value',H:280});
-    legend('legend',[['line','var(--muted)','X₁'],['line','var(--x)','X̃₁']]);
-    const[sx,sy,g]=frame(s2,[-1,1],[0,1],'ρ','Var(X̃₁) / Var(X₁)',440,220,{ky:4,pl:60}),rs=Array.from({length:81},(_,i)=>-1+i/40),pts=rs.map(r=>sx(r).toFixed(1)+','+sy(1-r*r).toFixed(1));
-    el('polygon',{points:`${sx(-1)},${sy(0)} ${pts.join(' ')} ${sx(1)},${sy(0)}`,fill:'var(--x)','fill-opacity':.1},g);el('polyline',{points:pts.join(' '),fill:'none',stroke:'var(--x)','stroke-width':2},g);
-    marker(s2,sx(p.r),sy(p.q),'var(--x)');halo(txt(s2,sx(p.r)+(p.r>0?-12:12),sy(p.q)+(p.q>.8?24:-12),'1 − ρ² = '+f2(p.q),'var(--fg)','',p.r>0?'end':'start'));break}
-  case 'split':{const r2=p.r*p.r,mk=(lab,sh,own)=>({label:lab,segs:[{v:sh,c:'var(--x2)',tip:'Shared with X₂, δ²',lab:f2(sh)},{v:own,c:'var(--x)',tip:'Own, Var(ν)',lab:f2(own)}]});
-    $('mainlab').textContent='Var(X₁), split into shared and own variation';
-    bars(m,[mk(`Hold Var(X₁) = 1${st.hold==='x1'?' · in use':''}`,r2,1-r2),mk(`Hold Var(ν) = 1${st.hold==='nu'?' · in use':''}`,r2/(1-r2),1)],{max:nice(1/(1-r2)),xl:'variance'});
-    legend('legend',[['dot','var(--x2)','Shared with X₂ (δ²)'],['dot','var(--x)','Own (Var ν, which is what X̃₁ keeps)']]);break}
-  case 'beta':{const vx=p.sx*p.sx,sh=p.d*p.d/vx,ry=p.tot*p.tot/(p.sy*p.sy),pc=v=>Math.round(v*100)+'%';
-    $('mainlab').textContent='Share of each variable’s variance removed by partialling out X₂';
-    bars(m,[{label:`X₁ · Var = ${f2(vx)}`,segs:[{v:sh,c:'var(--x2)',tip:'Removed',show:p.d*p.d,lab:pc(sh)},{v:1-sh,c:'var(--x)',tip:'Left in X̃₁',show:p.s*p.s,lab:pc(1-sh)}]},
-      {label:`y · Var = ${f2(p.sy*p.sy)}`,segs:[{v:ry,c:'var(--x2)',tip:'Removed',show:p.tot*p.tot,lab:pc(ry)},{v:1-ry,c:'var(--y)',tip:'Left in ỹ',show:p.left,lab:pc(1-ry)}]}],{max:1,xl:'share of variance',fx:v=>v*100+'%'});
-    legend('legend',[['dot','var(--x2)','Removed by X₂'],['dot','var(--x)','Left in X̃₁'],['dot','var(--y)','Left in ỹ']]);break}
-  case 'noise':{const sd0=SIG/Math.sqrt(st.n),w=11*sd0,xr2=[st.b1-w,st.b1+w],k=kde(S.L.v),b=normal(st.b1,sd0,xr2[0],xr2[1]);
-    $('mainlab').textContent=`Sampling distribution of the long β̂₁ across ${NSIM} simulations`;
-    density(m,[{...b,c:'var(--muted)',dash:'6 3',name:'ρ = 0'},{...k,c:'var(--fit)',area:1,name:'Long'}],{xr:xr2,ymax:1.3/(sd0*Math.sqrt(2*Math.PI)),xl:'β̂₁',H:300,v:[{x:st.b1,c:'var(--fg)',dash:'5 4',t:'true β₁',w:1.6}]});
-    legend('legend',[['line','var(--fit)','Long regression, current ρ'],['dash','var(--muted)','Baseline, ρ = 0']]);break}
-  case 'trade':{$('mainlab').textContent=`Sampling distributions across ${NSIM} simulations`;$('sublab').textContent='Which regression is more precise · both axes in absolute value';
-    simDensity(m,S,{H:280});legend('legend',LS);
-    const[sx,sy,g]=frame(s2,[0,1],[0,5],'|ρ|','|β₂| / σ',440,230,{ky:5}),rs=Array.from({length:60},(_,i)=>i/59*.905),pts=rs.map(r=>[sx(r),sy(r/(1-r*r))]).map(q=>q.map(v=>v.toFixed(1)).join(','));
-    el('polygon',{points:`${sx(0)},${sy(0)} ${pts.join(' ')} ${sx(1)},${sy(5)} ${sx(1)},${sy(0)}`,fill:'var(--res)','fill-opacity':.1},g);
-    el('polygon',{points:`${sx(0)},${sy(5)} ${sx(0)},${sy(0)} ${pts.join(' ')}`,fill:'var(--fit)','fill-opacity':.1},g);
-    el('polyline',{points:pts.join(' '),fill:'none',stroke:'var(--fg)','stroke-width':2},g);
-    txt(s2,sx(.03),sy(4.5),'long more precise','var(--fg)');txt(s2,sx(.97),sy(.45),'short more precise','var(--fg)','','end');
-    marker(s2,sx(Math.abs(p.r)),sy(Math.abs(st.b2)),'var(--fg)');break}
-  case 'ext':{const f=fit(D.tX1,D.tY);$('mainlab').textContent='★ ỹ on X̃₁';$('sublab').textContent=`Sampling distributions across ${NSIM} simulations`;
-    scatter(m,D.tX1,D.tY,{xr,yr:sym(3.2*Math.sqrt(p.left)),xl:'X̃₁',yl:'ỹ',lines:[fitLine(f),trueLine(f)],H:290});legend('legend',[OBS,FIT,TRUE]);
-    simDensity(s2,S,{H:210});legend('sublegend',LS);break}
+  case 'map':[0,.5,.9].forEach((r,i)=>{const d=mk({rho:r}),f=fit(d.X1,d.y);cap(i,`ρ = ${r}: slope ${f2(f.b)}`);
+      scatter(P[i],[{x:d.X1,y:d.y,fill:byX2(d),op:.9}],{xr:XR,yr:YR,xl:'X₁',yl:'y',W:230,H:250,r:2.4,lines:[{...trueLine(f),lab:null},{...fitLine(f),lab:null}]})});
+    legend([['dot',shade[0],'Low X₂'],['dot',shade[2],'High X₂'],FIT,TRUE]);break;
+  case 'one':case 'add':cap(0,id==='one'?'y on X₁':'Short regression: y on X₁ alone');
+    scatter(P[0],[{x:D.X1,y:D.y}],{xr:XR,yr:YR,xl:'X₁',yl:'y',lines:both(short)});legend([OBS,FIT,TRUE]);break;
+  case 'corr':{const L=trueLine(short);cap(0,'Short regression: y on X₁ alone');
+    scatter(P[0],[{x:D.X1,y:D.y}],{xr:XR,yr:YR,xl:'X₁',yl:'y',lines:both(short),gap:{L,F:short,x:2.6,lab:'bias '+f2(short.b-st.b1)}});legend([OBS,FIT,TRUE,['area','var(--res)','Omitted variable bias']]);break}
+  case 'need':[[0,0],[st.b2,0],[0,st.rho],[st.b2,st.rho]].forEach(([b2,r],i)=>{const d=mk({b2,rho:r}),f=fit(d.X1,d.y),on=Math.abs(b2*r)>1e-9;
+      cap(i,`β₂ = ${f2(b2)}, ρ = ${f2(r)}: bias ${f2(b2*r)}`);if(i===3&&on)outline(3);
+      scatter(P[i],[{x:d.X1,y:d.y}],{xr:XR,yr:YR,xl:'X₁',yl:'y',W:300,H:230,r:2.2,gap:on?{L:trueLine(f),F:f}:null,lines:[{...trueLine(f),lab:null},{...fitLine(f),lab:null}]})});
+    legend([OBS,FIT,TRUE,['area','var(--res)','Bias']]);break;
+  case 'groups':{const G=[0,1,2].map(k=>{const I=D.g.map((v,i)=>v===k?i:-1).filter(i=>i>=0),x=I.map(i=>D.X1[i]);return{f:fit(x,I.map(i=>D.y[i])),lo:Math.min(...x),hi:Math.max(...x)}});
+    cap(0,'y on X₁, dots grouped by X₂');
+    scatter(P[0],[{x:D.X1,y:D.y,fill:i=>shade[D.g[i]],op:.9,r:3}],{xr:XR,yr:YR,xl:'X₁',yl:'y',
+      lines:[...both(short,null,'pooled '+f2(short.b)),...G.map((g,k)=>({a:g.f.a,b:g.f.b,c:shade[k],lo:g.lo,hi:g.hi,w:3}))]});
+    legend([['dot',shade[0],'Low X₂'],['dot',shade[1],'Middle X₂'],['dot',shade[2],'High X₂'],['line','var(--fit)','Pooled fit'],TRUE]);break}
+  case 'shift':{const M=[0,1,2].map(k=>{const I=D.g.map((v,i)=>v===k?i:-1).filter(i=>i>=0);return[mean(I.map(i=>D.X1[i])),mean(I.map(i=>D.y[i]))]});
+    const x=D.X1.map((v,i)=>v-st.t*M[D.g[i]][0]),y=D.y.map((v,i)=>v-st.t*M[D.g[i]][1]),f=fit(x,y);cap(0,'y on X₁, minus a growing share of each group’s mean');
+    scatter(P[0],[{x,y,fill:i=>shade[D.g[i]],op:.9,r:3}],{xr:XR,yr:YR,xl:'X₁',yl:'y',lines:both(f,null,'pooled '+f2(f.b)),rings:M.map((c,k)=>[c[0]*(1-st.t),c[1]*(1-st.t),'var(--fg)'])});
+    legend([['dot',shade[0],'Low X₂'],['dot',shade[1],'Middle X₂'],['dot',shade[2],'High X₂'],['line','var(--fit)','Pooled fit'],TRUE]);break}
+  case 'px1':case 'py':{const py=id==='py',v=py?D.y:D.X1,t=py?D.tY:D.tX1,nm=py?['y','ỹ']:['X₁','X̃₁'],r=py?YR:XR,f=fit(D.X2,v),c=py?'var(--y)':'var(--x)';
+    cap(0,`${nm[0]} on X₂: the line to subtract`);cap(1,`What is left: ${nm[1]} on X₂`);
+    scatter(P[0],[{x:D.X2,y:v}],{xr:X2R,yr:r,xl:'X₂',yl:nm[0],H:250,lines:[fitLine(f)],resid:f});
+    scatter(P[1],[{x:D.X2,y:t,c,op:.75}],{xr:X2R,yr:r,xl:'X₂',yl:nm[1],H:250,lines:[fitLine({a:0,b:0})]});
+    legend([OBS,FIT,['line','var(--res)','Residual']]);break}
+  case 'rr':{const f=fit(D.tX1,D.tY);cap(0,'Short regression: y on X₁');cap(1,'ỹ on X̃₁');outline(1);
+    scatter(P[0],[{x:D.X1,y:D.y}],{xr:XR,yr:YR,xl:'X₁',yl:'y',W:300,H:290,lines:both(short,'var(--res)')});
+    scatter(P[1],[{x:D.tX1,y:D.tY}],{xr:XR,yr:YR,xl:'X̃₁',yl:'ỹ',W:300,H:290,lines:both(f)});legend([OBS,['line','var(--fit)','Residual-on-residual fit'],['line','var(--res)','Short fit'],TRUE]);break}
+  case 'onlyx':{const a=fit(D.tX1,D.y),b=fit(D.tX1,D.tY);cap(0,'y on X̃₁');cap(1,'ỹ on X̃₁');
+    scatter(P[0],[{x:D.tX1,y:D.y}],{xr:XR,yr:YR,xl:'X̃₁',yl:'y',W:300,H:290,band:a,lines:[fitLine(a)]});
+    scatter(P[1],[{x:D.tX1,y:D.tY}],{xr:XR,yr:YR,xl:'X̃₁',yl:'ỹ',W:300,H:290,band:b,lines:[fitLine(b)]});legend([OBS,FIT,CI]);break}
+  case 'onlyy':{const a=fit(D.X1,D.tY),b=fit(D.tX1,D.tY);cap(0,'ỹ on X₁');cap(1,'ỹ on X̃₁');
+    scatter(P[0],[{x:D.X1,y:D.tY}],{xr:XR,yr:RY,xl:'X₁',yl:'ỹ',W:300,H:290,lines:both(a)});
+    scatter(P[1],[{x:D.tX1,y:D.tY}],{xr:XR,yr:RY,xl:'X̃₁',yl:'ỹ',W:300,H:290,lines:both(b)});legend([OBS,FIT,TRUE]);break}
+  case 'thm':[[D.X1,D.y,'X₁','y',''],[D.X1,D.tY,'X₁','ỹ',''],[D.tX1,D.y,'X̃₁','y','Route 3: '],[D.tX1,D.tY,'X̃₁','ỹ','Route 2: ']].forEach(([x,y,xl,yl,pre],i)=>{const f=fit(x,y);
+      cap(i,`${pre}${yl} on ${xl} · residual SD ${f2(resSD(f))}`);scatter(P[i],[{x,y}],{xr:XR,yr:YR,xl,yl,W:300,H:265,r:2.2,band:f,lines:both(f).map(l=>({...l,lab:l.dash?null:l.lab}))})});
+    outline(3);legend([OBS,FIT,CI,TRUE]);break;
+  case 'low':case 'high':cap(0,`X₁ and X̃₁ against X₂ · ρ = ${f2(st.rho)}`);cap(1,'Histogram: number of observations at each value');
+    overlay(P[0],D,{yr:XR,yl:'X₁ and X̃₁',H:290});xhist(P[1],D);legend([['dot','var(--muted)','X₁'],['dot','var(--x)','X̃₁'],['line','var(--fit)','What X₂ predicts']]);break;
+  case 'both':{[st.ra,st.rb].forEach((r,i)=>{const d=mk({rho:r});cap(i,`ρ = ${f2(r)}: X₁ and X̃₁ against X₂`);cap(i+2,`ρ = ${f2(r)}: histogram`);
+      overlay(P[i],d,{yr:XR,yl:'X₁, X̃₁',W:320,H:240});xhist(P[i+2],d,{W:320,H:150})});
+    cap(4,'Share of X₁’s variance left in X̃₁, for every ρ');
+    const Wd=wideW(),Hd=170,[sx,sy,g]=frame(P[4],[0,1],[0,1],'ρ','share left',Wd,Hd,{ky:2,fy:pct}),rs=Array.from({length:61},(_,i)=>i/60),pts=rs.map(r=>sx(r).toFixed(1)+','+sy(1-r*r).toFixed(1));
+    el('polygon',{points:`${sx(0)},${sy(0)} ${pts.join(' ')} ${sx(1)},${sy(0)}`,fill:'var(--x)','fill-opacity':.1},g);el('polyline',{points:pts.join(' '),fill:'none',stroke:'var(--x)','stroke-width':2},g);
+    [st.ra,st.rb].forEach(v=>{const r=Math.abs(v),q=1-r*r,left=r<.25;marker(P[4],sx(r),sy(q),'var(--x)',5);curveLabel(P[4],sx(r)+(left?8:-8),sy(q)+18,`ρ = ${f2(v)}: ${pct(q)} left`,left?'start':'end')});
+    legend([['dot','var(--muted)','X₁'],['dot','var(--x)','X̃₁'],['line','var(--fit)','What X₂ predicts']]);break}
+  case 'beta':cap(0,'X₁ and X̃₁ against X₂');cap(1,'y and ỹ against X₂');
+    overlay(P[0],D,{yr:XR,yl:'X₁, X̃₁',W:320,H:310});overlay(P[1],D,{y:1,yr:YR,yl:'y, ỹ',W:320,H:310});
+    legend([['dot','var(--muted)','Before partialling out'],['dot','var(--x)','X̃₁'],['dot','var(--y)','ỹ'],['line','var(--fit)','What X₂ predicts']]);break;
+  case 'fanlo':case 'fanhi':{const S=simulate(),f=fit(D.tX1,D.tY);cap(0,`ρ = ${f2(st.rho)}: ỹ on X̃₁, with the fits from 40 of the 500 samples`);cap(1,'Histogram: the estimated slope from each of 500 samples');
+    scatter(P[0],[{x:D.tX1,y:D.tY,op:.6}],{xr:EQ,yr:EQ,xl:'X̃₁',yl:'ỹ',H:426,band:id==='fanhi'?f:null,fan:fan(S),lines:[{a:0,b:st.b1,c:'var(--fg)',dash:'5 4'}]});
+    slopeHist(P[1],S,{v:[{x:st.b1,c:'var(--fg)',t:'true β₁'},{x:f.b,c:'var(--res)',dash:'none',t:'this sample',row:1}]});legend([OBS,['line','var(--fit)','Fit from one sample'],...(id==='fanhi'?[CI]:[]),TRUE]);break}
+  case 'push':[st.ra,st.rb].forEach((r,i)=>{const d=mk({rho:r}),S=simulate({rho:r}),k=topIdx(d),base=fit(d.tX1,d.tY),y=d.tY.map((v,j)=>j===k?v+st.push:v),f=fit(d.tX1,y);
+      cap(i,`ρ = ${f2(r)}: slope moved by ${f2(Math.abs(f.b-base.b))}`);cap(i+2,`ρ = ${f2(r)}: this slope among 500 samples`);
+      scatter(P[i],[{x:d.tX1,y}],{xr:EQ6,yr:EQ6,xl:'X̃₁',yl:'ỹ',W:320,H:306,r:3,hot:[[d.tX1[k],y[k]]],gap:{L:base,F:f},lines:[{a:base.a,b:base.b,c:'var(--muted)',dash:'4 3'},{a:f.a,b:f.b,c:'var(--fit)'}]});
+      slopeHist(P[i+2],S,{W:320,H:150,xr:[-1,5],bins:72,v:[{x:base.b,c:'var(--muted)',dash:'4 3'},{x:f.b,c:'var(--res)',dash:'none',t:'with outlier'}]})});
+    legend([['dot','var(--res)','Outlier'],['line','var(--fit)','Fit with outlier'],['dash','var(--muted)','Fit without it'],['area','var(--res)','How far it moved']]);break;
+  case 'lz':case 'lh':pairStep();break;
+  case 'lboth':{const A=simulate({rho:st.ra}),B=simulate({rho:st.rb}),all=[A.L.m,A.S.m,B.L.m,B.S.m,st.b1],xr=[Math.min(...all)-.9,Math.max(...all)+.9],ym=Math.max(...[A.L,A.S,B.L,B.S].flatMap(q=>counts(q.v,xr,60)))*1.15;
+    [st.ra,st.rb].forEach((r,i)=>{const d=mk({rho:r}),f=fit(d.tX1,d.tY);cap(i,`ρ = ${f2(r)}: ỹ on X̃₁`);cap(i+2,`ρ = ${f2(r)}: slopes in 500 samples`);
+      scatter(P[i],[{x:d.tX1,y:d.tY}],{xr:XR,yr:YR,xl:'X̃₁',yl:'ỹ',W:320,H:230,lines:[{...trueLine(f),lab:null},{...fitLine(f),lab:null}]});
+      lsHist(P[i+2],i?B:A,xr,{W:320,H:180,ymax:ym})});legend(LS);break}
+  case 'bv':{const S=simulate(),pad=4*Math.max(S.L.sd,S.S.sd),lo=Math.min(st.b1,S.S.m)-pad,hi=Math.max(st.b1,S.S.m)+pad;cap(0,'Histogram: estimated slope in each of 500 samples');
+    const[sx,,g,m]=lsHist(P[0],S,[lo,hi],{bins:48,H:300}),y=m.pt+34,b=S.S.m-st.b1;
+    if(Math.abs(sx(S.S.m)-sx(st.b1))>16){seg(g,[sx(st.b1),y],[sx(S.S.m),y],'var(--res)',3);curveLabel(P[0],(sx(st.b1)+sx(S.S.m))/2,y-7,'bias '+f2(b),'middle')}
+    legend(LS);break}
+  case 'mse':{const xm=b2max(),Y=3*theory().mL,Xs=Array.from({length:90},(_,i)=>xm*i/89),th=b=>theory({b2:b}),q=theory().q,cross=Math.sqrt(st.rho*st.rho/(q*(q+st.n*st.rho*st.rho)));cap(0,'Mean squared error of each regression, for every |β₂|');
+    const Wd=440,Hd=340,[sx,sy,g,m]=frame(P[0],[0,xm],[0,Y],'|β₂|, the effect of the omitted variable','MSE',Wd,Hd,{pl:66,kx:5,ky:3}),path=f=>Xs.map(b=>sx(b).toFixed(1)+','+sy(f(b)).toFixed(1));
+    el('polygon',{points:path(b=>th(b).vS).concat(path(b=>th(b).mS).reverse()).join(' '),fill:'var(--res)','fill-opacity':.16},g);
+    el('polyline',{points:path(b=>th(b).vS).join(' '),fill:'none',stroke:'var(--res)','stroke-width':1.6,'stroke-dasharray':'5 4'},g);
+    el('polyline',{points:path(b=>th(b).mS).join(' '),fill:'none',stroke:'var(--res)','stroke-width':2.4},g);
+    seg(g,[sx(0),sy(th(0).mL)],[sx(xm),sy(th(0).mL)],'var(--fit)',2.4);
+    if(cross>1e-3&&cross<xm){seg(g,[sx(cross),m.pt],[sx(cross),Hd-m.pb],'var(--fg)',1.2,'2 3');curveLabel(P[0],sx(cross)-6,m.pt+16,'← short wins','end');curveLabel(P[0],sx(cross)+6,m.pt+16,'long wins →')}
+    const b=Math.abs(st.b2),now=th(b);marker(g,sx(b),sy(now.mL),'var(--fit)',5);marker(g,sx(b),sy(Math.min(now.mS,Y)),'var(--res)',5);
+    curveLabel(P[0],sx(xm)-6,sy(th(0).mL)-8,'long','end');curveLabel(P[0],sx(xm*.9)-8,sy(th(xm*.9).mS)+4,'short','end');curveLabel(P[0],sx(xm)-6,sy(th(xm).vS)-8,'short: variance only','end');
+    legend([['line','var(--fit)','Long: MSE'],['line','var(--res)','Short: MSE'],['dash','var(--res)','Short: variance'],['area','var(--res)','Short: bias²']]);break}
   }
 }
+const topIdx=D=>D.tX1.reduce((k,v,i,a)=>Math.abs(v)>Math.abs(a[k])?i:k,0);
+// Widest β₂ worth drawing: where the short MSE reaches three times the long MSE
+const b2max=()=>{const q=1-st.rho*st.rho;return clamp(Math.sqrt((3/q-1)/(q+st.n*st.rho*st.rho)),.1,1.5)};
 
 /* ---------- readout ---------- */
-function readout(id,D,S){const L=[],p=pars(),short=fit(D.X1,D.y),l=ols([D.iota,D.X1,D.X2],D.y),n=st.n,vX=varr(D.X1),vT=varr(D.tX1),rs=fit(D.tX1,D.tY),ry=fit(D.tX1,D.y),ax=fit(D.X1,D.tY);
-  const c=(a,w=18)=>col(a,w);
+function readout(id){const L=[],D=mk(),c=(a,w=18)=>col(a,w),short=fit(D.X1,D.y);
+  const tb=(rows)=>rows.map(r=>c(r[0])+col(r[1],9)+(r[2]??''));
+  const scoreRows=()=>{const t=theory(),S=simulate();return[c('')+col('long',9)+'short',...tb([['bias²','0',f3(t.bias**2)],['variance',f3(t.vL),f3(t.vS)],['MSE',f3(t.mL),f3(t.mS)],['MSE, simulated',f3(S.L.mse),f3(S.S.mse)]])]};
   switch(id){
-  case 'scatter':L.push(`true β₁ = ${f3(st.b1)}`,`short slope = ${f3(short.b)}`);break;
-  case 'ovb':{const g=fit(D.X1,D.X2).b;L.push(c('short slope',13)+`= ${f3(short.b)}`,c('β̂₁ + β̂₂·γ̂',13)+`= ${f3(l.b[1])} + ${f3(l.b[2])} × ${f3(g)} = ${f3(l.b[1]+l.b[2]*g)}`,c('population',13)+`= ${f2(st.b1)} + ${f2(st.b2)} × ${f2(p.r/p.sx)} = ${f2(st.b1+st.b2*p.r/p.sx)}`,`γ̂ = Cov(X₁, X₂) / Var(X₁), slope of X₂ on X₁`);break}
-  case 'px1':L.push(`slope of X₁ on X₂ = ${f3(fit(D.X2,D.X1).b)}`,`slope of X̃₁ on X₂ = ${f3(fit(D.X2,D.tX1).b)}`);break;
-  case 'py':L.push(`slope of y on X₂ = ${f3(fit(D.X2,D.y).b)}`,`slope of ỹ on X₂ = ${f3(fit(D.X2,D.tY).b)}`);break;
-  case 'three':L.push(c('true β₁')+f3(st.b1),c('1. long')+f3(l.b[1]),c('2. ỹ on X̃₁')+f3(rs.b),c('3. y on X̃₁')+f3(ry.b),c('short, y on X₁')+f3(short.b)+'  biased');break;
-  case 'one':L.push(c('')+'slope    SE',c('long')+f3(l.b[1])+'   '+f3(l.se[1]),c('ỹ on X̃₁')+f3(rs.b)+'   '+f3(rs.se),c('y on X̃₁')+f3(ry.b)+'   '+f3(ry.se),c('ỹ on X₁')+f3(ax.b)+'   '+f3(ax.se),'',`Var(X̃₁)/Var(X₁) = ${f3(vT/vX)}`,`β̂₁ × ${f3(vT/vX)} = ${f3(l.b[1]*vT/vX)}, slope of ỹ on X₁`);break;
-  case 'var':{const r=fit(D.X2,D.X1).b*Math.sqrt(varr(D.X2)/vX);L.push(c('Var(X₁)',9)+`= ${f3(vX)}`,c('Var(X̃₁)',9)+`= ${f3(vT)}`,c('ratio',9)+`= ${f3(vT/vX)} = 1 − r²,  sample r = ${f3(r)}`);break}
-  case 'split':{const q=p.q,r2=p.r*p.r;L.push(c('')+'δ²      Var(ν)  Var(X₁)',c('hold Var(X₁)')+[r2,q,1].map(v=>col(f2(v),8)).join(''),c('hold Var(ν)')+[r2/q,1,1/q].map(v=>col(f2(v),8)).join(''),`share removed in both: ρ² = ${f2(r2)}`);break}
-  case 'beta':L.push(`δ = ${f2(p.d)}   total effect β₂ + β₁δ = ${f2(p.tot)}`,`Var(y)  = ${f2(p.sy*p.sy)}  (sample ${f2(varr(D.y))})`,`Var(ỹ)  = ${f2(p.left)}  (sample ${f2(varr(D.tY))})`,`removed = ${f2(p.tot*p.tot)}`,`Var(X̃₁)/Var(X₁) = ${f2(p.q)}, whatever the βs`);break;
-  case 'noise':L.push(c('SD across simulations',23)+`= ${f3(S.L.sd)}`,c('σ / √(n Var(X̃₁))',23)+`= ${f3(SIG/Math.sqrt(n*p.s*p.s))}`,c('baseline at ρ = 0',23)+`= ${f3(SIG/Math.sqrt(n))}`,c('VIF = 1 / (1 − ρ²)',23)+`= ${f2(1/p.q)}`,`Var(X₁) = ${f2(p.sx*p.sx)}   Var(X̃₁) = ${f2(p.s*p.s)}`);break;
-  case 'trade':{const a=Math.abs(st.b2)/SIG,b=Math.abs(p.r)/p.q;L.push(c('')+'long    short',c('mean')+col(f3(S.L.m),8)+f3(S.S.m),c('SD, simulated')+col(f3(S.L.sd),8)+f3(S.S.sd),c('SD, formula')+col(f3(SIG/Math.sqrt(n*p.s*p.s)),8)+f3(Math.sqrt((SIG*SIG+st.b2*st.b2*p.q)/(n*p.sx*p.sx))),c('RMSE')+col(f3(S.L.rmse),8)+f3(S.S.rmse),'',`|β₂|/σ = ${f2(a)}   |ρ|/(1−ρ²) = ${f2(b)}`,a>b?'long regression is more precise':'short regression is more precise');break}
-  case 'ext':L.push(c('')+'long    short',c('slope')+col(f3(l.b[1]),8)+f3(short.b),c('SE, this sample')+col(f3(l.se[1]),8)+f3(short.se),c('SD, simulated')+col(f3(S.L.sd),8)+f3(S.S.sd),'',`Var(X̃₁) = ${f3(vT)}   VIF = ${f2(1/p.q)}`);break;
+  case 'one':case 'add':L.push(c('true β₁')+f3(st.b1),c('fitted slope')+f3(short.b));break;
+  case 'corr':L.push(c('true β₁')+f3(st.b1),c('short slope')+f3(short.b),c('bias, this sample')+f3(short.b-st.b1),c('bias, expected')+f3(st.b2*st.rho)+'  = β₂ρ');break;
+  case 'need':L.push(c('β₂ off, ρ off')+'0.00',c('β₂ on,  ρ off')+'0.00',c('β₂ off, ρ on')+'0.00',c('β₂ on,  ρ on')+f2(st.b2*st.rho));break;
+  case 'groups':{const G=['low X₂','middle X₂','high X₂'].map((nm,k)=>{const I=D.g.map((v,i)=>v===k?i:-1).filter(i=>i>=0);return c(nm)+f3(fit(I.map(i=>D.X1[i]),I.map(i=>D.y[i])).b)});L.push(...G,c('pooled')+f3(short.b),c('true β₁')+f3(st.b1));break}
+  case 'shift':{const M=[0,1,2].map(k=>{const I=D.g.map((v,i)=>v===k?i:-1).filter(i=>i>=0);return[mean(I.map(i=>D.X1[i])),mean(I.map(i=>D.y[i]))]}),f=fit(D.X1.map((v,i)=>v-st.t*M[D.g[i]][0]),D.y.map((v,i)=>v-st.t*M[D.g[i]][1]));L.push(c('shift')+pct(st.t),c('pooled slope')+f3(f.b),c('true β₁')+f3(st.b1));break}
+  case 'px1':L.push(c('slope of X₁ on X₂')+f3(fit(D.X2,D.X1).b),c('slope of X̃₁ on X₂')+f3(fit(D.X2,D.tX1).b));break;
+  case 'py':L.push(c('slope of y on X₂')+f3(fit(D.X2,D.y).b),c('slope of ỹ on X₂')+f3(fit(D.X2,D.tY).b));break;
+  case 'rr':L.push(c('short slope',20)+f3(short.b)+'  swings',c('ỹ on X̃₁',20)+f3(fit(D.tX1,D.tY).b)+'  stays put',c('long regression',20)+f3(long(D).b[1])+'  identical',c('true β₁',20)+f3(st.b1));break;
+  case 'onlyx':{const a=fit(D.tX1,D.y),b=fit(D.tX1,D.tY),l=long(D);L.push(c('')+col('slope',9)+'SE',...tb([['y on X̃₁',f3(a.b),f3(a.se)],['ỹ on X̃₁',f3(b.b),f3(b.se)],['long regression',f3(l.b[1]),f3(l.se[1])]]));break}
+  case 'onlyy':{const b=fit(D.tX1,D.tY).b,r=varr(D.tX1)/varr(D.X1);L.push(c('ỹ on X₁',22)+f3(fit(D.X1,D.tY).b),c('β̂₁ × '+f3(r),22)+f3(b*r),c('where Var(X̃₁)/Var(X₁)',22)+' = '+f3(r));break}
+  case 'thm':{const R=[['y on X₁',short],['ỹ on X₁',fit(D.X1,D.tY)],['y on X̃₁',fit(D.tX1,D.y)],['ỹ on X̃₁',fit(D.tX1,D.tY)]];L.push(c('')+col('slope',9)+'residual SD',...tb(R.map(([n,f])=>[n,f3(f.b),f2(resSD(f))])),c('long regression')+f3(long(D).b[1]),c('true β₁')+f3(st.b1));break}
+  case 'low':case 'high':L.push(c('Var(X₁)')+f2(varr(D.X1)),c('Var(X̃₁)')+f2(varr(D.tX1)),c('share left')+pct(varr(D.tX1)/varr(D.X1)));break;
+  case 'both':{const a=mk({rho:st.ra}),b=mk({rho:st.rb});L.push(c('')+col('ρ = '+f2(st.ra),11)+'ρ = '+f2(st.rb),...[['Var(X₁)',f2(varr(a.X1)),f2(varr(b.X1))],['Var(X̃₁)',f2(varr(a.tX1)),f2(varr(b.tX1))],['share left',pct(varr(a.tX1)/varr(a.X1)),pct(varr(b.tX1)/varr(b.X1))]].map(r=>c(r[0])+col(r[1],11)+r[2]));break}
+  case 'beta':{const tot=st.b2+st.b1*st.rho;L.push(c('slope β₂ + β₁ρ',22)+f2(tot),c('Var(y) → Var(ỹ)',22)+f2(varr(D.y))+' → '+f2(varr(D.tY)),c('Var(X₁) → Var(X̃₁)',22)+f2(varr(D.X1))+' → '+f2(varr(D.tX1)));break}
+  case 'fanlo':case 'fanhi':{const S=simulate();L.push(c('Var(X̃₁)',21)+f2(varr(D.tX1)),c('this sample’s slope',21)+f3(fit(D.tX1,D.tY).b),c('mean of 500 slopes',21)+f3(S.L.m),c('SD of 500 slopes',21)+f3(S.L.sd));break}
+  case 'push':{const a=mk({rho:st.ra}),b=mk({rho:st.rb}),mv=d=>{const k=topIdx(d),y=d.tY.map((v,j)=>j===k?v+st.push:v);return fit(d.tX1,y).b-fit(d.tX1,d.tY).b},ma=mv(a),mb=mv(b),A=simulate({rho:st.ra}),B=simulate({rho:st.rb}),w=11;
+    L.push(c('')+col('ρ = '+f2(st.ra),w)+'ρ = '+f2(st.rb),...[['slope moved by',f3(ma),f3(mb)],['SD across samples',f3(A.L.sd),f3(B.L.sd)],['VIF, 1/(1 − ρ²)',f2(1/(1-st.ra**2)),f2(1/(1-st.rb**2))]].map(r=>c(r[0])+col(r[1],w)+r[2]));if(Math.abs(ma)>1e-3)L.push('',`moved ${(mb/ma).toFixed(1)} times as far`);break}
+  case 'lz':case 'lh':{const S=simulate();L.push(c('')+col('long',9)+'short',...tb([['mean of slope',f3(S.L.m),f3(S.S.m)],['SD of slope',f3(S.L.sd),f3(S.S.sd)]]));break}
+  case 'lboth':{const A=simulate({rho:st.ra}),B=simulate({rho:st.rb});L.push(c('',16)+col('long',8)+'short',...[[`ρ = ${f2(st.ra)}`,A],[`ρ = ${f2(st.rb)}`,B]].flatMap(([nm,S])=>[c(nm+' mean',16)+col(f2(S.L.m),8)+f2(S.S.m),c(nm+' SD',16)+col(f2(S.L.sd),8)+f2(S.S.sd)]));break}
+  case 'bv':{const t=theory();L.push(...scoreRows(),'',t.mL<t.mS?'smaller MSE: long regression':'smaller MSE: short regression');break}
+  case 'mse':{const t=theory(),q=t.q,cross=Math.sqrt(st.rho*st.rho/(q*(q+st.n*st.rho*st.rho)));L.push(t.mL<t.mS?'smaller MSE here: long regression':'smaller MSE here: short regression',`curves cross at |β₂| = ${f2(cross)}`,'',...scoreRows());break}
   }
   $('readout').textContent=L.join('\n');
 }
 
 /* ---------- render ---------- */
+const SL=['b1','b2','rho','ra','rb','n','t','push'];
+function go(k){st={...DEF,...steps[k].set,step:k};const step=steps[k],f=$('fig');
+  f.innerHTML='';f.style.setProperty('--cols',step.cols||1);$('layout').classList.toggle('wide',!!step.wide);
+  P=step.fig.map((c,i)=>{const d=document.createElement('div'),l=document.createElement('div'),s=document.createElementNS(NS,'svg');d.className='cell';l.className='plabel';s.id='p'+i;s.setAttribute('role','img');
+    if(c===2)d.style.gridColumn='1/-1';d.append(l,s);f.append(d);return s});
+  const score=['bv','mse'].includes(step.id);
+  $('b2').min=score?0:-4;$('b2').max=step.id==='bv'?2:step.id==='mse'?1.5:4;
+  $('rho').min=score?0:-.95;
+    render();
+}
 function render(){
   const k=st.step,step=steps[k],show=step.ctl;
   [...$('nav').querySelectorAll('button')].forEach((b,i)=>{b.classList.toggle('on',i===k);b.classList.toggle('done',i<k);b.setAttribute('aria-current',i===k?'step':'false')});
@@ -366,46 +459,35 @@ function render(){
   $('stitle').textContent=step.t;
   $('stext').innerHTML=typeof katex!=='undefined'?tex(step.text):step.text.replace(/\\\(|\\\)/g,'');
   $('hint').textContent=step.hint;
-  ['b1','b2','rho','n','seed','hold'].forEach(c=>{$('c-'+c).hidden=!show.includes(c)});
-  ['mask','r0','r1'].forEach(c=>{$(c).hidden=!show.includes(c)});
-  $('main').toggleAttribute('hidden',!!step.quad);$('quad').hidden=!step.quad;$('subp').hidden=!step.sub;
-  $('sub').style.touchAction=['var','trade'].includes(step.id)?'none':'';$('sub').style.cursor=$('sub').style.touchAction?'grab':'';
+  SL.forEach(c=>{$('c-'+c).hidden=!show.includes(c)});
+  $('mask').hidden=!show.includes('mask');$('new').hidden=!show.includes('new');
+  $('reset').hidden=!show.length;$('c-row').hidden=!show.length;
   $('prev').disabled=k===0;$('next').disabled=k===steps.length-1;
   draw();
 }
-function draw(){const step=steps[st.step],D=sample(),S=step.sim?simulate():null;
-  figure(step.id,D,S);readout(step.id,D,S);
-  ['b1','b2','rho','n','seed'].forEach(c=>{$(c).value=st[c];$(c+'o').textContent=['n','seed'].includes(c)?st[c]:f2(st[c])});
-  [...$('hold').querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.m===st.hold))}
+function draw(){const id=steps[st.step].id;
+  if(id==='mse'){const m=b2max();$('b2').max=m;st.b2=Math.min(st.b2,m)}
+  figure(id);readout(id);
+  SL.forEach(c=>{$(c).value=st[c];$(c+'o').textContent=c==='n'?st.n:c==='t'?pct(st.t):f2(st[c])})}
 
 /* nav */
 let lastPart='';steps.forEach((s,i)=>{if(s.part!==lastPart){const p=document.createElement('span');p.className='part';p.textContent=parts[s.part];$('nav').appendChild(p);lastPart=s.part}
-  const b=document.createElement('button');b.textContent=i+1;b.title=s.t;b.setAttribute('aria-label',`Step ${i+1}: ${s.t}`);b.onclick=()=>{st.step=i;render()};$('nav').appendChild(b)});
-$('prev').onclick=()=>{if(st.step>0){st.step--;render()}};
-$('next').onclick=()=>{if(st.step<steps.length-1){st.step++;render()}};
+  const b=document.createElement('button');b.textContent=i+1;b.title=s.t;b.setAttribute('aria-label',`Step ${i+1}: ${s.t}`);b.onclick=()=>go(i);$('nav').appendChild(b)});
+$('prev').onclick=()=>{if(st.step>0)go(st.step-1)};
+$('next').onclick=()=>{if(st.step<steps.length-1)go(st.step+1)};
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')$('next').click();if(e.key==='ArrowLeft')$('prev').click()});
-['b1','b2','rho','n','seed'].forEach(c=>$(c).addEventListener('input',()=>{st[c]=+$(c).value;draw()}));
-[...$('hold').querySelectorAll('button')].forEach(b=>b.onclick=()=>{st.hold=b.dataset.m;draw()});
-$('mask').onclick=()=>{st.b2=clamp(-st.b1*pars().d,-5,5);draw()};
-$('r0').onclick=()=>{st.rho=0;st.hold='x1';draw()};
-$('r1').onclick=()=>{st.rho=0.95;st.hold='x1';draw()};
-$('reset').onclick=()=>{Object.assign(st,DEF);render()};
+SL.forEach(c=>$(c).addEventListener('input',()=>{st[c]=+$(c).value;draw()}));
+$('mask').onclick=()=>{st.b2=clamp(-st.b1*st.rho,-4,4);draw()};
+$('new').onclick=()=>{st.seed=st.seed%100+1;draw()};
+$('reset').onclick=()=>go(st.step);
 
-/* dragging and tooltips */
-let drag=false;
+/* tooltips */
 const svgPt=(svg,e)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
-function pick(e){const s=$('sub'),q=svgPt(s,e),v=s._inv(q.x,q.y);
-  if(steps[st.step].id==='var')st.rho=+clamp(v[0],-.95,.95).toFixed(2);
-  else{st.rho=+(clamp(v[0],0,.95)*(st.rho<0?-1:1)).toFixed(2);st.b2=+(clamp(v[1],0,5)*(st.b2<0?-1:1)).toFixed(2)}
-  draw()}
-$('sub').addEventListener('pointerdown',e=>{if(['var','trade'].includes(steps[st.step].id)){drag=true;pick(e);e.preventDefault()}});
-window.addEventListener('pointerup',()=>{drag=false});
-window.addEventListener('pointermove',e=>{if(drag){pick(e);return}
-  const t=e.target,tip=$('tip');let s=t.getAttribute&&t.getAttribute('data-tip');
-  if(!s){const svg=t.closest&&t.closest('svg');if(svg&&svg._pts&&svg._pts.length){const q=svgPt(svg,e);let best=400;svg._pts.forEach(p=>{const d=(p[0]-q.x)**2+(p[1]-q.y)**2;if(d<best){best=d;s=p[2]}})}}
+window.addEventListener('pointermove',e=>{const t=e.target,tip=$('tip');let s=null;
+  const svg=t.closest&&t.closest('svg');if(svg&&svg._pts&&svg._pts.length){const q=svgPt(svg,e);let best=400;svg._pts.forEach(p=>{const d=(p[0]-q.x)**2+(p[1]-q.y)**2;if(d<best){best=d;s=p[2]}})}
   tip.hidden=!s;if(s){tip.textContent=s;tip.style.left=Math.min(e.clientX+12,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=Math.max(4,e.clientY-30)+'px'}});
 
-render();
+go(0);
 })();
 </script>
 </body>
