@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tests and Confidence Intervals</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+/* Layout: figures left, narrative + controls + readout right; stacks on phone */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --fg:#1c2330; --muted:#5f6b7a; --grid:#e8ebf0; --rule:#d5dae2;
+  --y:#2457c5; --x:#c2620a; --x2:#16825a; --fit:#6b3fc0; --res:#cf2e2a;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --x2:#3fcf94; --fit:#b996ff; --res:#ff6b66; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --x2:#3fcf94; --fit:#b996ff; --res:#ff6b66; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
+a{color:inherit;text-underline-offset:2px}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:2px 0 0;color:var(--muted)}
+.steps{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.steps .part{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 3px 0 8px}
+.steps .part:first-child{margin-left:0}
+.steps button{width:27px;height:27px;padding:0;border-radius:50%;font-family:var(--mono);font-size:.74rem}
+.steps button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.steps button.done{border-color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px;min-width:0}
+.panel svg{display:block;width:100%;height:auto;user-select:none}
+.figs{display:grid;gap:8px}
+.cell{min-width:0}
+.hint{margin:6px 2px 0;font-size:.8rem;color:var(--muted);min-height:1.2em}
+.side{display:grid;gap:12px;min-width:0}
+.stepnum{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h2{margin:0;font-size:1.2rem;text-wrap:balance}
+.text{max-width:62ch}
+.text p{margin:0 0 .6em}
+.text ul{margin:0 0 .6em;padding-left:1.3em}
+.text li{margin-bottom:.25em}
+.text strong{font-weight:600}
+.text .key{margin:.7em 0;padding:7px 11px;border-left:3px solid var(--fit);border-radius:0 6px 6px 0;background:color-mix(in srgb,var(--fit) 9%,transparent)}
+.text .eq{margin:.6em 0;text-align:center;font-size:1.06em}
+.text .recipe{margin:0 0 .8em;padding:8px 10px 8px 2.1em;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+.text .recipe li{color:var(--muted)}
+.text .recipe li.on{color:var(--fg);font-weight:600}
+.text .recipe li.on::marker{color:var(--fit)}
+.text .ok,.text .no{position:relative;padding-left:24px}
+.text .ok::before,.text .no::before{position:absolute;left:2px;top:0;font-weight:700}
+.text .ok::before{content:'✓';color:var(--x2)}
+.text .no::before{content:'✗';color:var(--res)}
+.controls.btnfirst #c-row{order:-1}
+.text .tt{border-collapse:collapse;margin:.3em 0 .8em;width:100%;font-size:.93em}
+.text .tt th,.text .tt td{border:1px solid var(--rule);padding:5px 8px;text-align:left;vertical-align:top}
+.text .tt th{font-weight:600}
+.text .tt .a{background:color-mix(in srgb,var(--res) 12%,transparent)}
+.text .tt .b{background:color-mix(in srgb,var(--x) 14%,transparent)}
+.text .tt .p{background:color-mix(in srgb,var(--fit) 12%,transparent)}
+math{font-size:1.06em}
+.controls{display:grid;gap:10px}
+.controls:not(:has(:not([hidden]))){display:none}
+.ctl{display:grid;grid-template-columns:4.5em 1fr 3.6em;gap:10px;align-items:center}
+.ctl label{font-family:var(--mono);font-size:.9rem}
+.ctl output{font-family:var(--mono);font-size:.85rem;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--fit)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-size:.85rem;padding:6px 12px;border-radius:6px;border:1px solid var(--rule);background:var(--panel);color:var(--fg);cursor:pointer}
+button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible{outline:2px solid var(--fit);outline-offset:2px}
+.readout{font-family:var(--mono);font-size:.82rem;line-height:1.7;font-variant-numeric:tabular-nums;border-left:2px solid var(--rule);padding-left:10px;overflow-x:auto;white-space:pre}
+.readout:empty{display:none}
+.plabel{font-size:.8rem;color:var(--fg);margin:0 0 2px 2px;font-weight:600}
+.plabel:empty{display:none}
+.topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px}
+.pager{display:flex;gap:8px;margin-left:auto}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin:6px 2px 0;font-size:.8rem;color:var(--muted)}
+.legend:empty{display:none}
+.li{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:18px;height:0;border-top:2px solid var(--c)}
+.sw.dash{border-top-style:dashed}
+.sw.dot{width:9px;height:9px;border:0;border-radius:50%;background:var(--c)}
+.sw.area{height:10px;border:0;background:var(--c);opacity:.3}
+.tip{position:fixed;z-index:9;pointer-events:none;background:var(--fg);color:var(--bg);font-family:var(--mono);font-size:.75rem;padding:2px 6px;border-radius:4px;white-space:nowrap}
+footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+svg text{font-family:var(--mono);font-size:12px}
+svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:italic}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Hypothesis Tests and Confidence Intervals</h1>
+    <p class="sub">The recipe for a test, and what a confidence interval does and does not say. Follows a blog post by Julia Rohrer. Use the buttons or the ← → keys.</p>
+  </header>
+  <div class="topbar">
+    <nav class="steps" id="nav" aria-label="Steps"></nav>
+    <div class="pager"><button id="prev">← Previous</button><button id="next" class="primary">Next →</button></div>
+  </div>
+  <div class="grid">
+    <section class="panel">
+      <div class="figs" id="fig"></div>
+      <div class="legend" id="legend"></div>
+      <p class="hint" id="hint"></p>
+    </section>
+    <section class="side">
+      <div>
+        <div class="stepnum" id="stepnum"></div>
+        <h2 id="stitle"></h2>
+      </div>
+      <div class="text" id="stext"></div>
+      <div class="controls">
+        <div class="ctl" id="c-theta"><label for="theta">true θ</label><input type="range" id="theta" min="-1" max="2" step="0.05"><output id="thetao"></output></div>
+        <div class="ctl" id="c-th0"><label for="th0">θ₀</label><input type="range" id="th0" min="-2" max="3" step="0.01"><output id="th0o"></output></div>
+        <div class="ctl" id="c-alpha"><label for="alpha">α</label><input type="range" id="alpha" min="0.01" max="0.2" step="0.01"><output id="alphao"></output></div>
+        <div class="ctl" id="c-n"><label for="n">n</label><input type="range" id="n" min="5" max="400" step="5"><output id="no"></output></div>
+        <div class="ctl" id="c-m"><label for="m">prior μ</label><input type="range" id="m" min="-2" max="3" step="0.05"><output id="mo"></output></div>
+        <div class="ctl" id="c-tau"><label for="tau">prior SD</label><input type="range" id="tau" min="0.1" max="5" step="0.05"><output id="tauo"></output></div>
+        <div class="row" id="c-row">
+          <button id="new">New sample</button>
+          <button id="ten">Draw 10 more</button>
+          <button id="more">Draw 100 more</button>
+          <button id="all">Test every θ₀</button>
+          <button id="reveal">Reveal θ</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+      <div class="readout" id="readout"></div>
+    </section>
+  </div>
+  <footer><span>Rasmus Duret · LSE</span><a href="https://rassssd.github.io">rassssd.github.io</a></footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const NS='http://www.w3.org/2000/svg';
+// Each measurement is θ plus noise with known SD σ; the estimate is their mean
+const SIG=2,NMAX=400,NSIM=5000;
+const DEF={theta:0.8,n:25,th0:0,alpha:0.05,seed:15,m:0,tau:0.5,reveal:false};
+const st={step:0,...DEF};
+const T=String.raw;
+
+const RECIPE=[
+ T`State the null, \(H_0:\theta=\theta_0\), and the alternative, \(H_1:\theta\neq\theta_0\).`,
+ T`Pick a test statistic whose distribution is known if \(H_0\) is true: \(z=(\hat\theta-\theta_0)/\text{se}\sim N(0,1)\).`,
+ T`Choose the significance level \(\alpha\) before looking at the data. It fixes the critical value \(c\).`,
+ T`Compute \(z\) from your sample.`,
+ T`Reject \(H_0\) if \(|z|>c\), equivalently if \(p<\alpha\). Otherwise, do not reject it.`];
+const recipe=on=>`<ol class="recipe">${RECIPE.map((t,i)=>`<li class="${on.includes(i)?'on':''}">${t}</li>`).join('')}</ol>`;
+
+const steps=[
+ {id:'sample',part:'A',t:'One sample, one estimate',fig:[1],ctl:['n','new'],hint:'Draw a new sample: the measurements and their mean move.',
+  text:T`<p>We want to learn a number \(\theta\), say the average effect of a programme. We observe \(n\) noisy measurements, each equal to \(\theta\) plus noise with standard deviation \(\sigma=2\), and estimate \(\theta\) by their mean, \(\hat\theta=\bar x\).</p><p class="key">The data give us the estimate. <strong>\(\theta\) itself stays unknown.</strong></p>`},
+ {id:'where',part:'A',t:'Where is θ?',fig:[1],ctl:['new','ten','more','reveal'],newLabel:'Draw another sample',tenLabel:'Draw 10 samples',moreLabel:'Draw 100 samples',hint:'Each new sample leaves its estimate behind as a faded dot.',
+  text:T`<p>In a real study, this is all you get: one estimate, with \(\theta\) somewhere nearby. You do not know where.</p><p class="key">Draw a few more samples. <strong>The estimates scatter, and \(\theta\) stays put.</strong> One estimate cannot tell you how far off it is, but the scatter tells you how far off estimates typically are.</p><p>Reveal \(\theta\) to see how far off each estimate was.</p>`},
+ {id:'sampling',part:'A',t:'Estimates vary from sample to sample',fig:[1],ctl:['n','new'],hint:'Each bar counts how many of 1,000 simulated samples gave an estimate in that range.',
+  text:T`<p>In a simulation we know \(\theta\), so we can show it. Repeat the study many times and \(\hat\theta\) traces out its <strong>sampling distribution</strong>. Here it is normal, centred on \(\theta\), with standard deviation</p><p class="eq">\(\text{se}=\sigma/\sqrt n\)</p><p class="key">The <strong>standard error</strong> is how far a typical estimate lands from the truth. More data, smaller se.</p><p>Every test and interval below is built from this one fact.</p>`},
+ {id:'null',part:'B',t:'Step 1: a null hypothesis',fig:[1],ctl:['th0'],hint:'Move θ₀: the curve shifts, your estimate stays put.',
+  text:T`${recipe([0])}<p>Pick a value to test, \(\theta_0\). If \(H_0\) were true, estimates would follow the grey curve: centred on \(\theta_0\), with the same se.</p><p class="key">A test asks one question: <strong>would an estimate like ours be surprising if \(\theta=\theta_0\)?</strong></p>`},
+ {id:'stat',part:'B',t:'Step 2: a test statistic',fig:[1,1],ctl:['th0'],hint:'The two panels are the same picture with a relabelled axis.',
+  text:T`${recipe([1])}<p>Measure the distance from \(\theta_0\) in standard errors. If \(H_0\) is true, \(z\) follows a standard normal whatever \(\theta_0\), \(n\) or \(\sigma\) are, so one reference curve serves for every test.</p><p class="key">Only the axis changes: <strong>\(z\) counts standard errors between your estimate and \(\theta_0\)</strong>.</p><p>Here \(\sigma\) is known. If it is estimated, \(z\) becomes a \(t\) statistic and the reference curve a \(t\) distribution.</p>`},
+ {id:'alpha',part:'B',t:'Step 3: fix α before you look',fig:[1],ctl:['alpha'],hint:'Your estimate is hidden on purpose: α is chosen first.',
+  text:T`${recipe([2])}<p>The red tails hold the most extreme \(\alpha\) share of the curve. Landing there is what we will call <strong>surprising</strong>. With \(\alpha=0.05\) the critical value is \(c=1.96\).</p><p class="key">If \(H_0\) is true, \(z\) lands in the tails with probability \(\alpha\). <strong>\(\alpha\) is the rate of false rejections you accept up front.</strong></p>`},
+ {id:'decide',part:'B',t:'Steps 4 and 5: compute and decide',fig:[1],ctl:['new','ten','more','th0','alpha'],btnFirst:true,newLabel:'Draw a sample',tenLabel:'Draw 10 samples',moreLabel:'Draw 100 samples',hint:'Draw a sample and see where its z lands. Earlier samples stay behind as dots: red ones rejected H₀.',
+  text:T`${recipe([3,4])}<p>\(\theta_0\) and \(\alpha\) were fixed before the data came in. Now the data arrive: draw a sample, compute its \(z\), and see where it lands.</p><p>The <strong>p-value</strong> is the purple area: the probability, if \(H_0\) were true, of a \(z\) at least as far from 0 as the one observed. \(p<\alpha\) exactly when \(z\) lies in the red tails.</p><p class="key">"Do not reject" is <strong>not</strong> "\(H_0\) is true". The data are compatible with \(\theta_0\), and they may be compatible with many other values too.</p><p>Nor is \(p\) the probability that \(H_0\) is true: it is computed by assuming that \(H_0\) is true.</p>`},
+ {id:'sides',part:'B',t:'One-sided or two-sided?',fig:[1,1],ctl:['th0','alpha','new'],hint:'Move θ₀ until z sits between 1.645 and 1.96: one test rejects, the other does not.',
+  text:T`<p>So far the alternative was \(H_1:\theta\neq\theta_0\). A surprise in either direction counts, so \(\alpha\) is split between two tails.</p><p>If, <strong>before seeing the data</strong>, only one direction matters, say \(H_1:\theta>\theta_0\), the whole \(\alpha\) goes in one tail. With \(\alpha=0.05\) the critical value drops from 1.96 to 1.645, and when \(z>0\) the p-value halves.</p><p class="key">The direction must be fixed in advance. <strong>Choosing the tail after seeing the sign of \(z\) doubles the false rejection rate</strong>, from 5% to 10%.</p><p>A one-sided test never rejects when \(z\) lands on the other side, however far out.</p>`},
+ {id:'tradeoff',part:'B',t:'α, β and power: the trade-off',fig:[1,1],ctl:['alpha','theta','n'],hint:'Lower α: the red tails shrink, the orange β area grows, and the dot slides up the curve.',
+  text:T`<p>Every test ends in one of four ways. Two of them are mistakes, and each has a name and a probability.</p><table class="tt"><tr><th></th><th>Reject \(H_0\)</th><th>Do not reject</th></tr><tr><th>\(H_0\) true</th><td class="a">Type I error<br>prob. \(\alpha\)</td><td>Correct<br>prob. \(1-\alpha\)</td></tr><tr><th>\(H_0\) false</th><td class="p">Correct<br>prob. \(1-\beta\), the <strong>power</strong></td><td class="b">Type II error<br>prob. \(\beta\)</td></tr></table><p>\(\alpha\) is the <strong>significance level</strong>, and a result with \(p<\alpha\) is called <strong>statistically significant</strong>. Significant means "rejected at \(\alpha\)", not large or important. \(\beta\) depends on the true \(\theta\) and on \(n\), as well as on \(\alpha\).</p><p class="key">At a fixed \(n\), <strong>\(\alpha\) and \(\beta\) pull against each other</strong>. A stricter \(\alpha\) moves the critical lines out: fewer false rejections, more missed effects. Only more data, or a larger effect, lowers both.</p>`},
+ {id:'errors',part:'B',t:'The power curve',fig:[1],ctl:['theta','n','alpha'],hint:'Move the true θ. At θ = θ₀ the curve sits exactly at α.',
+  text:T`<p>\(\beta\) depends on where the true \(\theta\) is. The curve gives the probability of rejecting \(H_0:\theta=\theta_0\) for every possible true \(\theta\).</p><p>At \(\theta=\theta_0\) it equals \(\alpha\), the type I error rate. Anywhere else it is the power, \(1-\beta\).</p><p class="key">Power grows with the distance from \(\theta_0\) and with \(n\). <strong>A true \(\theta\) close to \(\theta_0\) is hard to tell apart from it</strong>: there the power is barely above \(\alpha\).</p>`},
+ {id:'powern',part:'B',t:'Power and sample size',fig:[1,1],ctl:['n','theta','alpha'],hint:'Move n: both curves narrow, they overlap less, and the purple area grows.',
+  text:T`<p>The top panel shows where estimates fall if \(H_0\) is true (grey), and where they actually fall (purple). Power is the purple area inside the red rejection region.</p><p>What matters is the distance between the curves in standard errors:</p><p class="eq">\((\theta-\theta_0)/\text{se}=(\theta-\theta_0)\sqrt n/\sigma\)</p><p class="key">More data narrows both curves, so <strong>power rises with \(n\)</strong>. Halving the effect takes about four times the sample for the same power.</p><p>Planning a study runs this backwards: pick the smallest effect worth detecting and the power you want, often 80%, then solve for \(n\).</p>`},
+ {id:'invert',part:'C',t:'A CI is every value you cannot reject',fig:[1,1],ctl:['th0','alpha','all'],hint:'Move θ₀ to test values one at a time, or test them all.',
+  text:T`<p>Keep the sample fixed and run the test for many values of \(\theta_0\). Each value you try is marked on the lower strip: purple if the test does not reject it, red if it does.</p><p class="key">The survivors form an interval. <strong>The confidence interval contains all parameter values that we cannot reject</strong>: the values that are compatible with the data.</p><p class="eq">\(\hat\theta\pm c\cdot\text{se}\)</p><p>With \(\alpha=0.05\) this is the 95% interval.</p>`},
+ {id:'one',part:'C',t:'One interval: θ is in or it isn’t',fig:[1],ctl:['reveal','new'],hint:'Press Reveal θ. Nothing about the interval changes; only your knowledge does.',
+  text:T`<p>In practice you have one sample and one interval. Once the data are in, nothing is random any more: \(\theta\) is a fixed number, and so are the endpoints.</p><p class="ok"><strong>"Across repeated samples, 95% of intervals built this way contain \(\theta\)."</strong> A statement about the procedure.</p><p class="no"><strong>"This interval would contain \(\theta\) in 95% of repeated samples."</strong> A fixed interval does not move between samples, so it contains \(\theta\) in all of them or in none. It is the intervals that change.</p><p class="no"><strong>"There is a 95% probability that \(\theta\) is in this interval."</strong> For a fixed interval and a fixed \(\theta\), that probability is 1 or 0. We just do not know which.</p>`},
+ {id:'repeat',part:'C',t:'Draw, reveal, repeat',fig:[1],ctl:['alpha','n','new','ten','more','reveal'],newLabel:'Draw a study',hint:'Draw one study at a time and reveal θ, or draw 100 at once. Newest is on top.',
+  text:T`<p>Now play the same game many times. Each study brings a new sample and a new interval, while \(\theta\) stays where it is. Draw a study, guess, then reveal.</p><p class="key">Each interval on its own either contains \(\theta\) or misses it. <strong>Across many studies, 95% of them contain it.</strong> That share is what the 95% describes: the procedure, not any one interval.</p><p>Change \(\alpha\) and the share changes with it: a \(1-\alpha\) interval covers \(\theta\) in a \(1-\alpha\) share of studies.</p>`},
+ {id:'recap',part:'C',t:'Recap: compatible with the data',fig:[1],ctl:['th0','alpha','new'],hint:'Move θ₀: inside the shaded band p > α, outside it p < α.',
+  text:T`<p>The curve gives the p-value for every \(\theta_0\), using your one sample. Where it sits above \(\alpha\), the test does not reject.</p><p class="key">"The confidence interval contains <strong>all parameter values that we cannot reject</strong>, that are compatible with the data."</p><ul><li>A test at level \(\alpha\) rejects \(\theta_0\) exactly when \(\theta_0\) lies outside the \(1-\alpha\) interval.</li><li>The confidence level describes the procedure, not this interval.</li><li>A p-value assumes \(H_0\); it is not the probability that \(H_0\) is true.</li><li>Not rejecting is not accepting.</li></ul>`},
+ {id:'bayes',part:'D',t:'Extra: where the probability statement is right',fig:[1,1],ctl:['m','tau'],hint:'Push prior SD to the right: the two intervals converge.',
+  text:T`<p class="key"><strong>Optional extra.</strong> Everything before this step is frequentist. This one shows the Bayesian reading of an interval.</p><p>"There is a 95% probability that \(\theta\) is in this interval" was wrong on the one-interval step. It is, however, how a Bayesian reads an interval. Treat \(\theta\) as uncertain, start from a <strong>prior</strong> belief, and combine it with the data into a <strong>posterior</strong>. A 95% <strong>credible interval</strong> then does contain \(\theta\) with probability 0.95, given that prior.</p><p class="key">With a vague prior <strong>the two intervals coincide in number while answering different questions</strong>. That is why the misreading so often gives the right numbers.</p><p>With a tight prior they part ways: the posterior is pulled towards the prior mean.</p>`}
+];
+const parts={A:'The estimate',B:'The test',C:'Confidence intervals',D:'Extra'};
+
+function tex(s){return s.replace(/\\\((.+?)\\\)([.,:;]?)/g,(m,t,p)=>{let h=t;try{h=katex.renderToString(t,{output:'mathml',throwOnError:false})}catch(e){}return p?`<span style="white-space:nowrap">${h}${p}</span>`:h})}
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const varr=a=>{const m=mean(a);return a.reduce((s,v)=>s+(v-m)*(v-m),0)/a.length};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const f2=v=>(Math.abs(v)<0.005?0:v).toFixed(2);
+const f3=v=>(Math.abs(v)<0.0005?0:v).toFixed(3);
+const pct=v=>Math.round(v*100)+'%';
+const col=(s,w)=>s+' '.repeat(Math.max(0,w-s.replace(/[̂̃̄]/g,'').length));
+const halo=t=>{t.style.cssText+='paint-order:stroke;stroke:var(--panel);stroke-width:4px';return t};
+function el(tag,at,p){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);if(p)p.appendChild(e);return e}
+function txt(p,x,y,s,c,cls,anchor){const t=el('text',{x,y,'text-anchor':anchor||'start',class:cls||''},p);t.textContent=s;t.style.fill=c||'var(--muted)';return t}
+function seg(p,a,b,c,w,dash,op){el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:c,'stroke-width':w||1.5,'stroke-dasharray':dash||'none',opacity:op??1},p)}
+function marker(p,x,y,c,r){el('circle',{cx:x,cy:y,r:r||6,fill:c,stroke:'var(--panel)','stroke-width':2},p)}
+function ticks(lo,hi,k){const raw=(hi-lo)/k,s_=Math.pow(10,Math.floor(Math.log10(raw)));const m=[1,2,2.5,5,10].find(m=>m*s_>=raw)*s_;const out=[];for(let v=Math.ceil(lo/m-1e-9)*m;v<=hi+1e-9;v+=m)out.push(+v.toFixed(6));return out}
+
+/* ---------- statistics ---------- */
+const npdf=(x,m,s)=>Math.exp(-.5*((x-m)/s)**2)/(s*Math.sqrt(2*Math.PI));
+// Standard normal CDF, Abramowitz and Stegun 26.2.17 (error below 1e-7)
+function Phi(z){const t=1/(1+.2316419*Math.abs(z)),d=.3989423*Math.exp(-z*z/2),p=d*t*(.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-p:p}
+const pval=z=>2*(1-Phi(Math.abs(z)));
+const crit=a=>{let lo=0,hi=10;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(pval(m)>a)lo=m;else hi=m}return(lo+hi)/2};
+const power=(theta,th0,se,c)=>{const d=(theta-th0)/se;return 1-Phi(c-d)+Phi(-c-d)};
+// One-sided critical value: all of α in the upper tail
+const crit1=a=>{let lo=-10,hi=10;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(1-Phi(m)>a)lo=m;else hi=m}return(lo+hi)/2};
+// Smallest n with at least 80% power against the true θ, or null when θ = θ₀
+const n80=D=>{if(Math.abs(st.theta-st.th0)<1e-9)return null;for(let k=2;k<=20000;k++)if(power(st.theta,st.th0,SIG/Math.sqrt(k),D.c)>=.8)return k;return null};
+
+/* ---------- data ---------- */
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const boxMuller=r=>Math.sqrt(-2*Math.log(r()+1e-12))*Math.cos(2*Math.PI*r());
+let Zseed=null,Z=null,SZ=null;
+function draws(seed){if(seed!==Zseed){const r=mulberry32(seed*1337+42);Z=[Array.from({length:NMAX},()=>boxMuller(r)),Array.from({length:NMAX},()=>r())];Zseed=seed}return Z}
+// One study: the sample, its estimate, se, and the test of θ₀
+function mk(){const[z,j]=draws(st.seed),n=st.n,x=z.slice(0,n).map(v=>st.theta+SIG*v),xb=mean(x),se=SIG/Math.sqrt(n),c=crit(st.alpha),zs=(xb-st.th0)/se;
+  return{x,j:j.slice(0,n),xb,se,c,z:zs,p:pval(zs),lo:xb-c*se,hi:xb+c*se}}
+// The estimate from another seed's sample, without disturbing the cached draws
+function xbar(seed){const r=mulberry32(seed*1337+42);let s=0;for(let i=0;i<st.n;i++)s+=boxMuller(r);return st.theta+SIG*s/st.n}
+// Many studies: the mean of n normal draws is exactly N(θ, se²), so draw it directly
+function sims(){if(!SZ){const r=mulberry32(7919);SZ=Float64Array.from({length:NSIM},()=>boxMuller(r))}return SZ}
+
+/* ---------- chart pieces ---------- */
+function frame(s,xr,yr,xl,yl,Wd,Hd,o={}){s.innerHTML='';s.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);s._pts=[];
+  const pl=o.noy?16:o.pl??50,pr_=14,pt=10,pb=40,fx=o.fx||(v=>v),fy=o.fy||(v=>v);
+  const sx=v=>pl+(v-xr[0])/(xr[1]-xr[0])*(Wd-pl-pr_),sy=v=>Hd-pb-(v-yr[0])/(yr[1]-yr[0])*(Hd-pt-pb);
+  ticks(xr[0],xr[1],o.kx||6).forEach(t=>{seg(s,[sx(t),pt],[sx(t),Hd-pb],'var(--grid)',1);txt(s,sx(t),Hd-pb+15,fx(t),null,'','middle')});
+  if(!o.noy){ticks(yr[0],yr[1],o.ky||4).forEach(t=>{seg(s,[pl,sy(t)],[Wd-pr_,sy(t)],'var(--grid)',1);txt(s,pl-6,sy(t)+4,fy(t),null,'','end')});seg(s,[pl,pt],[pl,Hd-pb],'var(--fg)',1.2)}
+  seg(s,[pl,Hd-pb],[Wd-pr_,Hd-pb],'var(--fg)',1.2);
+  txt(s,(pl+Wd-pr_)/2,Hd-5,xl,'var(--fg)','lab','middle');
+  if(yl){const m=(pt+Hd-pb)/2,t=txt(s,13,m,yl,'var(--fg)','lab','middle');t.setAttribute('transform',`rotate(-90 13 ${m})`)}
+  const cid='clip-'+s.id,cp=el('clipPath',{id:cid},el('defs',{},s));el('rect',{x:pl,y:pt,width:Wd-pl-pr_,height:Hd-pt-pb},cp);
+  return[sx,sy,el('g',{'clip-path':`url(#${cid})`},s),{pl,pr_,pt,pb,Wd,Hd}]}
+// Density curve, with optional shaded stretches [a, b]
+function bell(g,sx,sy,f,xr,o={}){const N=240,at=(a,b)=>Array.from({length:N+1},(_,i)=>a+(b-a)*i/N);
+  (o.fill||[]).forEach(([a,b,c,op])=>{a=Math.max(a,xr[0]);b=Math.min(b,xr[1]);if(b<=a)return;const xs=at(a,b);
+    el('polygon',{points:`${sx(a)},${sy(0)} ${xs.map(x=>sx(x).toFixed(1)+','+sy(f(x)).toFixed(1)).join(' ')} ${sx(b)},${sy(0)}`,fill:c,'fill-opacity':op??.3},g)});
+  el('polyline',{points:at(xr[0],xr[1]).map(x=>sx(x).toFixed(1)+','+sy(f(x)).toFixed(1)).join(' '),fill:'none',stroke:o.c||'var(--fg)','stroke-width':o.w||2,'stroke-dasharray':o.dash||'none'},g)}
+// Vertical marker line with a label at the top; row staggers labels that would collide
+function vline(s,g,sx,m,x,c,lab,o={}){seg(g,[sx(x),m.pt],[sx(x),m.Hd-m.pb],c,o.w||2,o.dash);
+  if(lab){const right=o.side?o.side==='r':sx(x)<(m.pl+m.Wd-m.pr_)/2;halo(txt(s,sx(x)+(right?6:-6),m.pt+13+(o.row||0)*16,lab,'var(--fg)','',right?'start':'end'))}}
+function counts(v,xr,b){const w=(xr[1]-xr[0])/b,c=new Array(b).fill(0);v.forEach(x=>{const i=Math.floor((x-xr[0])/w);if(i>=0&&i<b)c[i]++});return c}
+function legend(items){const e=$('legend');e.innerHTML='';items.forEach(([k,c,t])=>{const i=document.createElement('span'),sw=document.createElement('i');i.className='li';sw.className='sw '+k;sw.style.setProperty('--c',c);i.append(sw,t);e.append(i)})}
+
+/* ---------- figures ---------- */
+let P=[];
+const cap=(i,t)=>{P[i].previousSibling.textContent=t};
+const XR=[-2.5,3.5],ZR=[-4,4];
+const lvl=()=>Math.round((1-st.alpha)*100)+'%';
+function nullPanel(s,D,o={}){const ym=1.18*npdf(0,0,D.se),[sx,sy,g,m]=frame(s,XR,[0,ym],'estimate','',440,o.H||250,{noy:1});
+  const fill=o.reject?[[XR[0],st.th0-D.c*D.se,'var(--res)',.28],[st.th0+D.c*D.se,XR[1],'var(--res)',.28]]:[[XR[0],XR[1],'var(--muted)',.12]];
+  bell(g,sx,sy,x=>npdf(x,st.th0,D.se),XR,{c:'var(--muted)',fill});
+  vline(s,g,sx,m,st.th0,'var(--muted)',`θ₀ = ${f2(st.th0)}`,{w:1.2,dash:'4 3',side:st.th0<D.xb?'l':'r'});
+  vline(s,g,sx,m,D.xb,'var(--res)',`your estimate = ${f2(D.xb)}`,{side:st.th0<D.xb?'r':'l'});
+  s._pts.push([sx(D.xb),m.pt+20,`estimate = ${f3(D.xb)}`])}
+function zPanel(s,D,o={}){const[sx,sy,g,m]=frame(s,ZR,[0,.47],'z = (estimate − θ₀) / se','',440,o.H||250,{noy:1}),f=x=>npdf(x,0,1),az=Math.abs(D.z);
+  const fill=[];if(o.tails)fill.push([ZR[0],-D.c,'var(--res)',.28],[D.c,ZR[1],'var(--res)',.28]);else fill.push([ZR[0],ZR[1],'var(--muted)',.12]);
+  if(o.p)fill.push([ZR[0],-az,'var(--fit)',.45],[az,ZR[1],'var(--fit)',.45]);
+  bell(g,sx,sy,f,ZR,{c:'var(--muted)',fill});
+  if(o.tails){[-D.c,D.c].forEach((v,i)=>{seg(g,[sx(v),sy(0)],[sx(v),sy(f(v))+0],'var(--res)',1.5);halo(txt(s,sx(v)+(i?4:-4),sy(.09),(i?'c = ':'−c = −')+f2(D.c),'var(--fg)','',i?'start':'end'))});
+    [ZR[0]+.55,ZR[1]-.55].forEach(v=>halo(txt(s,sx(v),sy(.035),`α/2 = ${f3(st.alpha/2)}`,'var(--fg)','','middle')))}
+  if(o.obs){vline(s,g,sx,m,D.z,'var(--res)',`your z = ${f2(D.z)}`,{side:D.z>0?'l':'r'});if(o.p)seg(g,[sx(-D.z),m.pt+20],[sx(-D.z),m.Hd-m.pb],'var(--res)',1,'3 3')}
+  return[sx,sy,g,m]}
+function zOne(s,D,o={}){const[sx,sy,g,m]=frame(s,ZR,[0,.47],'z = (estimate − θ₀) / se','',440,o.H||210,{noy:1}),f=x=>npdf(x,0,1),c1=crit1(st.alpha);
+  bell(g,sx,sy,f,ZR,{c:'var(--muted)',fill:[[ZR[0],c1,'var(--muted)',.12],[c1,ZR[1],'var(--res)',.28],[Math.max(D.z,ZR[0]),ZR[1],'var(--fit)',.45]]});
+  seg(g,[sx(c1),sy(0)],[sx(c1),sy(f(c1))],'var(--res)',1.5);halo(txt(s,sx(c1)+4,sy(.09),`c = ${f3(c1)}`,'var(--fg)'));halo(txt(s,sx(ZR[1]-.55),sy(.035),`α = ${f2(st.alpha)}`,'var(--fg)','','middle'));
+  vline(s,g,sx,m,D.z,'var(--res)',`your z = ${f2(D.z)}`,{side:D.z>0?'l':'r'})}
+function figure(id){const D=mk();legend([]);
+  switch(id){
+  case 'sample':{cap(0,`${st.n} measurements and their mean`);const xr=[-6,7.5],[sx,sy,g,m]=frame(P[0],xr,[0,1],'measurement','',440,230,{noy:1});
+    D.x.forEach((v,i)=>{const cx=sx(v),cy=sy(.12+.6*D.j[i]);el('circle',{cx,cy,r:3.2,fill:'var(--muted)','fill-opacity':.55},g);P[0]._pts.push([cx,cy,f2(v)])});
+    vline(P[0],g,sx,m,D.xb,'var(--fit)',`estimate x̄ = ${f2(D.xb)}`,{side:'r'});
+    legend([['dot','var(--muted)','Measurement'],['line','var(--fit)','Estimate, the mean']]);break}
+  case 'where':{const[sx,sy,g,m]=frame(P[0],XR,[0,1],'θ','',440,240,{noy:1}),E=st.drawn.map(xbar),cur=E[E.length-1],N=E.length-1,many=N>20;cap(0,N?`Your estimate, and ${N} earlier ${N>1?'ones':'one'}`:'Your estimate');
+    E.slice(0,-1).forEach((v,i)=>{const cy=sy(.08+.36*((i*.618)%1));el('circle',{cx:sx(v),cy,r:many?3:4,fill:'var(--fit)','fill-opacity':many?.25:.3},g);if(st.reveal&&!many)seg(g,[sx(v),cy],[sx(st.theta),cy],'var(--res)',1,null,.4);P[0]._pts.push([sx(v),cy,`earlier estimate ${f2(v)}`])});
+    if(st.reveal){vline(P[0],g,sx,m,st.theta,'var(--fg)',`θ = ${f2(st.theta)}`,{dash:'5 4',side:cur>st.theta?'l':'r'});seg(g,[sx(cur),sy(.58)],[sx(st.theta),sy(.58)],'var(--res)',3);
+      halo(txt(P[0],(sx(cur)+sx(st.theta))/2,sy(.58)-9,`off by ${f2(Math.abs(cur-st.theta))}`,'var(--fg)','','middle'))}
+    else halo(txt(P[0],(m.pl+m.Wd-m.pr_)/2,m.pt+16,'θ is fixed somewhere on this line. Where?','var(--fg)','','middle'));
+    marker(g,sx(cur),sy(.58),'var(--fit)',7);halo(txt(P[0],sx(cur),sy(.58)+24,`your estimate ${f2(cur)}`,'var(--fg)','','middle'));
+    legend([['dot','var(--fit)','Estimate'],...(E.length>1?[['dot','color-mix(in srgb,var(--fit) 35%,var(--panel))','Earlier estimates']]:[]),['dash','var(--fg)','True θ, once revealed']]);break}
+  case 'sampling':{const xr=[st.theta-3,st.theta+3],b=48,w=(xr[1]-xr[0])/b,S=sims(),v=Array.from(S.slice(0,1000),z=>st.theta+D.se*z),C=counts(v,xr,b),ym=Math.max(...C,1000*w*npdf(0,0,D.se))*1.12;
+    cap(0,'Estimates from 1,000 samples');const[sx,sy,g,m]=frame(P[0],xr,[0,ym],'estimate','count',440,280,{ky:3});
+    C.forEach((c,i)=>{if(!c)return;const a=xr[0]+i*w;el('rect',{x:sx(a)+.4,y:sy(c),width:Math.max(.6,sx(a+w)-sx(a)-.8),height:sy(0)-sy(c),fill:'var(--fit)','fill-opacity':.5},g);P[0]._pts.push([sx(a+w/2),sy(c),`${c} estimates between ${f2(a)} and ${f2(a+w)}`])});
+    bell(g,sx,sy,x=>1000*w*npdf(x,st.theta,D.se),xr,{c:'var(--fit)'});
+    vline(P[0],g,sx,m,st.theta,'var(--fg)','true θ',{dash:'5 4',w:1.5,side:'l'});vline(P[0],g,sx,m,D.xb,'var(--res)','your sample',{side:'r',row:1});
+    const a=sy(ym*.5);seg(g,[sx(st.theta),a],[sx(st.theta+D.se),a],'var(--fg)',2);halo(txt(P[0],sx(st.theta+D.se)+5,a+4,'1 se','var(--fg)'));
+    legend([['area','var(--fit)','Estimates'],['line','var(--fit)','Normal, SD = se'],['line','var(--res)','Your sample'],['dash','var(--fg)','True θ']]);break}
+  case 'null':cap(0,`If H₀: θ = ${f2(st.th0)} were true, estimates would look like this`);nullPanel(P[0],D,{H:270});
+    legend([['area','var(--muted)','Estimates under H₀'],['line','var(--res)','Your estimate']]);break;
+  case 'stat':cap(0,'On the estimate scale');cap(1,'Standardised: same curve, axis in standard errors');nullPanel(P[0],D,{H:220});zPanel(P[1],D,{obs:1,H:220});
+    legend([['area','var(--muted)','Distribution under H₀'],['line','var(--res)','Your sample']]);break;
+  case 'alpha':cap(0,`Rejection region at α = ${f2(st.alpha)}`);zPanel(P[0],D,{tails:1,H:280});legend([['area','var(--res)','Rejection region'],['area','var(--muted)','Do not reject']]);break;
+  case 'decide':{cap(0,D.p<st.alpha?`p = ${f3(D.p)} < α: reject H₀`:`p = ${f3(D.p)} ≥ α: do not reject H₀`);const[sx,sy,g]=zPanel(P[0],D,{tails:1,obs:1,p:1,H:290}),Zs=st.drawn.slice(0,-1).map(s=>(xbar(s)-st.th0)/D.se),many=Zs.length>20;
+    // Earlier samples stay behind as dots on the z axis, red where they landed in the rejection region
+    Zs.forEach((z,i)=>{const r=Math.abs(z)>D.c,cx=sx(clamp(z,ZR[0]+.05,ZR[1]-.05)),cy=sy(.012+.05*((i*.618)%1));el('circle',{cx,cy,r:many?2.6:3.6,fill:r?'var(--res)':'var(--fg)','fill-opacity':many?.4:.55},g);P[0]._pts.push([cx,cy,`earlier sample: z = ${f2(z)}, ${r?'reject':'do not reject'}`])});
+    legend([['area','var(--res)','Rejection region'],['area','var(--fit)','p-value'],['line','var(--res)','Your z'],...(Zs.length?[['dot','var(--muted)','Earlier samples']]:[])]);break}
+  case 'sides':{const p1=1-Phi(D.z);cap(0,`Two-sided, H₁: θ ≠ θ₀ · p = ${f3(D.p)}${D.p<st.alpha?' · reject':''}`);cap(1,`One-sided, H₁: θ > θ₀ · p = ${f3(p1)}${p1<st.alpha?' · reject':''}`);
+    zPanel(P[0],D,{tails:1,obs:1,p:1,H:210});zOne(P[1],D,{H:210});legend([['area','var(--res)','Rejection region'],['area','var(--fit)','p-value'],['line','var(--res)','Your z']]);break}
+  case 'tradeoff':{const pw=power(st.theta,st.th0,D.se,D.c),lo=st.th0-D.c*D.se,hi=st.th0+D.c*D.se,ym=1.18*npdf(0,0,D.se),up=st.theta>=st.th0,h0=Math.abs(st.theta-st.th0)<1e-9;
+    cap(0,`α = ${f3(st.alpha)} · β = ${f3(1-pw)} · power = ${f3(pw)}`);cap(1,`β against α, for true θ = ${f2(st.theta)}`);
+    const[sx,sy,g,m]=frame(P[0],XR,[0,ym],'estimate','',440,240,{noy:1});
+    bell(g,sx,sy,x=>npdf(x,st.th0,D.se),XR,{c:'var(--muted)',fill:[[XR[0],lo,'var(--res)',.35],[hi,XR[1],'var(--res)',.35]]});
+    if(!h0)bell(g,sx,sy,x=>npdf(x,st.theta,D.se),XR,{c:'var(--fit)',w:2.4,fill:[[lo,hi,'var(--x)',.4],[XR[0],lo,'var(--fit)',.4],[hi,XR[1],'var(--fit)',.4]]});
+    [lo,hi].forEach(v=>seg(g,[sx(v),m.pt],[sx(v),m.Hd-m.pb],'var(--res)',1.2,'4 3'));
+    halo(txt(P[0],sx(up?lo:hi)+(up?-5:5),sy(.07*ym),'α/2','var(--fg)','',up?'end':'start'));
+    const ly=sy(.86*npdf(0,0,D.se));halo(txt(P[0],sx(st.th0)+(up?-14:14),ly,'if H₀ true','var(--fg)','',up?'end':'start'));
+    if(!h0){halo(txt(P[0],sx(st.theta)+(up?14:-14),ly,'actual','var(--fg)','',up?'start':'end'));
+      // Area labels sit inside the stretch of the actual curve they name, when it is wide enough to hold them
+      const lab=(a,b,s)=>{a=Math.max(a,st.theta-2.2*D.se,XR[0]);b=Math.min(b,st.theta+2.2*D.se,XR[1]);if(sx(b)-sx(a)<10+9*s.length)return;const x=(a+b)/2;halo(txt(P[0],sx(x),sy(.35*npdf(x,st.theta,D.se))+4,s,'var(--fg)','','middle'))};
+      lab(lo,hi,'β');up?lab(hi,XR[1],'1 − β'):lab(XR[0],lo,'1 − β')}
+    const AR=[0,.2],[sx2,sy2,g2]=frame(P[1],AR,[0,1],'α, the type I error rate','β, type II',440,220,{fy:v=>v,ky:4}),as=Array.from({length:100},(_,i)=>.002+i*.002);
+    const curve=(k,c,w,dash)=>el('polyline',{points:as.map(a=>sx2(a).toFixed(1)+','+sy2(1-power(st.theta,st.th0,SIG/Math.sqrt(k),crit(a))).toFixed(1)).join(' '),fill:'none',stroke:c,'stroke-width':w,'stroke-dasharray':dash||'none'},g2);
+    curve(4*st.n,'var(--muted)',1.8,'5 4');curve(st.n,'var(--x)',2.6);
+    const b4=1-power(st.theta,st.th0,SIG/Math.sqrt(4*st.n),crit(.1));if(!h0)halo(txt(P[1],sx2(.1)+4,sy2(b4)-8,`n = ${4*st.n}`,'var(--fg)'));
+    marker(g2,sx2(st.alpha),sy2(1-pw),'var(--x)',6);halo(txt(P[1],sx2(st.alpha)+10,sy2(1-pw)-10,`n = ${st.n}`,'var(--fg)'));
+    legend([['area','var(--res)','α: rejects a true H₀'],['area','var(--x)','β: misses the effect'],['area','var(--fit)','Power, 1 − β'],['dash','var(--muted)','Four times the data']]);break}
+  case 'powern':{const pw=power(st.theta,st.th0,D.se,D.c),lo=st.th0-D.c*D.se,hi=st.th0+D.c*D.se,ym=1.18*npdf(0,0,D.se),nn=n80(D);
+    cap(0,`n = ${st.n}: power ${pct(pw)}`);cap(1,`Power against n, for true θ = ${f2(st.theta)}`);
+    const[sx,sy,g]=frame(P[0],XR,[0,ym],'estimate','',440,230,{noy:1});
+    bell(g,sx,sy,x=>npdf(x,st.th0,D.se),XR,{c:'var(--muted)',fill:[[XR[0],lo,'var(--res)',.22],[hi,XR[1],'var(--res)',.22]]});
+    bell(g,sx,sy,x=>npdf(x,st.theta,D.se),XR,{c:'var(--fit)',w:2.4,fill:[[XR[0],lo,'var(--fit)',.4],[hi,XR[1],'var(--fit)',.4]]});
+    const up=st.theta>=st.th0,ly=sy(.8*npdf(0,0,D.se));halo(txt(P[0],sx(st.th0)+(up?-14:14),ly,'if H₀ true','var(--fg)','',up?'end':'start'));
+    if(Math.abs(st.theta-st.th0)>1e-9)halo(txt(P[0],sx(st.theta)+(up?14:-14),ly,'actual','var(--fg)','',up?'start':'end'));
+    const NX=[0,400],[sx2,sy2,g2,m2]=frame(P[1],NX,[0,1],'sample size n','power',440,220,{fy:pct,ky:4}),ns=Array.from({length:200},(_,i)=>2+i*2);
+    el('polyline',{points:ns.map(k=>sx2(k).toFixed(1)+','+sy2(power(st.theta,st.th0,SIG/Math.sqrt(k),D.c)).toFixed(1)).join(' '),fill:'none',stroke:'var(--fit)','stroke-width':2.4},g2);
+    seg(g2,[sx2(0),sy2(.8)],[sx2(400),sy2(.8)],'var(--muted)',1.2,'5 4');halo(txt(P[1],sx2(400)-6,sy2(.8)+16,'80%','var(--fg)','','end'));
+    if(nn&&nn<=400){seg(g2,[sx2(nn),sy2(0)],[sx2(nn),sy2(.8)],'var(--muted)',1,'2 3');halo(txt(P[1],sx2(nn)+5,sy2(.06),`n = ${nn}`,'var(--fg)'))}
+    marker(g2,sx2(st.n),sy2(pw),'var(--fit)',6);halo(txt(P[1],sx2(st.n)+(st.n<300?10:-10),sy2(pw)+(pw>.85?20:-10),`power ${pct(pw)}`,'var(--fg)','',st.n<300?'start':'end'));
+    legend([['area','var(--muted)','Estimates if H₀ is true'],['line','var(--fit)','Estimates at the true θ'],['area','var(--res)','Rejection region'],['area','var(--fit)','Power']]);break}
+  case 'errors':{const xr=XR,[sx,sy,g,m]=frame(P[0],xr,[0,1],'true θ','P(reject H₀)',440,290,{fy:pct,ky:4});cap(0,`Probability of rejecting H₀: θ = ${f2(st.th0)}`);
+    const xs=Array.from({length:241},(_,i)=>xr[0]+(xr[1]-xr[0])*i/240);
+    el('polyline',{points:xs.map(t=>sx(t).toFixed(1)+','+sy(power(t,st.th0,D.se,D.c)).toFixed(1)).join(' '),fill:'none',stroke:'var(--fit)','stroke-width':2.4},g);
+    seg(g,[sx(xr[0]),sy(st.alpha)],[sx(xr[1]),sy(st.alpha)],'var(--res)',1.4,'5 4');halo(txt(P[0],sx(xr[1])-6,sy(st.alpha)-6,`α = ${f2(st.alpha)}`,'var(--fg)','','end'));
+    vline(P[0],g,sx,m,st.th0,'var(--muted)','θ₀',{w:1,dash:'3 3',side:'r'});
+    const pw=power(st.theta,st.th0,D.se,D.c);marker(g,sx(st.theta),sy(pw),'var(--fit)',6);
+    halo(txt(P[0],sx(st.theta)+(st.theta<1.8?10:-10),sy(pw)+(pw>.85?18:-10),Math.abs(st.theta-st.th0)<1e-9?`type I error rate ${pct(pw)}`:`power ${pct(pw)}`,'var(--fg)','',st.theta<1.8?'start':'end'));
+    legend([['line','var(--fit)','Probability of rejecting'],['dash','var(--res)','α']]);break}
+  case 'invert':{cap(0,`Testing θ₀ = ${f2(st.th0)}: ${D.p<st.alpha?'rejected':'not rejected'}`);cap(1,'Every θ₀ tested so far');nullPanel(P[0],D,{reject:1,H:230});
+    const[sx,sy,g,m]=frame(P[1],XR,[0,1],'θ₀','',440,120,{noy:1}),w=sx(XR[0]+GRID)-sx(XR[0]);
+    vis.forEach(i=>{const t=XR[0]+i*GRID,ok=Math.abs(D.xb-t)<=D.c*D.se;el('rect',{x:sx(t)-w/2,y:sy(.62),width:w+.3,height:sy(.18)-sy(.62),fill:ok?'var(--fit)':'var(--res)','fill-opacity':ok?.75:.35},g);P[1]._pts.push([sx(t),sy(.4),`θ₀ = ${f2(t)}: ${ok?'not rejected':'rejected'}`])});
+    el('polygon',{points:`${sx(st.th0)},${sy(.7)} ${sx(st.th0)-6},${sy(.9)} ${sx(st.th0)+6},${sy(.9)}`,fill:'var(--fg)'},g);
+    if(allTested){seg(g,[sx(D.lo),sy(.08)],[sx(D.hi),sy(.08)],'var(--fit)',3);halo(txt(P[1],sx(D.xb),sy(.95)+4,`${lvl()} CI: [${f2(D.lo)}, ${f2(D.hi)}]`,'var(--fg)','','middle'))}
+    legend([['area','var(--fit)','Not rejected'],['area','var(--res)','Rejected'],['line','var(--res)','Your estimate']]);break}
+  case 'repeat':{const S=sims(),K=st.k,R=Math.min(K,100),top=Math.max(R,12)+1,[sx,sy,g,m]=frame(P[0],XR,[0,top],'θ','',440,460,{noy:1}),w=R<=12?6:R<=40?3:1.8;
+    cap(0,`${K} ${K>1?'studies':'study'}, one ${lvl()} interval each`);
+    for(let r=0;r<R;r++){const k=K-R+r,c=st.theta+D.se*S[k%NSIM],a=c-D.c*D.se,e=c+D.c*D.se,ok=a<=st.theta&&st.theta<=e,y=sy(r+1),col_=st.reveal?(ok?'var(--fit)':'var(--res)'):'var(--muted)',last=k===K-1;
+      seg(g,[sx(a),y],[sx(e),y],col_,last?w+2:w,null,st.reveal&&ok?.75:1);el('circle',{cx:sx(c),cy:y,r:last?4:Math.min(2.5,w),fill:col_},g);P[0]._pts.push([sx(c),y,`study ${k+1}: [${f2(a)}, ${f2(e)}]${st.reveal?(ok?' contains θ':' misses θ'):''}`])}
+    halo(txt(P[0],sx(XR[1])-4,sy(R)+4,'latest','var(--fg)','','end'));
+    if(st.reveal){seg(g,[sx(st.theta),m.pt],[sx(st.theta),m.Hd-m.pb],'var(--fg)',1.6,'5 4');halo(txt(P[0],sx(st.theta)+6,m.Hd-m.pb-8,`true θ = ${f2(st.theta)}`,'var(--fg)'))}
+    else if(R<=12)halo(txt(P[0],(m.pl+m.Wd-m.pr_)/2,m.pt+16,'θ is hidden. Does the latest interval contain it?','var(--fg)','','middle'));
+    legend(st.reveal?[['line','var(--fit)','Contains θ'],['line','var(--res)','Misses θ'],['dash','var(--fg)','True θ']]:[['line','var(--muted)','Interval, θ still hidden']]);break}
+  case 'one':{const[sx,sy,g,m]=frame(P[0],XR,[0,1],'θ','',440,200,{noy:1});cap(0,`Your ${lvl()} confidence interval`);
+    el('rect',{x:sx(D.lo),y:sy(.62),width:sx(D.hi)-sx(D.lo),height:sy(.38)-sy(.62),rx:4,fill:'var(--fit)','fill-opacity':.25,stroke:'var(--fit)','stroke-width':2},g);
+    marker(g,sx(D.xb),sy(.5),'var(--fit)',5);halo(txt(P[0],sx(D.lo),sy(.25),f2(D.lo),'var(--fg)','','middle'));halo(txt(P[0],sx(D.hi),sy(.25),f2(D.hi),'var(--fg)','','middle'));
+    if(st.reveal){const ok=D.lo<=st.theta&&st.theta<=D.hi;vline(P[0],g,sx,m,st.theta,ok?'var(--fg)':'var(--res)',`θ = ${f2(st.theta)}: ${ok?'inside':'outside'}`,{dash:'5 4',side:st.theta>D.hi?'l':'r'})}
+    else halo(txt(P[0],(m.pl+m.Wd-m.pr_)/2,m.pt+16,'θ is fixed somewhere on this line. Where?','var(--fg)','','middle'));
+    legend([['area','var(--fit)','Confidence interval'],['dot','var(--fit)','Estimate'],['dash','var(--fg)','True θ, once revealed']]);break}
+  case 'bayes':{const B=bayes(D),ym=1.12*Math.max(npdf(0,0,B.sp),npdf(0,0,D.se),npdf(0,0,st.tau));cap(0,'Prior, data and posterior');cap(1,`The two ${lvl()} intervals`);
+    const[sx,sy,g]=frame(P[0],XR,[0,ym],'θ','',440,250,{noy:1});
+    bell(g,sx,sy,x=>npdf(x,st.m,st.tau),XR,{c:'var(--muted)',dash:'5 4'});bell(g,sx,sy,x=>npdf(x,D.xb,D.se),XR,{c:'var(--fit)'});bell(g,sx,sy,x=>npdf(x,B.mp,B.sp),XR,{c:'var(--x2)',w:2.6,fill:[[B.lo,B.hi,'var(--x2)',.15]]});
+    const[sx2,sy2,g2]=frame(P[1],XR,[0,1],'θ','',440,140,{noy:1});
+    [[D.lo,D.hi,'var(--fit)','confidence',.72],[B.lo,B.hi,'var(--x2)','credible',.3]].forEach(([a,b,c,nm,y])=>{el('rect',{x:sx2(a),y:sy2(y+.09),width:sx2(b)-sx2(a),height:sy2(y-.09)-sy2(y+.09),rx:4,fill:c,'fill-opacity':.75},g2);
+      halo(txt(P[1],clamp(sx2(a),20,250),sy2(y+.09)-5,`${nm} [${f2(a)}, ${f2(b)}]`,'var(--fg)'))});
+    legend([['dash','var(--muted)','Prior'],['line','var(--fit)','Data alone'],['line','var(--x2)','Posterior']]);break}
+  case 'recap':{const[sx,sy,g,m]=frame(P[0],XR,[0,1],'θ₀','p-value',440,320,{fy:v=>v,ky:4}),xs=Array.from({length:241},(_,i)=>XR[0]+(XR[1]-XR[0])*i/240),pf=t=>pval((D.xb-t)/D.se);
+    cap(0,'p-value for every θ₀, from your one sample');
+    el('rect',{x:sx(D.lo),y:m.pt,width:sx(D.hi)-sx(D.lo),height:m.Hd-m.pb-m.pt,fill:'var(--fit)','fill-opacity':.12},g);
+    el('polyline',{points:xs.map(t=>sx(t).toFixed(1)+','+sy(pf(t)).toFixed(1)).join(' '),fill:'none',stroke:'var(--fit)','stroke-width':2.4},g);
+    seg(g,[sx(XR[0]),sy(st.alpha)],[sx(XR[1]),sy(st.alpha)],'var(--res)',1.4,'5 4');halo(txt(P[0],sx(XR[0])+6,sy(st.alpha)-6,`α = ${f2(st.alpha)}`,'var(--fg)'));
+    halo(txt(P[0],sx(D.xb),sy(.55),`${lvl()} CI`,'var(--fg)','','middle'));halo(txt(P[0],sx(D.xb),sy(.55)+16,'compatible with the data','var(--fg)','','middle'));
+    const pt=pf(st.th0);vline(P[0],g,sx,m,st.th0,'var(--muted)','',{w:1,dash:'3 3'});marker(g,sx(st.th0),sy(pt),pt<st.alpha?'var(--res)':'var(--fit)',6);
+    halo(txt(P[0],sx(st.th0)+(st.th0<D.xb?-10:10),sy(Math.max(pt,.16))-10,`p = ${f3(pt)}`,'var(--fg)','',st.th0<D.xb?'end':'start'));
+    legend([['line','var(--fit)','p-value of the test of θ₀'],['area','var(--fit)','Confidence interval'],['dash','var(--res)','α']]);break}
+  }
+}
+const GRID=0.05,NGRID=Math.round((XR[1]-XR[0])/GRID);
+let vis=new Set,allTested=false;
+const visit=()=>vis.add(clamp(Math.round((st.th0-XR[0])/GRID),0,NGRID));
+// Conjugate normal update: precisions add, the posterior mean is a precision-weighted average
+function bayes(D){const pp=1/st.tau**2,pd=1/D.se**2,vp=1/(pp+pd),mp=vp*(pp*st.m+pd*D.xb),sp=Math.sqrt(vp);return{mp,sp,lo:mp-D.c*sp,hi:mp+D.c*sp,w:pd/(pp+pd)}}
+
+/* ---------- readout ---------- */
+function readout(id){const D=mk(),L=[],c=(a,w=24)=>col(a,w),dec=D.p<st.alpha?'reject H₀':'do not reject H₀';
+  switch(id){
+  case 'sample':L.push(c('n')+st.n,c('estimate x̄')+f3(D.xb),c('true θ')+'unknown');break;
+  case 'where':{const E=st.drawn.map(xbar),cur=E[E.length-1];L.push(c('samples drawn')+E.length,c('your estimate')+f3(cur));if(E.length>1)L.push(c('SD of the estimates')+f3(Math.sqrt(varr(E)))+'  no θ needed');
+    if(st.reveal){L.push(c('true θ')+f3(st.theta),c('this one is off by')+f3(Math.abs(cur-st.theta)));if(E.length>1)L.push(c('typical error, RMS')+f3(Math.sqrt(mean(E.map(v=>(v-st.theta)**2)))))}else L.push(c('true θ')+'hidden');break}
+  case 'sampling':{const S=sims(),v=Array.from(S.slice(0,1000),z=>st.theta+D.se*z);L.push(c('se = σ/√n')+f3(D.se),c('SD of 1,000 estimates')+f3(Math.sqrt(varr(v))),c('your estimate')+f3(D.xb));break}
+  case 'null':L.push(c('θ₀')+f3(st.th0),c('your estimate')+f3(D.xb),c('distance x̄ − θ₀')+f3(D.xb-st.th0),c('in standard errors')+f2(D.z));break;
+  case 'stat':L.push(`z = (${f3(D.xb)} − ${f3(st.th0)}) / ${f3(D.se)}`,`  = ${f3(D.z)}`);break;
+  case 'alpha':L.push(c('α')+f2(st.alpha),c('critical value c')+f3(D.c),c('P(|z| > c) under H₀')+f3(pval(D.c)));break;
+  case 'decide':{L.push(c('θ₀, fixed in step 1')+f2(st.th0),c('your estimate')+f3(D.xb),c('z')+f3(D.z),c('critical value c')+f3(D.c),c('p-value')+f3(D.p),'',c('decision')+dec);
+    const N=st.drawn.length;if(N>1){const k=st.drawn.filter(s=>Math.abs((xbar(s)-st.th0)/D.se)>D.c).length;L.push('',c('samples drawn')+N,c('rejected H₀')+`${k} of ${N}`)}break}
+  case 'sides':{const p1=1-Phi(D.z),c1=crit1(st.alpha),w=12;L.push(c('z')+f3(D.z),'',c('')+col('two-sided',w)+'one-sided',c('critical value')+col(f3(D.c),w)+f3(c1),c('p-value')+col(f3(D.p),w)+f3(p1),c('decision')+col(D.p<st.alpha?'reject':'not reject',w)+(p1<st.alpha?'reject':'not reject'));break}
+  case 'tradeoff':{const pw=power(st.theta,st.th0,D.se,D.c),b4=1-power(st.theta,st.th0,D.se/2,D.c),w=16,h0=Math.abs(st.theta-st.th0)<1e-9;
+    L.push(c('',w)+col('reject H₀',w)+'not reject',c('H₀ true',w)+col('α = '+f3(st.alpha),w)+'1 − α = '+f3(1-st.alpha));
+    L.push(h0?'true θ = θ₀: H₀ is true, only α applies':c(`true θ = ${f2(st.theta)}`,w)+col('1 − β = '+f3(pw),w)+'β = '+f3(1-pw));
+    if(!h0)L.push('',c('critical value c')+f3(D.c),c(`β with n = ${4*st.n}`)+f3(b4));break}
+  case 'powern':{const pw=power(st.theta,st.th0,D.se,D.c),nn=n80(D);L.push(c('effect θ − θ₀')+f2(st.theta-st.th0),c('n')+st.n,c('se = σ/√n')+f3(D.se),c('power')+f3(pw),c('n for 80% power')+(nn?nn:'none: θ = θ₀'));break}
+  case 'errors':{const pw=power(st.theta,st.th0,D.se,D.c),S=sims(),d=(st.theta-st.th0)/D.se,r=S.reduce((k,z)=>k+(Math.abs(z+d)>D.c),0)/NSIM,h0=Math.abs(st.theta-st.th0)<1e-9;
+    L.push(c('true θ')+f2(st.theta),c('θ₀')+f2(st.th0),c('P(reject), formula')+f3(pw),c('rejected in 5,000 sims')+f3(r),'',h0?'θ = θ₀: every rejection is a type I error':c('type II error rate')+f3(1-pw));break}
+  case 'invert':L.push(c('θ₀')+f2(st.th0),c('z')+f2(D.z),c('p-value')+f3(D.p),c('decision')+dec,c('values tested')+vis.size);if(allTested)L.push('',c(lvl()+' CI')+`[${f3(D.lo)}, ${f3(D.hi)}]`);break;
+  case 'repeat':{const S=sims();let h=0;for(let k=0;k<st.k;k++)h+=Math.abs(S[k%NSIM])<=D.c;
+    L.push(c('studies drawn')+st.k,st.reveal?c('contain θ')+`${h} of ${st.k} (${(100*h/st.k).toFixed(1)}%)`:c('contain θ')+'press Reveal θ',c('nominal level')+lvl());break}
+  case 'one':L.push(c(lvl()+' CI')+`[${f3(D.lo)}, ${f3(D.hi)}]`,c('true θ')+(st.reveal?f3(st.theta)+(D.lo<=st.theta&&st.theta<=D.hi?'  inside':'  outside'):'hidden'));break;
+  case 'bayes':{const B=bayes(D);L.push(c('confidence interval')+`[${f2(D.lo)}, ${f2(D.hi)}]`,c('credible interval')+`[${f2(B.lo)}, ${f2(B.hi)}]`,c('posterior mean')+f3(B.mp),c('weight on the data')+pct(B.w));break}
+  case 'recap':{const inside=D.lo<=st.th0&&st.th0<=D.hi;L.push(c('θ₀')+f2(st.th0),c('p-value')+f3(D.p),c(lvl()+' CI')+`[${f3(D.lo)}, ${f3(D.hi)}]`,c('θ₀ inside the CI')+(inside?'yes':'no'),c('test at α')+dec);break}
+  }
+  $('readout').textContent=L.join('\n');
+}
+
+/* ---------- render ---------- */
+const SL=['theta','th0','alpha','n','m','tau'],BT=['new','ten','more','all','reveal'];
+function go(k){const step=steps[k],f=$('fig');st.step=k;Object.assign(st,step.set||{});st.reveal=false;vis=new Set;allTested=false;visit();st.drawn=[st.seed];st.k=1;
+  f.innerHTML='';P=step.fig.map((c,i)=>{const d=document.createElement('div'),l=document.createElement('div'),s=document.createElementNS(NS,'svg');d.className='cell';l.className='plabel';s.id='p'+i;s.setAttribute('role','img');d.append(l,s);f.append(d);return s});
+  render()}
+function render(){
+  const k=st.step,step=steps[k],show=step.ctl;
+  [...$('nav').querySelectorAll('button')].forEach((b,i)=>{b.classList.toggle('on',i===k);b.classList.toggle('done',i<k);b.setAttribute('aria-current',i===k?'step':'false')});
+  $('stepnum').textContent=`Part ${step.part} · ${parts[step.part]} · Step ${k+1} of ${steps.length}`;
+  $('stitle').textContent=step.t;
+  $('stext').innerHTML=typeof katex!=='undefined'?tex(step.text):step.text.replace(/\\\(|\\\)/g,'');
+  $('hint').textContent=step.hint;
+  SL.forEach(c=>{$('c-'+c).hidden=!show.includes(c)});BT.forEach(c=>{$(c).hidden=!show.includes(c)});
+  $('new').textContent=step.newLabel||'New sample';$('ten').textContent=step.tenLabel||'Draw 10 more';$('more').textContent=step.moreLabel||'Draw 100 more';
+  document.querySelector('.controls').classList.toggle('btnfirst',!!step.btnFirst);
+  $('reset').hidden=!show.length;$('c-row').hidden=!show.length;
+  $('prev').disabled=k===0;$('next').disabled=k===steps.length-1;
+  draw()}
+function draw(){const id=steps[st.step].id;
+  $('reveal').textContent=st.reveal?'Hide θ':'Reveal θ';
+  figure(id);readout(id);
+  SL.forEach(c=>{$(c).value=st[c];$(c+'o').textContent=c==='n'?st.n:f2(st[c])})}
+
+/* nav */
+let lastPart='';steps.forEach((s,i)=>{if(s.part!==lastPart){const p=document.createElement('span');p.className='part';p.textContent=parts[s.part];$('nav').appendChild(p);lastPart=s.part}
+  const b=document.createElement('button');b.textContent=i+1;b.title=s.t;b.setAttribute('aria-label',`Step ${i+1}: ${s.t}`);b.onclick=()=>go(i);$('nav').appendChild(b)});
+$('prev').onclick=()=>{if(st.step>0)go(st.step-1)};
+$('next').onclick=()=>{if(st.step<steps.length-1)go(st.step+1)};
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')$('next').click();if(e.key==='ArrowLeft')$('prev').click()});
+SL.forEach(c=>$(c).addEventListener('input',()=>{st[c]=+$(c).value;if(c==='th0')visit();draw()}));
+$('new').onclick=()=>{const id=steps[st.step].id;
+  if(id==='repeat'){st.k=Math.min(st.k+1,NSIM);st.reveal=false}else{st.seed=st.seed%500+1;if(KEEP.includes(id))st.drawn.push(st.seed)}draw()};
+// Draw several at once: more samples on the steps that keep earlier ones, more studies on the repeat step
+const KEEP=['where','decide'];
+const drawMany=k=>{if(KEEP.includes(steps[st.step].id)){for(let i=0;i<k;i++){st.seed=st.seed%500+1;st.drawn.push(st.seed)}st.drawn=st.drawn.slice(-500)}else{st.k=Math.min(st.k+k,NSIM);st.reveal=false}draw()};
+$('ten').onclick=()=>drawMany(10);
+$('more').onclick=()=>drawMany(100);
+$('all').onclick=()=>{for(let i=0;i<=NGRID;i++)vis.add(i);allTested=true;draw()};
+$('reveal').onclick=()=>{st.reveal=!st.reveal;draw()};
+$('reset').onclick=()=>{Object.assign(st,DEF,steps[st.step].set||{});go(st.step)};
+
+/* tooltips */
+const svgPt=(svg,e)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
+window.addEventListener('pointermove',e=>{const t=e.target,tip=$('tip');let s=null;
+  const svg=t.closest&&t.closest('svg');if(svg&&svg._pts&&svg._pts.length){const q=svgPt(svg,e);let best=400;svg._pts.forEach(p=>{const d=(p[0]-q.x)**2+(p[1]-q.y)**2;if(d<best){best=d;s=p[2]}})}
+  tip.hidden=!s;if(s){tip.textContent=s;tip.style.left=Math.min(e.clientX+12,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=Math.max(4,e.clientY-30)+'px'}});
+
+go(0);
+})();
+</script>
+</body>
+</html>

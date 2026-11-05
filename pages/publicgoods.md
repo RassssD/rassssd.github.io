@@ -16,5 +16,6 @@ title: Public Goods
 
 * [Visualising Frisch-Waugh-Lovell](/pages/apps/fwl_app.html)
 * [Regression Geometry](/pages/apps/regression-geometry.html)
+* [Hypothesis Tests and Confidence Intervals](/pages/apps/hypothesis-testing.html)
 * [Lemons: Akerlof Signalling](/pages/apps/akerlof_app.html)
 * [Insurance: Rothschild-Stiglitz](/pages/apps/rs_insurance.html)
