@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convergence Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+/* Layout: explanations, then controls directly above the results, then the four-estimator comparison */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --fg:#1c2330; --muted:#5f6b7a; --grid:#e8ebf0; --rule:#d5dae2;
+  --ok:#16825a; --bad:#cf2e2a;
+  /* Estimator colours: blue, amber, reddish purple, ink. Distinct from each other and from the green/red verdicts */
+  --e1:#1f6fb5; --e2:#b86e00; --e3:#b4579a; --e4:#1c2330;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --ok:#3fcf94; --bad:#ff6b66; --e1:#6cb4ee; --e2:#f0a830; --e3:#e48fc9; --e4:#e5e9ef; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --ok:#3fcf94; --bad:#ff6b66; --e1:#6cb4ee; --e2:#f0a830; --e3:#e48fc9; --e4:#e5e9ef; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
+a{color:inherit;text-underline-offset:2px}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:1.05rem;margin:0 0 8px}
+h3{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:600}
+h3 .nt{text-transform:none;letter-spacing:0;font-size:.85rem}
+.sub{margin:2px 0 0;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;min-width:0}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:16px;align-items:start}
+@media (max-width:980px){.two{grid-template-columns:1fr}}
+.defs dl{margin:0;display:grid;gap:8px}
+.defs dt{font-weight:600}
+.defs dd{margin:0}
+.defs ul{margin:6px 0 0;padding-left:1.2em}
+.defs li{margin-bottom:.2em}
+/* Estimator table; below 560px each row becomes a card with the three verdicts side by side */
+.etab{width:100%;border-collapse:collapse;font-size:.9rem}
+.etab th{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:0 8px 6px;border-bottom:1px solid var(--rule)}
+.etab td{padding:8px;border-bottom:1px solid var(--rule);vertical-align:top}
+.etab tr.on td{background:color-mix(in srgb,var(--c) 8%,transparent)}
+.etab td.nm{border-left:4px solid var(--c)}
+.etab .rowbtn{display:block;padding:0;border:0;border-radius:0;background:none;font-weight:600;font-size:.95rem;text-align:left;color:var(--fg)}
+.etab tr.on .rowbtn::after{content:' · shown';font-weight:400;font-size:.78rem;color:var(--muted)}
+.etab .d{margin-top:2px;color:var(--muted);font-size:.85rem;line-height:1.45}
+.etab td.f{white-space:nowrap}
+.etab .v{display:inline-block;font-weight:700;margin-right:4px}
+.etab .v.y{color:var(--ok)}.etab .v.n{color:var(--bad)}
+.etab .r{display:block;font-size:.78rem;color:var(--muted);line-height:1.35;margin-top:1px}
+@media (max-width:560px){
+  .etab,.etab tbody{display:block}.etab thead{display:none}
+  .etab tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--rule)}
+  .etab td{border:0;padding:4px 6px}
+  .etab td.nm,.etab td.f{grid-column:1/-1}
+  .etab td.f{padding-left:10px;border-left:4px solid var(--c)}
+  .etab td.v3::before{content:attr(data-l);display:block;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.chip{font-size:.76rem;padding:1px 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+.chip.y{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent);background:color-mix(in srgb,var(--ok) 9%,transparent)}
+.chip.n{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent);background:color-mix(in srgb,var(--bad) 8%,transparent)}
+.controls{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center}
+.group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.group>span{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+button{font:inherit;font-size:.85rem;padding:5px 12px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button.act{border-radius:6px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--e1);outline-offset:2px}
+.sl{display:flex;gap:8px;align-items:center;min-width:min(100%,250px)}
+.sl label{font-family:var(--mono);font-size:.88rem;white-space:nowrap}
+.sl input{flex:1;min-width:90px;accent-color:var(--e1)}
+.sl output{font-family:var(--mono);font-size:.88rem;min-width:3.6em;text-align:right;font-variant-numeric:tabular-nums}
+.summary{border-left:4px solid var(--c);display:grid;gap:4px}
+.summary .top{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.summary .top strong{font-size:1.02rem}
+.summary p{margin:0}
+.results{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:1000px){.results{grid-template-columns:1fr 1fr}.results .wide{grid-column:1/-1}}
+@media (max-width:640px){.results{grid-template-columns:1fr}}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.cmp{grid-template-columns:1fr}}
+.chart svg{display:block;width:100%;height:auto}
+.cap{font-size:.82rem;color:var(--muted);margin:6px 2px 0}
+.stats{font-size:.84rem;margin:6px 2px 0;font-variant-numeric:tabular-nums;display:flex;flex-wrap:wrap;gap:2px 16px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.8rem;color:var(--muted);margin:6px 2px 0}
+.li{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:18px;height:0;border-top:2.5px solid var(--c)}
+.sw.dash{border-top-style:dashed}
+.sw.dot{border-top-style:dotted}
+footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+svg text{font-family:var(--sans);font-size:11.5px;fill:var(--muted);font-variant-numeric:tabular-nums}
+svg .lab{font-family:var(--sans);font-size:12.5px;font-weight:600;fill:var(--fg)}
+math{font-size:1.04em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Convergence Lab</h1>
+    <p class="sub">Unbiasedness, consistency and convergence in distribution, by simulation. The histograms use 2,000 simulated samples of size n, the curves over n 600 samples at each n; θ = 1, σ = 1.</p>
+  </header>
+
+  <div class="two">
+    <section class="panel defs" id="defs"></section>
+    <section class="panel"><h2>Four estimators of the mean</h2><table class="etab" id="etab"></table><p class="sub" style="margin-top:8px;font-size:.85rem">Click an estimator’s name to show it in the panels below. Consistent and asymptotically normal refer to n → ∞; the reasons are in grey. The verdicts hold for all three populations.</p></section>
+  </div>
+
+  <section class="panel controls" aria-label="Controls">
+    <div class="group" id="g-est" role="group" aria-label="Estimator"><span>Estimator</span></div>
+    <div class="group" id="g-pop" role="group" aria-label="Population"><span>Population</span></div>
+    <div class="sl"><label for="n">n</label><input type="range" id="n" min="0" max="12" step="1"><output id="no"></output></div>
+    <div class="sl"><label for="eps">ε</label><input type="range" id="eps" min="0.02" max="0.5" step="0.01"><output id="epso"></output></div>
+    <button class="act" id="reseed">New draws</button>
+  </section>
+
+  <section class="panel summary" id="summary" aria-live="polite"></section>
+
+  <div class="results">
+    <section class="panel chart wide"><h3>Sampling distribution of <span class="nt">θ̂</span></h3><svg id="hist" role="img" aria-label="Histogram of the estimates"></svg><div class="stats" id="hstats"></div></section>
+    <section class="panel chart"><h3>As n grows</h3><svg id="path" role="img" aria-label="Bias, sd and miss probability against n"></svg><div class="legend" id="plegend"></div><p class="cap">600 samples at each n, so the dots can differ slightly from the 2,000-sample figures under the histogram.</p></section>
+    <section class="panel chart"><h3>Shape, standardised</h3><svg id="shape" role="img" aria-label="Standardised histogram with the normal curve"></svg><p class="cap">(θ̂ − mean) / sd against N(0, 1). Compares shape only, not centre.</p></section>
+  </div>
+
+  <section style="display:grid;gap:10px">
+    <div>
+      <h2 style="margin:0">All four estimators</h2>
+      <p class="sub">Same population, same ε, 600 samples at each n. The selected estimator is drawn thicker.</p>
+      <div class="legend" id="clegend"></div>
+    </div>
+    <div class="cmp">
+      <section class="panel chart"><h3>|Bias|</h3><svg id="c-bias" role="img" aria-label="Absolute bias against n"></svg><p class="cap">Unbiased means zero at every n, not only in the limit.</p></section>
+      <section class="panel chart"><h3>Standard deviation</h3><svg id="c-sd" role="img" aria-label="Standard deviation against n"></svg><p class="cap">Shrinkage is smallest at small n. The dominant unit stalls at 0.5.</p></section>
+      <section class="panel chart"><h3>RMSE = √(bias² + sd²)</h3><svg id="c-rmse" role="img" aria-label="RMSE against n"></svg><p class="cap">RMSE → 0 is enough for consistency.</p></section>
+      <section class="panel chart"><h3>Miss probability <span class="nt">P(|θ̂ − θ| > ε)</span></h3><svg id="c-miss" role="img" aria-label="Miss probability against n"></svg><p class="cap" id="misscap">Consistent means this goes to 0, for every ε.</p></section>
+    </div>
+  </section>
+  <footer><span>Rasmus Duret · LSE</span><a href="https://rassssd.github.io">rassssd.github.io</a></footer>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg',T=String.raw;
+const THETA=1,K=5,MAIN=2000,PATH=600;
+const GRID=[1,2,3,5,10,20,30,50,100,200,300,500,1000];
+
+/* ---------- content ---------- */
+// chips: [verdict, property, reason]; the reason is shown in grey in the table and after a colon in the summary
+const EST=[
+ {name:'Sample mean',c:'var(--e1)',chips:[[1,'Unbiased','E[X̄] = θ'],[1,'Consistent','Var = σ²/n → 0'],[1,'Asy. normal','CLT']],
+  f:T`\(\bar X=\frac1n\sum_i X_i\)`,desc:'Average all n observations. The benchmark.',
+  look:'The benchmark. With the skewed population, step n through 1, 5, 50 and watch the shape panel become normal.'},
+ {name:'Dominant unit',c:'var(--e2)',chips:[[1,'Unbiased','both halves have mean θ'],[0,'Consistent','Var → σ²/4'],[0,'Asy. normal','X₁ never averages out']],
+  f:T`\(\tfrac12X_1+\tfrac12\bar X_{-1}\)`,desc:'One unit always gets half the weight, like a GDP-weighted average dominated by one country, or a diff-in-diff with one treated state. For n = 1 it is X₁.',
+  look:'More data never dilutes that unit: sd stalls at 0.5 and the miss probability levels off. Unbiasedness does not imply consistency; the effective sample size must grow.'},
+ {name:'Shrinkage',c:'var(--e3)',chips:[[0,'Unbiased','bias = −kθ/(n+k)'],[1,'Consistent','bias and Var → 0'],[1,'Asy. normal','like X̄ in the limit']],
+  f:T`\(\frac{n}{n+5}\,\bar X\)`,desc:'Pulls the mean towards a prior guess of 0, as if adding k = 5 pseudo-observations at 0. Like ridge regression or a Bayesian posterior mean.',
+  look:'Biased but with smaller sd than the sample mean at small n: the bias–variance trade-off. As n grows the data swamp the prior. Consistency does not require unbiasedness.'},
+ {name:'Nonresponse',c:'var(--e4)',chips:[[0,'Unbiased','selection'],[0,'Consistent','→ E[X | respond] > θ'],[1,'Asy. normal','around the wrong centre']],
+  f:T`\(\bar X_{\text{resp}}\)`,desc:'A survey where units with X < θ reply only half the time; average the respondents. Selection bias, like omitted variable bias. Samples with no respondents are dropped.',
+  look:'Selection bias: the distribution collapses onto the wrong point. Once ε is below the bias, the miss probability goes to 1. More data does not fix bias that does not shrink.'}];
+const POPS=[{name:'Normal',tip:'1 + Z, Z ~ N(0, 1)'},{name:'Skewed',tip:'Exponential with mean 1'},{name:'Uniform',tip:'1 + √3·U, U ~ Uniform(−1, 1)'}];
+const DEFS=T`<h2>What the words mean</h2><dl>
+<dt>Unbiased</dt><dd>\(E[\hat\theta_n]=\theta\) at every fixed \(n\). The mean of the sampling distribution is the truth, whatever the sample size.</dd>
+<dt>Consistent, \(\hat\theta_n\to_p\theta\)</dt><dd>\(P(|\hat\theta_n-\theta|>\varepsilon)\to0\) as \(n\to\infty\), for every \(\varepsilon>0\). The whole distribution collapses onto \(\theta\).</dd>
+<dt>Converges in distribution, \(\to_d\)</dt><dd>The distribution of a sequence of random variables approaches a fixed limit distribution. For estimators it is applied after rescaling, as in the central limit theorem: \(\sqrt n(\bar X-\theta)\to_d N(0,\sigma^2)\).</dd>
+<dt>MSE \(\to0\)</dt><dd>\(\text{MSE}=E[(\hat\theta_n-\theta)^2]=\text{bias}^2+\text{Var}\). It goes to 0 exactly when both bias and variance do.</dd></dl>
+<h3 style="margin-top:12px">How they link</h3><ul>
+<li>Unbiasedness and consistency do not imply each other: the dominant unit is unbiased but not consistent; shrinkage is biased but consistent.</li>
+<li>Bias \(\to0\) and variance \(\to0\) together imply consistency, because \(P(|\hat\theta_n-\theta|>\varepsilon)\le\text{MSE}/\varepsilon^2\) (Chebyshev).</li>
+<li>\(\to_p\) a constant is the same as \(\to_d\) a point mass at that constant.</li></ul>
+<p class="sub" style="margin-top:8px;font-size:.88rem">Populations, all with mean 1 and sd 1, so they differ only in shape: Normal, \(1+Z\) with \(Z\sim N(0,1)\); Skewed, exponential with mean 1; Uniform, \(1+\sqrt3\,U\) with \(U\sim\text{Uniform}({-1},1)\).</p>`;
+
+function tex(s){return typeof katex==='undefined'?s.replace(/\\\(|\\\)/g,''):s.replace(/\\\((.+?)\\\)([.,:;]?)/g,(m,t,p)=>{let h=t;try{h=katex.renderToString(t,{output:'mathml',throwOnError:false})}catch(e){}return p?`<span style="white-space:nowrap">${h}${p}</span>`:h})}
+const chipHTML=(ch,long)=>ch.map(([y,l,r])=>`<span class="chip ${y?'y':'n'}">${y?'✓':'✗'} ${l}${long&&r?': '+r:''}</span>`).join('');
+
+/* ---------- simulation ---------- */
+// xorshift32 for uniforms; Box–Muller for normals (the second value of each pair is kept for the next call)
+function xorshift(seed){let s=(seed>>>0)||1;return()=>{s=(s^(s<<13))>>>0;s=(s^(s>>>17))>>>0;s=(s^(s<<5))>>>0;return(s+.5)/4294967296}}
+function boxMuller(r){let spare=null;return()=>{if(spare!==null){const v=spare;spare=null;return v}const a=Math.sqrt(-2*Math.log(r())),b=2*Math.PI*r();spare=a*Math.sin(b);return a*Math.cos(b)}}
+const mix=(...v)=>{let h=2166136261;v.forEach(x=>{h=Math.imul(h^(x>>>0),16777619)>>>0;h=Math.imul(h^(h>>>13),2246822519)>>>0});return h||1};
+// reps samples of size n; all four estimators from the same samples. Nonresponse is NaN when nobody responds
+function simulate(n,reps,seed,pop){const r=xorshift(seed),z=boxMuller(r),S3=Math.sqrt(3);
+  const draw=pop===0?()=>1+z():pop===1?()=>-Math.log(r()):()=>1+S3*(2*r()-1);
+  const out=[0,1,2,3].map(()=>new Float64Array(reps));
+  for(let k=0;k<reps;k++){let sum=0,x1=0,rs=0,rc=0;
+    for(let i=0;i<n;i++){const x=draw();if(i===0)x1=x;sum+=x;if(x>=THETA||r()<.5){rs+=x;rc++}}
+    out[0][k]=sum/n;out[1][k]=n===1?x1:.5*x1+.5*(sum-x1)/(n-1);out[2][k]=sum/(n+K);out[3][k]=rc?rs/rc:NaN}
+  return out}
+function stats(a,eps){let m=0,c=0,miss=0;for(const v of a)if(v===v){m+=v;c++;if(Math.abs(v-THETA)>eps)miss++}m/=c;let s=0;for(const v of a)if(v===v)s+=(v-m)**2;
+  const sd=Math.sqrt(s/(c-1||1)),bias=m-THETA;return{n:c,drop:a.length-c,mean:m,bias,sd,rmse:Math.sqrt(bias*bias+sd*sd),miss:miss/c}}
+
+/* ---------- state and caches ---------- */
+const st={est:0,pop:1,ni:4,eps:.1,seed:20250901};
+let paths=null,pstats=null;const main=new Map();
+const runs={paths:0,main:0};window.__convergenceRuns=runs;
+function computePaths(){runs.paths++;paths=GRID.map((n,g)=>simulate(n,PATH,mix(st.seed,st.pop,g,1),st.pop));computePathStats()}
+function computePathStats(){pstats=[0,1,2,3].map(e=>GRID.map((n,g)=>stats(paths[g][e],st.eps)))}
+function mainDraws(){const n=GRID[st.ni],key=`${st.pop}|${st.seed}|${n}`;if(!main.has(key)){runs.main++;main.set(key,simulate(n,MAIN,mix(st.seed,st.pop,n,2),st.pop))}return main.get(key)}
+
+/* ---------- SVG ---------- */
+function el(tag,at,p){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);if(p)p.appendChild(e);return e}
+function txt(p,x,y,s,o={}){const t=el('text',{x,y,'text-anchor':o.a||'start',class:o.cls||''},p);t.textContent=s;if(o.c)t.style.fill=o.c;if(o.halo)t.style.cssText+=';paint-order:stroke;stroke:var(--panel);stroke-width:4px';return t}
+const seg=(p,a,b,c,w,dash)=>el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:c,'stroke-width':w||1,'stroke-dasharray':dash||'none'},p);
+const fmt=v=>+v.toFixed(3)+'';
+// A chart frame. Log x when o.log; returns scales, a clipped group and the plot box
+function frame(s,o){const W=o.W,H=o.H,pl=44,pr=10,pt=10,pb=36,w=W-pl-pr,h=H-pt-pb;s.innerHTML='';s.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const lx=v=>Math.log10(v),x0=o.log?lx(o.xr[0]):o.xr[0],x1=o.log?lx(o.xr[1]):o.xr[1];
+  const sx=v=>pl+((o.log?lx(v):v)-x0)/(x1-x0)*w,sy=v=>pt+h-(v-o.yr[0])/(o.yr[1]-o.yr[0])*h;
+  (o.xt||[]).forEach(t=>{seg(s,[sx(t),pt],[sx(t),pt+h],'var(--grid)');txt(s,sx(t)+(t===o.xr[1]?3:0),pt+h+14,o.fx?o.fx(t):String(t),{a:t===o.xr[1]?'end':'middle'})});
+  (o.yt||[]).forEach(t=>{seg(s,[pl,sy(t)],[pl+w,sy(t)],'var(--grid)');txt(s,pl-6,sy(t)+4,o.fy?o.fy(t):fmt(t),{a:'end'})});
+  seg(s,[pl,pt+h],[pl+w,pt+h],'var(--fg)',1.2);seg(s,[pl,pt],[pl,pt+h],'var(--fg)',1.2);
+  if(o.xl)txt(s,pl+w/2,H-4,o.xl,{a:'middle',cls:'lab'});
+  const id='clip-'+s.id,cp=el('clipPath',{id},el('defs',{},s));el('rect',{x:pl,y:pt,width:w,height:h},cp);
+  return{sx,sy,g:el('g',{'clip-path':`url(#${id})`},s),pl,pt,w,h}}
+const NT=[1,10,100,1000],nfmt=t=>t===1000?'1,000':String(t);
+const niceMax=v=>{for(const m of [.1,.2,.25,.3,.4,.5,.6,.75,.8,1,1.2,1.5])if(v<=m)return m;return 1.5};
+const yticks=m=>{const st_=m<=.3?.1:m<=.6?.2:m<=1.2?.25:.5;const t=[];for(let v=0;v<=m+1e-9;v+=st_)t.push(+v.toFixed(2));return t};
+function curN(F){const x=F.sx(GRID[st.ni]);seg(F.g,[x,F.pt],[x,F.pt+F.h],'var(--muted)',1.2,'4 3')}
+function polyline(F,pts,c,w,dash){el('polyline',{points:pts.map(([x,y])=>F.sx(x).toFixed(1)+','+F.sy(y).toFixed(1)).join(' '),fill:'none',stroke:c,'stroke-width':w,'stroke-dasharray':dash||'none','stroke-linejoin':'round'},F.g)}
+function legend(id,items){$(id).innerHTML=items.map(([c,t,k])=>`<span class="li"><i class="sw ${k||''}" style="--c:${c}"></i>${t}</span>`).join('')}
+
+/* ---------- panels ---------- */
+function renderSummary(){const E=EST[st.est],s=$('summary');s.style.setProperty('--c',E.c);
+  s.innerHTML=`<div class="top"><strong>Showing: ${E.name}</strong><span class="chips" style="margin:0">${chipHTML(E.chips,true)}</span></div><p>${E.look}</p>`}
+function renderHist(D){const a=D[st.est],S=stats(a,st.eps),XR=[-1.5,3.5],B=100,bw=(XR[1]-XR[0])/B,cnt=new Array(B).fill(0);let off=0;
+  for(const v of a){if(v!==v)continue;const i=Math.floor((v-XR[0])/bw);if(i<0||i>=B)off++;else cnt[i]++}
+  // A narrower canvas on small screens, so the labels stay readable when the chart is scaled down
+  const narrow=$('hist').getBoundingClientRect().width<430,ym=Math.max(...cnt)*1.12||1,F=frame($('hist'),{W:narrow?380:560,H:narrow?240:270,xr:XR,yr:[0,ym],xt:[-1,0,1,2,3],yt:[],xl:'θ̂'}),E=EST[st.est];
+  el('rect',{x:F.sx(THETA-st.eps),y:F.pt,width:F.sx(THETA+st.eps)-F.sx(THETA-st.eps),height:F.h,fill:'var(--ok)','fill-opacity':.12},F.g);
+  cnt.forEach((c,i)=>{if(!c)return;const x=F.sx(XR[0]+i*bw);el('rect',{x:x+.3,y:F.sy(c),width:Math.max(.6,F.sx(XR[0]+(i+1)*bw)-x-.6),height:F.sy(0)-F.sy(c),fill:E.c,'fill-opacity':.6},F.g)});
+  // Each marker line sits on a panel-coloured underlay so it stays visible over bars of any colour
+  [[THETA,'var(--fg)',null],[S.mean,E.c,'6 4']].forEach(([v,c,d])=>{seg(F.g,[F.sx(v),F.pt],[F.sx(v),F.pt+F.h],'var(--panel)',5);seg(F.g,[F.sx(v),F.pt],[F.sx(v),F.pt+F.h],c,2,d)});
+  const right=S.mean>=THETA;txt($('hist'),F.sx(THETA)+(right?-6:6),F.pt+14,'θ = 1',{a:right?'end':'start',halo:1,c:'var(--fg)'});
+  txt($('hist'),F.sx(S.mean)+(right?6:-6),F.pt+30,`average θ̂ = ${S.mean.toFixed(2)}`,{a:right?'start':'end',halo:1,c:'var(--fg)'});
+  txt($('hist'),F.sx(THETA+st.eps)+4,F.pt+F.h-8,`θ ± ε`,{halo:1,c:'var(--ok)'});
+  const it=[`average θ̂ ${S.mean.toFixed(3)}`,`bias ${S.bias>=0?' ':''}${S.bias.toFixed(3)}`,`sd ${S.sd.toFixed(3)}`,`P(|θ̂ − θ| > ε) ${S.miss.toFixed(3)}`];
+  if(off)it.push(`${off} off axis`);if(S.drop)it.push(`${S.drop} dropped: no respondents`);
+  $('hstats').innerHTML=it.map(s=>`<span>${s}</span>`).join('')}
+function renderPath(){const P=pstats[st.est],E=EST[st.est],F=frame($('path'),{W:300,H:250,xr:[1,1000],log:1,yr:[0,1.1],xt:NT,fx:nfmt,yt:[0,.25,.5,.75,1],xl:'n'});curN(F);
+  // |bias| and sd in grey (solid, dashed) so that only the miss probability carries the estimator's colour
+  const L=[['bias',k=>Math.abs(P[k].bias),'var(--muted)',2,null],['sd',k=>P[k].sd,'var(--muted)',2,'6 4'],['miss',k=>P[k].miss,E.c,3,null]];
+  L.forEach(([,f,c,w,d])=>{polyline(F,GRID.map((n,k)=>[n,f(k)]),c,w,d);el('circle',{cx:F.sx(GRID[st.ni]),cy:F.sy(Math.min(f(st.ni),1.1)),r:4.5,fill:c,stroke:'var(--panel)','stroke-width':1.5},F.g)});
+  legend('plegend',[['var(--muted)','|bias|'],['var(--muted)','sd','dash'],[E.c,`P(|θ̂ − θ| > ${st.eps.toFixed(2)})`]])}
+function renderShape(D){const a=D[st.est],S=stats(a,st.eps),XR=[-4,4],bw=.2,B=40,cnt=new Array(B).fill(0);
+  for(const v of a){if(v!==v)continue;const z=(v-S.mean)/S.sd,i=Math.floor((z-XR[0])/bw);if(i>=0&&i<B)cnt[i]++}
+  const dens=cnt.map(c=>c/(S.n*bw)),ym=Math.max(.5,Math.max(...dens)*1.1),F=frame($('shape'),{W:300,H:250,xr:XR,yr:[0,ym],xt:[-4,-2,0,2,4],yt:[],xl:'standardised θ̂'}),E=EST[st.est];
+  dens.forEach((d,i)=>{if(!d)return;const x=F.sx(XR[0]+i*bw);el('rect',{x:x+.3,y:F.sy(d),width:F.sx(XR[0]+(i+1)*bw)-x-.6,height:F.sy(0)-F.sy(d),fill:E.c,'fill-opacity':.55},F.g)});
+  const xs=Array.from({length:161},(_,i)=>-4+i*.05);polyline(F,xs.map(x=>[x,Math.exp(-x*x/2)/Math.sqrt(2*Math.PI)]),'var(--fg)',2);
+  txt($('shape'),F.sx(1.3),F.sy(.3),'N(0, 1)',{halo:1,c:'var(--fg)'})}
+const CMP=[['c-bias',s=>Math.abs(s.bias)],['c-sd',s=>s.sd],['c-rmse',s=>s.rmse],['c-miss',s=>s.miss]];
+function renderCompare(){CMP.forEach(([id,f])=>{const miss=id==='c-miss',vals=pstats.flatMap(P=>P.map(f)),m=miss?1:niceMax(Math.max(...vals)*1.05);
+  const F=frame($(id),{W:460,H:240,xr:[1,1000],log:1,yr:[0,m],xt:NT,fx:nfmt,yt:miss?[0,.25,.5,.75,1]:yticks(m),xl:'n'});curN(F);
+  // The selected estimator last, so it sits on top
+  [0,1,2,3].filter(e=>e!==st.est).concat(st.est).forEach(e=>{const sel=e===st.est;polyline(F,GRID.map((n,k)=>[n,Math.min(f(pstats[e][k]),m*1.2)]),EST[e].c,sel?3:1.6);
+    if(sel)el('circle',{cx:F.sx(GRID[st.ni]),cy:F.sy(Math.min(f(pstats[e][st.ni]),m)),r:4.5,fill:EST[e].c,stroke:'var(--panel)','stroke-width':1.5},F.g)})});
+  $('misscap').textContent=`Consistent means this goes to 0, for every ε (here ε = ${st.eps.toFixed(2)}).`}
+function renderMain(){const D=mainDraws();renderHist(D);renderPath();renderShape(D)}
+function syncControls(){[...$('g-est').querySelectorAll('button')].forEach((b,i)=>b.setAttribute('aria-pressed',i===st.est));[...$('etab').tBodies[0].rows].forEach((r,i)=>r.classList.toggle('on',i===st.est));[...$('g-pop').querySelectorAll('button')].forEach((b,i)=>b.setAttribute('aria-pressed',i===st.pop));
+  $('n').value=st.ni;$('no').textContent=GRID[st.ni].toLocaleString('en');$('eps').value=st.eps;$('epso').textContent=st.eps.toFixed(2)}
+function renderAll(){syncControls();renderSummary();renderMain();renderCompare()}
+
+/* ---------- build ---------- */
+$('defs').innerHTML=tex(DEFS);
+const COLS=['Unbiased','Consistent','Asy. normal'];
+$('etab').innerHTML=`<thead><tr><th>Estimator</th><th>Formula</th>${COLS.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`+
+  EST.map((E,i)=>`<tr style="--c:${E.c}"><td class="nm"><button class="rowbtn" data-i="${i}">${E.name}</button><div class="d">${E.desc}</div></td><td class="f">${tex(E.f)}</td>`+
+    E.chips.map(([y,,r],j)=>`<td class="v3" data-l="${COLS[j]}"><span class="v ${y?'y':'n'}" aria-label="${y?'yes':'no'}">${y?'✓':'✗'}</span><span class="r">${r}</span></td>`).join('')+'</tr>').join('')+'</tbody>';
+legend('clegend',EST.map(E=>[E.c,E.name]));
+const select=i=>{st.est=i;syncControls();renderSummary();renderMain();renderCompare()};
+EST.forEach((E,i)=>{const b=document.createElement('button');b.textContent=E.name;b.onclick=()=>select(i);$('g-est').appendChild(b)});
+$('etab').querySelectorAll('.rowbtn').forEach(b=>b.onclick=()=>select(+b.dataset.i));
+POPS.forEach((p,i)=>{const b=document.createElement('button');b.textContent=p.name;b.title=p.tip;b.onclick=()=>{if(st.pop===i)return;st.pop=i;main.clear();computePaths();renderAll()};$('g-pop').appendChild(b)});
+$('n').addEventListener('input',()=>{st.ni=+$('n').value;syncControls();renderMain();renderCompare()});
+// ε only changes which draws count as misses: recount from the stored draws, no new simulation
+$('eps').addEventListener('input',()=>{st.eps=+$('eps').value;syncControls();computePathStats();renderMain();renderCompare()});
+$('reseed').onclick=()=>{st.seed=(st.seed+7919)>>>0;main.clear();computePaths();renderAll()};
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderMain,150)});
+computePaths();renderAll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Wald Test</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+/* Layout: figures left, narrative + controls + readout right; stacks on phone */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --fg:#1c2330; --muted:#5f6b7a; --grid:#e8ebf0; --rule:#d5dae2;
+  --y:#2457c5; --x:#c2620a; --x2:#16825a; --fit:#6b3fc0; --res:#cf2e2a; --disc:#b8318f;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --x2:#3fcf94; --fit:#b996ff; --res:#ff6b66; --disc:#f07ccf; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --x2:#3fcf94; --fit:#b996ff; --res:#ff6b66; --disc:#f07ccf; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
+a{color:inherit;text-underline-offset:2px}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:2px 0 0;color:var(--muted)}
+.steps{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.steps .part{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 3px 0 8px}
+.steps .part:first-child{margin-left:0}
+.steps button{width:27px;height:27px;padding:0;border-radius:50%;font-family:var(--mono);font-size:.74rem}
+.steps button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.steps button.done{border-color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px;min-width:0}
+.panel svg{display:block;width:100%;height:auto;user-select:none}
+.panel svg.drag{touch-action:none;cursor:grab}
+.figs{display:grid;gap:8px}
+.cell{min-width:0}
+.hint{margin:6px 2px 0;font-size:.8rem;color:var(--muted);min-height:1.2em}
+.side{display:grid;gap:12px;min-width:0}
+.stepnum{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h2{margin:0;font-size:1.2rem;text-wrap:balance}
+.text{max-width:62ch}
+.text p{margin:0 0 .6em}
+.text ul{margin:0 0 .6em;padding-left:1.3em}
+.text li{margin-bottom:.25em}
+.text strong{font-weight:600}
+.text .key{margin:.7em 0;padding:7px 11px;border-left:3px solid var(--fit);border-radius:0 6px 6px 0;background:color-mix(in srgb,var(--fit) 9%,transparent)}
+.text .eq{margin:.6em 0;text-align:center;font-size:1.06em}
+.text .recipe{margin:0 0 .8em;padding:8px 10px 8px 2.1em;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+.text .recipe li{color:var(--muted)}
+.text .recipe li.on{color:var(--fg);font-weight:600}
+.text .recipe li.on::marker{color:var(--fit)}
+math{font-size:1.06em}
+.controls{display:grid;gap:10px}
+.controls:not(:has(:not([hidden]))){display:none}
+.controls.btnfirst #c-row{order:-1}
+.ctl{display:grid;grid-template-columns:6.2em 1fr 3.6em;gap:10px;align-items:center}
+.ctl label{font-family:var(--mono);font-size:.88rem}
+.ctl output{font-family:var(--mono);font-size:.85rem;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--fit)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-size:.85rem;padding:6px 12px;border-radius:6px;border:1px solid var(--rule);background:var(--panel);color:var(--fg);cursor:pointer}
+button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible{outline:2px solid var(--fit);outline-offset:2px}
+.readout{font-family:var(--mono);font-size:.82rem;line-height:1.7;font-variant-numeric:tabular-nums;border-left:2px solid var(--rule);padding-left:10px;overflow-x:auto;white-space:pre}
+.readout:empty{display:none}
+.plabel{font-size:.8rem;color:var(--fg);margin:0 0 2px 2px;font-weight:600}
+.plabel:empty{display:none}
+.topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px}
+.pager{display:flex;gap:8px;margin-left:auto}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin:6px 2px 0;font-size:.8rem;color:var(--muted)}
+.legend:empty{display:none}
+.li{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:18px;height:0;border-top:2px solid var(--c)}
+.sw.dash{border-top-style:dashed}
+.sw.dot{width:9px;height:9px;border:0;border-radius:50%;background:var(--c)}
+.sw.ring{width:10px;height:10px;border:2px solid var(--c);border-radius:50%}
+.sw.area{height:10px;border:0;background:var(--c);opacity:.3}
+.tip{position:fixed;z-index:9;pointer-events:none;background:var(--fg);color:var(--bg);font-family:var(--mono);font-size:.75rem;padding:2px 6px;border-radius:4px;white-space:nowrap}
+footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+svg text{font-family:var(--mono);font-size:12px}
+svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:italic}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>The Wald Test</h1>
+    <p class="sub">Testing several restrictions at once: why a joint test is not two t-tests, where the ellipses come from, and what changes when the restriction is nonlinear. Use the buttons or the ← → keys.</p>
+  </header>
+  <div class="topbar">
+    <nav class="steps" id="nav" aria-label="Steps"></nav>
+    <div class="pager"><button id="prev">← Previous</button><button id="next" class="primary">Next →</button></div>
+  </div>
+  <div class="grid">
+    <section class="panel">
+      <div class="figs" id="fig"></div>
+      <div class="legend" id="legend"></div>
+      <p class="hint" id="hint"></p>
+    </section>
+    <section class="side">
+      <div>
+        <div class="stepnum" id="stepnum"></div>
+        <h2 id="stitle"></h2>
+      </div>
+      <div class="text" id="stext"></div>
+      <div class="controls">
+        <div class="ctl" id="c-n"><label for="n">n firms</label><input type="range" id="n" min="5" max="400" step="5"><output id="no"></output></div>
+        <div class="ctl" id="c-r"><label for="r">corr(K, L)</label><input type="range" id="r" min="-0.9" max="0.9" step="0.05"><output id="ro"></output></div>
+        <div class="ctl" id="c-cbox"><label for="cbox">box cut-off</label><input type="range" id="cbox" min="1.8" max="3" step="0.01"><output id="cboxo"></output></div>
+        <div class="ctl" id="c-m"><label for="m">whiten</label><input type="range" id="m" min="0" max="1" step="0.01"><output id="mo"></output></div>
+        <div class="ctl" id="c-alpha"><label for="alpha">α</label><input type="range" id="alpha" min="0.01" max="0.2" step="0.01"><output id="alphao"></output></div>
+        <div class="row" id="c-row">
+          <button id="new">New sample</button>
+          <button id="ten">Draw 10</button>
+          <button id="more">Draw 100</button>
+          <button id="rand">Test 20 random β₀</button>
+          <button id="all">Test every β₀</button>
+          <button id="reveal">Reveal β</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+      <div class="readout" id="readout"></div>
+    </section>
+  </div>
+  <footer><span>Rasmus Duret · LSE</span><a href="https://rassssd.github.io">rassssd.github.io</a></footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const NS='http://www.w3.org/2000/svg';
+// log Y = β₀ + β₁ log K + β₂ log L + u. Inputs have SDs SDK and SDL and correlation r; the error has SD SIG
+const SDK=1,SDL=.8,SIG=.8,NSIM=4000;
+const B0=[.3,.7],TRUE=[.4,.72],TNL=[2,.5];
+const DEF={n:100,r:.6,alpha:.05,m:0,cbox:1.96,seed:4,bB:[.45,.88],bC:[.45,.78],bD:[1.6,1],probe:[.3,.7]};
+// Part D uses a smaller, noisier sample so the curvature of the null matters
+const DPART={n:10,r:.3};
+const fresh=()=>JSON.parse(JSON.stringify(DEF));
+const st={step:0,...fresh(),reveal:false,k:10,drawn:[]};
+const T=String.raw;
+
+const RECIPE=[
+ T`State \(H_0\) as \(q\) restrictions: \(R\beta=r\), or \(g(\beta)=0\).`,
+ T`Compute the discrepancy \(d=R\hat\beta-r\) and its variance \(R\hat VR'\).`,
+ T`Form \(W=d'(R\hat VR')^{-1}d\). If \(H_0\) is true, \(W\sim\chi^2_q\).`,
+ T`Choose \(\alpha\). It fixes the critical value \(c\) from \(\chi^2_q\).`,
+ T`Reject \(H_0\) if \(W>c\), equivalently if \(p<\alpha\).`];
+const recipe=on=>`<ol class="recipe">${RECIPE.map((t,i)=>`<li class="${on.includes(i)?'on':''}">${t}</li>`).join('')}</ol>`;
+
+const steps=[
+ {id:'one',part:'A',t:'One restriction you already know',fig:[1,1],ctl:['n','new'],hint:'Draw a new sample: t moves, and W = t² moves with it. Both red tails on top fold into the one red tail below.',
+  text:T`<p>A Cobb–Douglas production function, estimated by OLS on \(n\) firms:</p><p class="eq">\(\log Y=\beta_0+\beta_1\log K+\beta_2\log L+u\)</p><p>\(\beta_1\) and \(\beta_2\) are the output elasticities of capital and labour. Start with one of them: is \(\beta_1=0.3\)? That is a t-test, as in <a href="hypothesis-testing.html">the hypothesis-testing app</a>.</p><p class="key">Square the t-statistic: \(W=t^2\). Rejecting when \(|t|>1.96\) is rejecting when \(W>1.96^2=3.84\). <strong>Same test, new scale.</strong> \(W\) follows a \(\chi^2_1\) distribution, the square of a standard normal.</p><p>The squared version is the one that extends to several restrictions at once.</p>`},
+ {id:'where',part:'A',t:'Two coefficients, one estimate',fig:[1],ctl:['new','ten','more','reveal'],newLabel:'Draw another sample',tenLabel:'Draw 10 samples',moreLabel:'Draw 100 samples',hint:'Each new sample leaves its estimate behind as a faded dot.',
+  text:T`<p>Each sample gives two estimates, so one point \(\hat\beta=(\hat\beta_1,\hat\beta_2)\) in the plane. The true \(\beta\) is a fixed point somewhere nearby.</p><p class="key">Draw more samples. <strong>The estimates scatter in a cloud around \(\beta\).</strong> One estimate cannot tell you how far off it is. The cloud tells you how far off estimates typically are, and in which directions.</p><p>Reveal \(\beta\) to see how far off each one was.</p>`},
+ {id:'shape',part:'A',t:'The shape of the noise',fig:[1],ctl:['n','r'],hint:'Move the correlation between log K and log L: the cloud tilts. Move n: it shrinks.',
+  text:T`<p>The cloud is the sampling distribution of \(\hat\beta\): approximately normal, centred on \(\beta\), with covariance matrix \(\hat V\). The squared standard errors sit on its diagonal; the covariance of \(\hat\beta_1\) and \(\hat\beta_2\) sits off it.</p><p>More data shrinks the cloud. Correlation between the inputs tilts it.</p><p class="key">When firms with more capital also employ more labour, <strong>the estimates are negatively correlated</strong>. The data mostly show the two inputs moving together. A sample that credits a little too much output to capital fits almost as well if it credits a little less to labour, so the two errors offset each other.</p><p>The data then pin down the sum \(\beta_1+\beta_2\) well, but not how to split it between the inputs.</p><p>If firms substitute one input for the other, so that log K and log L are negatively correlated, the errors move together instead and the estimates are positively correlated. With two regressors, \(\text{corr}(\hat\beta_1,\hat\beta_2)=-\text{corr}(\log K,\log L)\).</p>`},
+ {id:'joint',part:'B',t:'A joint null: β₁ = 0.3 and β₂ = 0.7',fig:[1],ctl:[],drag:'bB',hint:'Click or drag in the plane to move your estimate.',
+  text:T`<p>Two points in the plane. The <strong>orange point is the null hypothesis</strong>, the textbook shares of capital and labour:</p><p class="eq">\(H_0:\ \beta_1=0.3\ \text{and}\ \beta_2=0.7\)</p><p>The <strong>blue point is your estimate</strong> from one sample, \((\hat\beta_1,\hat\beta_2)\). It starts at (0.45, 0.88). Click or drag in the plane to move it.</p><p>\(H_0\) makes two claims at once, so it imposes two restrictions: \(q=2\). The <strong>discrepancy</strong> is the arrow from the null to the estimate, \(d=\hat\beta-(0.3,\,0.7)'\).</p><p class="key">The question: <strong>is the arrow long compared with the noise?</strong> Rejecting says at least one of the two values is wrong. It does not say which.</p>${recipe([0,1])}<p>In the recipe's notation, \(R=I_2\) and \(r=(0.3,\,0.7)'\).</p>`},
+ {id:'twot',part:'B',t:'Why not two t-tests?',fig:[1],ctl:['new','ten','more','r'],btnFirst:true,newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Every dot is drawn with H₀ true. Set the correlation to 0 to get 9.75%; raise it and the corners fill up.',
+  text:T`<p>A shortcut: test \(\beta_1=0.3\) and \(\beta_2=0.7\) separately, each with its own t-test, and reject \(H_0\) if either rejects.</p><p>The red bands are where the first test rejects: \(\hat\beta_1\) too far left or right. The orange bands are where the second rejects: \(\hat\beta_2\) too high or too low. Every dot is an estimate drawn <strong>with \(H_0\) true</strong>, so a 5% test should reject 5% of them.</p><p class="eq">\(P(R)=P(R_1)+P(R_2)-P(R_1\cap R_2)\)</p><p class="key">Each band catches 5% of the draws. The corners lie in both bands, so they must not be counted twice. <strong>With independent estimates, 5% + 5% − 0.25% = 9.75%</strong>: almost double the size we asked for.</p><p>Correlated estimates are more often extreme together, so more draws land in the corners, the overlap grows, and the rate falls back towards 5%.</p>`},
+ {id:'widen',part:'B',t:'Widen the box?',fig:[1],ctl:['cbox','r','new','ten','more'],set:{cbox:2.24},newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Move the cut-off and the correlation; watch the long-run rate in the readout.',
+  text:T`<p>A fix for the size: make each t-test stricter, so that the two together reject 5%. With independent estimates \(|t|>2.24\) does it: each band now catches 2.5%, and 2.5% + 2.5% − 0.06% ≈ 5%.</p><p class="key">The size is right, but <strong>only for one correlation</strong>. Change it and the overlap changes, so the same cut-off no longer gives 5%.</p><p>And the box has the wrong shape. With correlated estimates the cloud is a tilted ellipse: the box keeps corners where draws almost never land and cuts into the long tips of the cloud.</p><p>A better region would follow the shape of the cloud. The next step builds it.</p>`},
+ {id:'ruler',part:'B',t:'Where the ellipses come from',fig:[1],ctl:['r'],drag:'bB',hint:'Click or drag to move your estimate. Along an ellipse W stays put; across the ellipses W climbs.',
+  text:T`<p>Look at the cloud of estimates drawn with \(H_0\) true. It is densest at the null and thins out in rings that share the cloud's shape: <strong>ellipses</strong>.</p>${recipe([2])}<p>Each ring is a set of points with the same value of the Wald statistic,</p><p class="eq">\(W=d'\hat V^{-1}d\)</p><p>which measures the arrow with the noise as its unit. With one coefficient it is \(d^2/\text{se}^2=t^2\). With two, \(\hat V^{-1}\) also allows for the correlation.</p><p class="key">A step along the long, noisy direction raises \(W\) slowly; a step across it, quickly. <strong>The ring at \(W=5.99\) holds 95% of the cloud.</strong></p><p>Adding up \(t_1^2+t_2^2\) would ignore the correlation. The readout shows how far off that is.</p>`},
+ {id:'white',part:'B',t:'Take the noise out: whitening',fig:[1],ctl:['m','r'],set:{m:0},drag:'bB',hint:'Slide from the β plane to the whitened plane. The dots are draws with H₀ true; the grid lines are lines of constant β₁ and β₂.',
+  text:T`<p>Change coordinates so that the noise is the same size in every direction and uncorrelated:</p><p class="eq">\(z=\hat V^{-1/2}(\hat\beta-r)\)</p><p>The slider bends the plane into these coordinates. Everything moves with it: the grid, the cloud, the ellipses and your estimate.</p><p class="key">In the whitened plane <strong>the ellipses are circles and \(W\) is the ordinary squared length of the arrow</strong>: \(W=z_1^2+z_2^2\).</p><p>If \(H_0\) is true, \(z_1\) and \(z_2\) are independent standard normals, and a sum of \(q\) squared independent standard normals is exactly what a \(\chi^2_q\) variable is.</p>`},
+ {id:'chi',part:'B',t:'W against χ²₂',fig:[1,1],ctl:['alpha'],drag:'bB',hint:'Drag your estimate or move α. The dashed ellipse runs through your estimate, at level W.',
+  text:T`${recipe([3,4])}<p>Each cut-off on the \(\chi^2_2\) curve is one ellipse in the plane. With \(\alpha=0.05\) the cut-off is \(c=5.99\), and the shaded 95% ellipse is where the test does not reject.</p><p>The p-value is the share of the curve beyond your \(W\): the chance, if \(H_0\) is true, of an estimate on a larger ellipse than yours.</p><p class="key">Reject \(H_0\) when \(W>c\): <strong>when your estimate lies outside the \(1-\alpha\) ellipse</strong> around the null.</p><p>Software usually reports \(F=W/q\) instead, compared with an \(F(q,\,n-k)\) distribution, which allows for \(\sigma\) being estimated. In large samples the two give the same answer.</p>`},
+ {id:'compare',part:'B',t:'Box or ellipse?',fig:[1],ctl:['cbox','r','new','ten','more'],set:{cbox:2.24},drag:'bB',newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Purple dots: only the ellipse rejects. Dark dots: only the box rejects. Raise the correlation and watch them multiply.',
+  text:T`<p>Now put the two regions side by side: the widened box from before, and the 95% ellipse. With independent estimates, both reject 5% of the draws.</p><p class="key">Same size, different shape. The ellipse follows the cloud; the box does not. <strong>The two rules disagree on many samples</strong>, more so as the correlation grows.</p><p>Press Reset to put your estimate back where it started: inside the box, outside the ellipse. Neither t-test rejects, but the joint test does. Both coefficients are a little high <em>together</em>, which the negative correlation makes unlikely.</p><p>Of all regions holding 95% of the draws, the ellipse is the smallest: it leaves out the least likely estimates first.</p>`},
+ {id:'region',part:'B',t:'Confidence region: every β₀ you cannot reject',fig:[1],ctl:['alpha','rand','all'],drag:'probe',hint:'Click or drag anywhere in the plane: the triangle follows, and each spot it visits is tested and marked.',
+  text:T`<p>Now keep the estimate fixed and move the null instead. The orange triangle is a candidate null, \(\beta_0\). <strong>Click or drag anywhere in the plane</strong> to move it: each spot it visits is tested and marked purple if the test does not reject it, red if it does. Or let the buttons test pairs for you.</p><p class="key">The survivors form an ellipse around \(\hat\beta\). <strong>The 95% confidence region contains all pairs \((\beta_1,\beta_2)\) we cannot reject.</strong> It has the shape of the acceptance region, centred on the estimate instead of the null.</p><p>It is not the box formed by the two separate confidence intervals (dashed). A pair can sit inside both intervals and still be rejected jointly. The triangle starts at (0.3, 0.7), the null from step 4: inside both intervals, outside the region.</p>`},
+ {id:'line',part:'C',t:'Constant returns: a line',fig:[1],ctl:['r'],drag:'bC',hint:'Move the correlation: the strip the test does not reject narrows or widens. Click or drag to move your estimate in and out of it.',
+  text:T`${recipe([0,1,2])}<p>A weaker question: <strong>constant returns to scale</strong>, \(H_0:\beta_1+\beta_2=1\). One restriction, so \(q=1\), \(R=[1\;\;1]\) and \(r=1\). The null is now a whole line, and (0.3, 0.7) is one point on it.</p><p>The discrepancy is one number, \(d=\hat\beta_1+\hat\beta_2-1\), with variance</p><p class="eq">\(R\hat VR'=\text{se}_1^2+\text{se}_2^2+2\,\text{cov}(\hat\beta_1,\hat\beta_2)\)</p><p class="key">So \(W=d^2/R\hat VR'\) is the squared t-statistic for the sum, compared with \(\chi^2_1\). <strong>\(q\) counts restrictions, not coefficients.</strong></p><p>The shaded strip is where the test does not reject: sums within \(1.96\) standard errors of 1. The cloud shows estimates drawn at (0.3, 0.7), one point where \(H_0\) holds. When the estimates are negatively correlated, the cloud lies along the line and the sum is precise, so the strip is narrow.</p><p>Leave out the covariance and you get the dotted strip instead, which is too wide here: the test then misses a sum that is clearly above 1.</p>`},
+ {id:'touch',part:'C',t:'W is the distance to the line',fig:[1],ctl:['m','r'],set:{m:0},drag:'bC',hint:'Drag your estimate, then slide to the whitened plane.',
+  text:T`<p>\(W\) is also the smallest stretched distance from \(\hat\beta\) to any point of the null. Grow an ellipse around \(\hat\beta\) until it touches the line: its level is \(W\).</p><p>The touching point is generally not the nearest point by ordinary distance (grey).</p><p class="key">Bend the plane into whitened coordinates: <strong>the arrow meets the line at a right angle</strong>, and \(W\) is its squared length.</p><p>The joint null works the same way. There the null was a single point, so the arrow ran straight to it.</p>`},
+ {id:'curve',part:'D',view:'nl',t:'A curved null',fig:[1],ctl:[],drag:'bD',hint:'Click or drag to move your estimate across the grey curves: g changes from one to the next.',
+  text:T`<p>Leave the production function for a restriction that is a curve:</p><p class="eq">\(H_0:\ g(\beta)=\beta_1\beta_2-1=0\)</p><p>The discrepancy is still how far the estimate is from satisfying \(H_0\): \(d=g(\hat\beta)\). It is 0 on the orange curve. The grey curves are where \(g\) takes other values, and your estimate sits on the blue one.</p><p class="key">To turn \(d\) into a test we need its standard error. With a linear restriction that was \(\sqrt{R\hat VR'}\). <strong>A curve has no single \(R\)</strong>: how fast \(g\) changes depends on where you are.</p>`},
+ {id:'tangent',part:'D',view:'nl',t:'Linearise at the estimate',fig:[1],ctl:[],drag:'bD',hint:'Click or drag to move your estimate: the arrow and the tangent move with it.',
+  text:T`<p>The <strong>delta method</strong>: near the estimate, replace \(g\) by its tangent approximation,</p><p class="eq">\(g(\beta)\approx g(\hat\beta)+G\,(\beta-\hat\beta)\)</p><p>The gradient \(G=(\hat\beta_2,\,\hat\beta_1)\) is the black arrow. It points where \(g\) rises fastest, at right angles to the blue curve, and the black line is the blue curve's tangent.</p><p class="key">Locally, \(g\) is linear with \(G\) playing the role of \(R\). So <strong>\(\text{Var}(g(\hat\beta))\approx G\hat VG'\)</strong>, the same formula as before.</p>`},
+ {id:'linnull',part:'D',view:'nl',t:'The linearised null',fig:[1],ctl:[],drag:'bD',hint:'Click or drag to move your estimate: the green line and the ellipse move with it.',
+  text:T`<p>Where does the tangent approximation say \(g=0\)? On a line parallel to the tangent, shifted by \(g(\hat\beta)\): the green <strong>linearised null</strong>. Near the estimate it follows the orange curve.</p><p class="key">From here it is a linear test: <strong>\(W=g(\hat\beta)^2/(G\hat VG')\)</strong>, compared with \(\chi^2_1\). Geometrically, the ellipse around \(\hat\beta\) grows until it touches the green line.</p>`},
+ {id:'far',part:'D',view:'nl',t:'When the tangent is a poor stand-in',fig:[1],ctl:[],drag:'bD',hint:'Drag the estimate towards the lower left, where the curve bends sharply.',
+  text:T`<p>\(W\) measures the distance to the green line, not to the orange curve. Near the curve the two are close. Far from it, or where the curve bends sharply, they part.</p><p>The dotted ellipse grows until it touches the curve itself. With a normal \(\hat\beta\) and known \(\hat V\), its level is the likelihood ratio statistic: the distance to the null as it really is.</p><p class="key">The Wald test only uses what it can see at \(\hat\beta\): <strong>the estimate and the slope of \(g\) there</strong>. That makes it easy to compute, and approximate.</p>`},
+ {id:'inv',part:'D',view:'nl',t:'Same hypothesis, written another way',fig:[1],ctl:[],set:{bD:[1.9,1.1]},drag:'bD',hint:'Click or drag to move your estimate: the two linearised nulls, and the two W, disagree almost everywhere.',
+  text:T`<p>The same null can be written as</p><p class="eq">\(g_A(\beta)=\beta_1\beta_2-1=0\quad\text{or}\quad g_B(\beta)=\beta_1-1/\beta_2=0\)</p><p>Both are zero on exactly the same orange curve, so they make the same claim about \(\beta\).</p><p>But they are different functions, with different values and different gradients at \(\hat\beta\). So the delta method draws two different linearised nulls (green and pink), and the two Wald statistics differ.</p><p class="key"><strong>The Wald test is not invariant to how the restriction is written.</strong> At the starting estimate, version A does not reject and version B does.</p>`},
+ {id:'invsim',part:'D',view:'nl',t:'Which version keeps its size?',fig:[1],ctl:['new','ten','more','n'],btnFirst:true,k0:200,newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Every dot is an estimate drawn with H₀ true. Pink dots: only version B rejects. Raise n and both rates approach 5%.',
+  text:T`<p>To judge a test, run it many times with \(H_0\) true. A 5% test should reject 5% of the time.</p><p>Each dot is an estimate from a sample generated with \(\beta=(2,\,0.5)\), the ringed point on the curve, so \(H_0\) holds. Each dot is tested both ways and coloured by which versions reject it.</p><p class="key">Version B, with \(1/\beta_2\), <strong>rejects far more often than 5%</strong>. When \(\hat\beta_2\) is small and noisy, \(1/\hat\beta_2\) is far from linear and its tangent is a poor guide.</p><p>In large samples \(\hat\beta\) stays close to \(\beta\), where every tangent is a good approximation. Raise \(n\): both rates approach 5%.</p>`},
+ {id:'recap',part:'E',t:'Recap',fig:[1],ctl:['alpha'],hint:'Move α: both cut-offs move.',
+  text:T`<p>One recipe covers every case:</p><p class="eq">\(W=d'\,(G\hat VG')^{-1}d\;\sim\;\chi^2_q\)</p><ul><li>\(d\) is how far the estimate is from satisfying \(H_0\): \(R\hat\beta-r\), or \(g(\hat\beta)\).</li><li>\(G\) is \(R\) for linear restrictions, and the gradient of \(g\) at \(\hat\beta\) otherwise.</li><li>\(q\) is the number of restrictions, not the number of coefficients.</li><li>\(W\) is the squared length of \(d\) once the noise is whitened. The ellipses are its contours.</li><li>A joint test is not two t-tests: the box has the wrong size, and the wrong shape.</li><li>The confidence region is every \(\beta_0\) the test does not reject.</li><li>A nonlinear Wald test depends on how \(g\) is written.</li></ul>`}
+];
+const parts={A:'Two coefficients',B:'A joint null',C:'One linear restriction',D:'Nonlinear',E:'Recap'};
+
+function tex(s){return s.replace(/\\\((.+?)\\\)([.,:;]?)/g,(m,t,p)=>{let h=t;try{h=katex.renderToString(t,{output:'mathml',throwOnError:false})}catch(e){}return p?`<span style="white-space:nowrap">${h}${p}</span>`:h})}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const f2=v=>(Math.abs(v)<0.005?0:v).toFixed(2);
+const f3=v=>(Math.abs(v)<0.0005?0:v).toFixed(3);
+const pct=v=>(100*v).toFixed(1)+'%';
+const pair=(b,f=f2)=>`(${f(b[0])}, ${f(b[1])})`;
+const col=(s,w)=>s+' '.repeat(Math.max(0,w-s.replace(/[̂̃̄]/g,'').length));
+const halo=t=>{t.style.cssText+='paint-order:stroke;stroke:var(--panel);stroke-width:4px';return t};
+function el(tag,at,p){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);if(p)p.appendChild(e);return e}
+function txt(p,x,y,s,c,cls,anchor){const t=el('text',{x,y,'text-anchor':anchor||'start',class:cls||''},p);t.textContent=s;t.style.fill=c||'var(--muted)';return t}
+function seg(p,a,b,c,w,dash,op){el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:c,'stroke-width':w||1.5,'stroke-dasharray':dash||'none',opacity:op??1},p)}
+function marker(p,x,y,c,r){el('circle',{cx:x,cy:y,r:r||6,fill:c,stroke:'var(--panel)','stroke-width':2},p)}
+function ticks(lo,hi,k){const raw=(hi-lo)/k,s_=Math.pow(10,Math.floor(Math.log10(raw)));const m=[1,2,2.5,5,10].find(m=>m*s_>=raw)*s_;const out=[];for(let v=Math.ceil(lo/m-1e-9)*m;v<=hi+1e-9;v+=m)out.push(+v.toFixed(6));return out}
+
+/* ---------- statistics ---------- */
+const npdf=(x,m,s)=>Math.exp(-.5*((x-m)/s)**2)/(s*Math.sqrt(2*Math.PI));
+// Standard normal CDF, Abramowitz and Stegun 26.2.17 (error below 1e-7)
+function Phi(z){const t=1/(1+.2316419*Math.abs(z)),d=.3989423*Math.exp(-z*z/2),p=d*t*(.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-p:p}
+const pval=z=>2*(1-Phi(Math.abs(z)));
+const crit=a=>{let lo=0,hi=10;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(pval(m)>a)lo=m;else hi=m}return(lo+hi)/2};
+// χ² with 1 or 2 degrees of freedom: density, critical value, p-value
+const chi=(x,q)=>x<0?0:q===2?Math.exp(-x/2)/2:x===0?0:Math.exp(-x/2)/Math.sqrt(2*Math.PI*x);
+const cq=(a,q)=>q===1?crit(a)**2:-2*Math.log(a);
+const pq=(W,q)=>q===1?pval(Math.sqrt(W)):Math.exp(-W/2);
+
+/* ---------- 2×2 matrices ---------- */
+const det=M=>M[0][0]*M[1][1]-M[0][1]*M[1][0];
+const inv2=M=>{const d=det(M);return[[M[1][1]/d,-M[0][1]/d],[-M[1][0]/d,M[0][0]/d]]};
+// Symmetric square root of a 2×2 positive definite matrix
+const sqrtm=M=>{const s=Math.sqrt(det(M)),t=Math.sqrt(M[0][0]+M[1][1]+2*s);return[[(M[0][0]+s)/t,M[0][1]/t],[M[1][0]/t,(M[1][1]+s)/t]]};
+const mv=(M,v)=>[M[0][0]*v[0]+M[0][1]*v[1],M[1][0]*v[0]+M[1][1]*v[1]];
+const quad=(d,M)=>d[0]*(M[0][0]*d[0]+M[0][1]*d[1])+d[1]*(M[1][0]*d[0]+M[1][1]*d[1]);
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1];
+// OLS covariance of (β̂₁, β̂₂): σ²/n times the inverse covariance matrix of (log K, log L)
+function V(){const k=SIG*SIG/(st.n*(1-st.r*st.r)),c=-st.r*k/(SDK*SDL);return[[k/(SDK*SDK),c],[c,k/(SDL*SDL)]]}
+const se=Vm=>[Math.sqrt(Vm[0][0]),Math.sqrt(Vm[1][1])];
+// One linear restriction a·β = c: W, and the point of the null where the ellipse around β̂ touches it
+function linTest(b,a,c,Vm){const d=dot(a,b)-c,s=quad(a,Vm),Va=mv(Vm,a);return{d,s,W:d*d/s,star:[b[0]-Va[0]*d/s,b[1]-Va[1]*d/s]}}
+// The nonlinear null β₁β₂ = 1, written two ways
+const gA=b=>({g:b[0]*b[1]-1,G:[b[1],b[0]]});
+const gB=b=>({g:b[0]-1/b[1],G:[1,1/(b[1]*b[1])]});
+const nlTest=(b,o,Vm)=>linTest(b,o.G,dot(o.G,b)-o.g,Vm);
+// Distance from β̂ to the curve itself, in the W metric: minimise over the positive branch β = (1/t, t)
+function toCurve(b,Vi){const f=t=>quad(sub(b,[1/t,t]),Vi);let bt=1,bv=Infinity;
+  for(let i=0;i<=600;i++){const t=Math.exp(-4+8*i/600),v=f(t);if(v<bv){bv=v;bt=t}}
+  let lo=bt*Math.exp(-8/600),hi=bt*Math.exp(8/600);for(let i=0;i<60;i++){const a=lo+(hi-lo)*.382,c=lo+(hi-lo)*.618;if(f(a)<f(c))hi=c;else lo=a}
+  const t=(lo+hi)/2;return{L:f(t),pt:[1/t,t]}}
+
+/* ---------- data ---------- */
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const boxMuller=r=>Math.sqrt(-2*Math.log(r()+1e-12))*Math.cos(2*Math.PI*r());
+const at=(c,z,R)=>[c[0]+R[0][0]*z[0]+R[0][1]*z[1],c[1]+R[1][0]*z[0]+R[1][1]*z[1]];
+// One sample's estimate: the truth plus correlated normal noise with covariance V
+function sample(seed){const r=mulberry32(seed*7919+13);return at(TRUE,[boxMuller(r),boxMuller(r)],sqrtm(V()))}
+// Fixed standard normal pairs; scaling them by V^{1/2} gives draws that morph smoothly as n and r move
+let ZS=null;const sims=()=>{if(!ZS){const r=mulberry32(271);ZS=Float64Array.from({length:2*NSIM},()=>boxMuller(r))}return ZS};
+const zi=i=>{const Z=sims();return[Z[2*i],Z[2*i+1]]};
+
+/* ---------- chart pieces ---------- */
+function frame(s,xr,yr,xl,yl,Wd,Hd,o={}){s.innerHTML='';s.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);s._pts=[];
+  const pl=o.noy?16:o.pl??50,pr_=14,pt=10,pb=40,fx=o.fx||(v=>v),fy=o.fy||(v=>v);
+  const sx=v=>pl+(v-xr[0])/(xr[1]-xr[0])*(Wd-pl-pr_),sy=v=>Hd-pb-(v-yr[0])/(yr[1]-yr[0])*(Hd-pt-pb);
+  ticks(xr[0],xr[1],o.kx||6).forEach(t=>{seg(s,[sx(t),pt],[sx(t),Hd-pb],'var(--grid)',1);txt(s,sx(t),Hd-pb+15,fx(t),null,'','middle')});
+  if(!o.noy){ticks(yr[0],yr[1],o.ky||4).forEach(t=>{seg(s,[pl,sy(t)],[Wd-pr_,sy(t)],'var(--grid)',1);txt(s,pl-6,sy(t)+4,fy(t),null,'','end')});seg(s,[pl,pt],[pl,Hd-pb],'var(--fg)',1.2)}
+  seg(s,[pl,Hd-pb],[Wd-pr_,Hd-pb],'var(--fg)',1.2);
+  txt(s,(pl+Wd-pr_)/2,Hd-5,xl,'var(--fg)','lab','middle');
+  if(yl){const m=(pt+Hd-pb)/2,t=txt(s,13,m,yl,'var(--fg)','lab','middle');t.setAttribute('transform',`rotate(-90 13 ${m})`)}
+  const cid='clip-'+s.id,cp=el('clipPath',{id:cid},el('defs',{},s));el('rect',{x:pl,y:pt,width:Wd-pl-pr_,height:Hd-pt-pb},cp);
+  return[sx,sy,el('g',{'clip-path':`url(#${cid})`},s),{pl,pr_,pt,pb,Wd,Hd}]}
+function bell(g,sx,sy,f,xr,o={}){const N=240,at_=(a,b)=>Array.from({length:N+1},(_,i)=>a+(b-a)*i/N);
+  (o.fill||[]).forEach(([a,b,c,op])=>{a=Math.max(a,xr[0]);b=Math.min(b,xr[1]);if(b<=a)return;const xs=at_(a,b);
+    el('polygon',{points:`${sx(a)},${sy(0)} ${xs.map(x=>sx(x).toFixed(1)+','+sy(f(x)).toFixed(1)).join(' ')} ${sx(b)},${sy(0)}`,fill:c,'fill-opacity':op??.3},g)});
+  el('polyline',{points:at_(xr[0],xr[1]).map(x=>sx(x).toFixed(1)+','+sy(f(x)).toFixed(1)).join(' '),fill:'none',stroke:o.c||'var(--fg)','stroke-width':o.w||2,'stroke-dasharray':o.dash||'none'},g)}
+function vline(s,g,sx,m,x,c,lab,o={}){seg(g,[sx(x),m.pt],[sx(x),m.Hd-m.pb],c,o.w||2,o.dash);
+  if(lab){const right=o.side?o.side==='r':sx(x)<(m.pl+m.Wd-m.pr_)/2;halo(txt(s,sx(x)+(right?6:-6),m.pt+13+(o.row||0)*16,lab,'var(--fg)','',right?'start':'end'))}}
+function legend(items){const e=$('legend');e.innerHTML='';items.forEach(([k,c,t])=>{const i=document.createElement('span'),sw=document.createElement('i');i.className='li';sw.className='sw '+k;sw.style.setProperty('--c',c);i.append(sw,t);e.append(i)})}
+function arrowS(p,a,b,c,w){const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(L<4)return;const ux=dx/L,uy=dy/L,h=Math.min(10,L*.5);
+  seg(p,a,[b[0]-ux*h,b[1]-uy*h],c,w);el('polygon',{points:`${b[0]},${b[1]} ${b[0]-ux*h-uy*4.5},${b[1]-uy*h+ux*4.5} ${b[0]-ux*h+uy*4.5},${b[1]-uy*h-ux*4.5}`,fill:c},p)}
+
+/* ---------- the parameter plane ---------- */
+const VIEW={cd:{x:[-.15,1.05],y:[.2,1.4],g:.2,xl:'β₁, capital',yl:'β₂, labour'},nl:{x:[-.2,3.2],y:[-.2,3.2],g:.5,xl:'β₁',yl:'β₂'}};
+// Everything is built in β coordinates and passed through one affine map. At m = 0 it is the identity;
+// at m = 1 it is the whitening V^{-1/2}, scaled by det(V)^{1/4} so that areas keep their size
+function plane(s,o={}){const vw=VIEW[o.view||'cd'],Wd=440,Hd=430,pl=50,pt=8,w=380,h=380,X=vw.x,Y=vw.y,span=X[1]-X[0];
+  s.innerHTML='';s.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);s._pts=[];
+  const Vm=V(),m=o.m||0,C=o.C||[(X[0]+X[1])/2,(Y[0]+Y[1])/2],k=Math.pow(det(Vm),.25),Si=sqrtm(inv2(Vm));
+  const A=[[1-m+m*k*Si[0][0],m*k*Si[0][1]],[m*k*Si[1][0],1-m+m*k*Si[1][1]]],Ai=inv2(A);
+  const sx=u=>pl+(u-X[0])/span*w,sy=u=>pt+h-(u-Y[0])/span*h;
+  const S=b=>{const d=sub(b,C),u=mv(A,d);return[sx(C[0]+u[0]),sy(C[1]+u[1])]};
+  const inv=(px,py)=>{const d=[X[0]+(px-pl)/w*span-C[0],Y[0]+(pt+h-py)/h*span-C[1]],u=mv(Ai,d);return[C[0]+u[0],C[1]+u[1]]};
+  s._inv=inv;
+  const cid='clip-'+s.id,cp=el('clipPath',{id:cid},el('defs',{},s));el('rect',{x:pl,y:pt,width:w,height:h},cp);
+  const g=el('g',{'clip-path':`url(#${cid})`},s),G=vw.g,ext=2*span;
+  // Grid lines of constant β₁ and β₂, carried through the same map as everything else
+  for(let i=Math.ceil((X[0]-ext)/G);i*G<=X[1]+ext;i++)seg(g,S([i*G,Y[0]-ext]),S([i*G,Y[1]+ext]),'var(--grid)',1);
+  for(let i=Math.ceil((Y[0]-ext)/G);i*G<=Y[1]+ext;i++)seg(g,S([X[0]-ext,i*G]),S([X[1]+ext,i*G]),'var(--grid)',1);
+  el('rect',{x:pl,y:pt,width:w,height:h,fill:'none',stroke:'var(--rule)'},s);
+  if(m<.005){seg(s,[pl,pt],[pl,pt+h],'var(--fg)',1.2);seg(s,[pl,pt+h],[pl+w,pt+h],'var(--fg)',1.2);ticks(X[0],X[1],6).forEach(t=>txt(s,sx(t),pt+h+15,String(+t.toFixed(2)),null,'','middle'));ticks(Y[0],Y[1],6).forEach(t=>txt(s,pl-6,sy(t)+4,String(+t.toFixed(2)),null,'','end'))}
+  const xl=m<.005?vw.xl:m>.995?'whitened: z₁':'',yl=m<.005?vw.yl:m>.995?'z₂':'';
+  txt(s,pl+w/2,Hd-6,xl,'var(--fg)','lab','middle');const ty=txt(s,14,pt+h/2,yl,'var(--fg)','lab','middle');ty.setAttribute('transform',`rotate(-90 14 ${pt+h/2})`);
+  if(m>.995){const L=k/span*w,x0=pl+w-12-L,y0=pt+h-14;seg(s,[x0,y0],[x0+L,y0],'var(--fg)',2);halo(txt(s,x0+L/2,y0-6,'1 se','var(--fg)','','middle'))}
+  return{s,g,S,Vm,m,k,C,pl,pt,w,h,span,vw}}
+const pts2=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+// Ellipse of points at W-distance lev from c, traced at whitened angles 0..2π; returns its screen points
+function ell(Pl,c,lev,o={}){const R=sqrtm(Pl.Vm),r=Math.sqrt(Math.max(lev,0)),q=[];
+  for(let i=0;i<=120;i++){const a=i/120*2*Math.PI;q.push(Pl.S(at(c,[Math.cos(a)*r,Math.sin(a)*r],R)))}
+  el('polygon',{points:pts2(q),fill:o.fill||'none','fill-opacity':o.fo??.1,stroke:o.c||'var(--fit)','stroke-width':o.w||1.5,'stroke-dasharray':o.dash||'none','stroke-opacity':o.op??1},Pl.g);
+  return q}
+// Label an ellipse at its top, or at whitened angle ang so that a family of labels lines up along one ray
+function elab(Pl,q,s,c,ang){const tp=ang==null?q.reduce((a,p)=>p[1]<a[1]?p:a):q[Math.round(((ang/(2*Math.PI))%1+1)%1*120)],right=tp[0]>Pl.pl+Pl.w/2;
+  if(tp[1]>Pl.pt+14&&tp[1]<Pl.pt+Pl.h-4&&tp[0]>Pl.pl+20&&tp[0]<Pl.pl+Pl.w-20)halo(txt(Pl.s,tp[0]+(ang==null?4:right?5:-5),tp[1]+(ang==null?-4:4),s,c||'var(--fit)','',ang==null||right?'start':'end'))}
+// The line a·β = c
+function lin(Pl,a,c,o={}){const n2=dot(a,a),n=Math.sqrt(n2),p=[a[0]*c/n2,a[1]*c/n2],d=[-a[1]/n,a[0]/n],L=40;
+  seg(Pl.g,Pl.S([p[0]-d[0]*L,p[1]-d[1]*L]),Pl.S([p[0]+d[0]*L,p[1]+d[1]*L]),o.c||'var(--x)',o.w||2.5,o.dash)}
+// The positive branch of β₁β₂ = kk
+function hyper(Pl,kk,o={}){if(kk<=0)return;const q=[];for(let i=0;i<=240;i++){const t=Math.exp(-3+6*i/240),b=[kk/t,t];if(b[0]<12&&b[1]<12)q.push(Pl.S(b))}
+  el('polyline',{points:pts2(q),fill:'none',stroke:o.c||'var(--x)','stroke-width':o.w||2.5,'stroke-dasharray':o.dash||'none'},Pl.g)}
+function est(Pl,b,lab){const p=Pl.S(b);marker(Pl.s,p[0],p[1],'var(--y)',7);Pl.s._pts.push([p[0],p[1],`estimate ${pair(b,f3)}`]);
+  if(lab){const right=p[0]<Pl.pl+Pl.w*.6;halo(txt(Pl.s,p[0]+(right?11:-11),p[1]+18,lab,'var(--fg)','',right?'start':'end'))}}
+// Dashed guides from a point to both axes, with its coordinates read off there
+function guides(Pl,b,c){const p=Pl.S(b),y0=Pl.pt+Pl.h;seg(Pl.g,p,[p[0],y0],c,1.2,'3 3',.8);seg(Pl.g,p,[Pl.pl,p[1]],c,1.2,'3 3',.8);
+  halo(txt(Pl.s,p[0],y0-5,f2(b[0]),c,'','middle'));halo(txt(Pl.s,Pl.pl+4,p[1]-4,f2(b[1]),c))}
+// Filled region between two parallel lines a·β = c1 and a·β = c2
+function strip(Pl,a,c1,c2,o={}){const n2=dot(a,a),n=Math.sqrt(n2),d=[-a[1]/n,a[0]/n],L=40,P1=[a[0]*c1/n2,a[1]*c1/n2],P2=[a[0]*c2/n2,a[1]*c2/n2];
+  el('polygon',{points:pts2([[P1[0]-d[0]*L,P1[1]-d[1]*L],[P1[0]+d[0]*L,P1[1]+d[1]*L],[P2[0]+d[0]*L,P2[1]+d[1]*L],[P2[0]-d[0]*L,P2[1]-d[1]*L]].map(b=>Pl.S(b))),fill:o.c||'var(--x)','fill-opacity':o.fo??.12},Pl.g)}
+// Axis-aligned rectangle in β coordinates
+const rectB=(Pl,x0,x1,y0,y1,c,fo)=>el('polygon',{points:pts2([[x0,y0],[x1,y0],[x1,y1],[x0,y1]].map(b=>Pl.S(b))),fill:c,'fill-opacity':fo},Pl.g);
+function nullPt(Pl,lab='H₀ (0.3, 0.7)'){const p=Pl.S(B0);marker(Pl.s,p[0],p[1],'var(--x)',6);if(lab)halo(txt(Pl.s,p[0]+10,p[1]+20,lab,'var(--fg)'))}
+function ring(Pl,b,c,lab){const p=Pl.S(b);el('circle',{cx:p[0],cy:p[1],r:6,fill:'none',stroke:c,'stroke-width':2.4},Pl.s);if(lab)halo(txt(Pl.s,p[0]+10,p[1]-8,lab,'var(--fg)'))}
+function arrow(Pl,a,b,lab,c){const p=Pl.S(a),q=Pl.S(b);arrowS(Pl.s,p,q,c||'var(--fg)',2.4);
+  if(lab&&Math.hypot(q[0]-p[0],q[1]-p[1])>30){const L=Math.hypot(q[0]-p[0],q[1]-p[1]);halo(txt(Pl.s,(p[0]+q[0])/2+(q[1]-p[1])/L*12,(p[1]+q[1])/2-(q[0]-p[0])/L*12+4,lab,'var(--fg)','lab','middle'))}}
+const dotAt=(Pl,b,c,r,op)=>{const p=Pl.S(b);el('circle',{cx:p[0],cy:p[1],r,fill:c,'fill-opacity':op},Pl.g);return p};
+// Right-angle mark at screen point a, between directions towards b and along u
+function rightAngle(Pl,a,b,u){let ux=b[0]-a[0],uy=b[1]-a[1];const ul=Math.hypot(ux,uy)||1;ux/=ul;uy/=ul;let vx=u[0]-a[0],vy=u[1]-a[1];const vl=Math.hypot(vx,vy)||1;vx/=vl;vy/=vl;const k=10;
+  el('polyline',{points:`${a[0]+ux*k},${a[1]+uy*k} ${a[0]+ux*k+vx*k},${a[1]+uy*k+vy*k} ${a[0]+vx*k},${a[1]+vy*k}`,fill:'none',stroke:'var(--fg)','stroke-width':1.2},Pl.s)}
+
+/* ---------- figures ---------- */
+let P=[];
+const cap=(i,t)=>{P[i].previousSibling.textContent=t};
+const ZR=[-4,4];
+// Long-run rejection rates under H₀ for the box and the ellipse
+// over the first k draws: each t-test separately, both, either (the box), the ellipse, and disagreement
+function rates(cb,k=NSIM){const R=sqrtm(V()),Vi=inv2(V()),[s1,s2]=se(V()),c=cq(.05,2);let r1=0,r2=0,both=0,b=0,e=0,dis=0;
+  for(let i=0;i<k;i++){const d=at([0,0],zi(i),R),a1=Math.abs(d[0])>cb*s1,a2=Math.abs(d[1])>cb*s2,ob=a1||a2,oe=quad(d,Vi)>c;r1+=a1;r2+=a2;both+=a1&&a2;b+=ob;e+=oe;dis+=ob!==oe}
+  return{n:k,r1:r1/k,r2:r2/k,both:both/k,b:b/k,e:e/k,dis:dis/k,k1:r1,k2:r2,kb:both,ku:b}}
+function figure(id){legend([]);const step=steps[st.step];
+  switch(id){
+  case 'one':{const b=sample(st.seed),s1=se(V())[0],t=(b[0]-B0[0])/s1,W=t*t,c=crit(.05);
+    cap(0,`t-test of β₁ = 0.3: t = ${f2(t)}`);cap(1,`The same test, squared: W = t² = ${f2(W)}`);
+    const[sx,sy,g,m]=frame(P[0],ZR,[0,.47],'t = (estimate − 0.3) / se','density',440,210,{ky:4});
+    bell(g,sx,sy,x=>npdf(x,0,1),ZR,{c:'var(--muted)',fill:[[ZR[0],-c,'var(--res)',.3],[c,ZR[1],'var(--res)',.3]]});
+    [-c,c].forEach((v,i)=>halo(txt(P[0],sx(v)+(i?4:-4),sy(.11),f2(v),'var(--fg)','',i?'start':'end')));
+    vline(P[0],g,sx,m,clamp(t,ZR[0],ZR[1]),'var(--y)',`t = ${f2(t)}`,{side:t>0?'l':'r'});
+    const[sx2,sy2,g2,m2]=frame(P[1],[0,12],[0,.6],'W = t²','density',440,210,{ky:3});
+    bell(g2,sx2,sy2,x=>chi(x,1),[.01,12],{c:'var(--muted)',fill:[[c*c,12,'var(--res)',.3]]});
+    halo(txt(P[1],sx2(c*c)+4,sy2(.16),`3.84 = 1.96²`,'var(--fg)'));
+    vline(P[1],g2,sx2,m2,Math.min(W,11.9),'var(--y)',`W = ${f2(W)}`,{side:W>6?'l':'r'});
+    legend([['area','var(--res)','Reject at 5%'],['line','var(--y)','Your sample']]);break}
+  case 'where':{const Pl=plane(P[0]),E=st.drawn.map(sample),cur=E[E.length-1],N=E.length-1,many=N>20;
+    cap(0,N?`Your estimate, and ${N} earlier ${N>1?'ones':'one'}`:'Your estimate');
+    E.slice(0,-1).forEach(b=>dotAt(Pl,b,'var(--y)',many?2.6:4,many?.3:.35));
+    if(st.reveal){const t=Pl.S(TRUE);if(!many)E.slice(0,-1).forEach(b=>seg(Pl.g,Pl.S(b),t,'var(--res)',1,null,.35));seg(Pl.g,Pl.S(cur),t,'var(--res)',2.5);ring(Pl,TRUE,'var(--fg)','true β')}
+    else halo(txt(Pl.s,Pl.pl+Pl.w/2,Pl.pt+20,'β is a fixed point somewhere here. Where?','var(--fg)','','middle'));
+    guides(Pl,cur,'var(--y)');est(Pl,cur,'your estimate (β̂₁, β̂₂)');
+    legend([['dot','var(--y)','Estimate'],['dash','var(--y)','Its two coordinates'],['ring','var(--fg)','True β, once revealed']]);break}
+  case 'shape':{const Pl=plane(P[0]),R=sqrtm(Pl.Vm);cap(0,'300 estimates from 300 samples');
+    for(let i=0;i<300;i++)dotAt(Pl,at(TRUE,zi(i),R),'var(--y)',2.4,.4);
+    elab(Pl,ell(Pl,TRUE,cq(.05,2),{w:2.2}),'95% of estimates');ring(Pl,TRUE,'var(--fg)','true β');
+    legend([['dot','var(--y)','Estimates'],['line','var(--fit)','Ellipse holding 95% of them'],['ring','var(--fg)','True β']]);break}
+  case 'joint':{const Pl=plane(P[0]),b=st.bB;cap(0,'Two points: the null and your estimate. The arrow between them is the discrepancy');
+    guides(Pl,B0,'var(--x)');guides(Pl,b,'var(--y)');
+    nullPt(Pl,'H₀: (0.3, 0.7)');arrow(Pl,B0,b,'d');est(Pl,b,`your estimate ${pair(b)}`);
+    legend([['dot','var(--x)','Null hypothesis H₀'],['dot','var(--y)','Your estimate'],['line','var(--fg)','Discrepancy d']]);break}
+  case 'twot':case 'widen':case 'compare':{const Pl=plane(P[0]),R=sqrtm(Pl.Vm),Vi=inv2(Pl.Vm),[s1,s2]=se(Pl.Vm),cb=id==='twot'?1.96:st.cbox,c=cq(.05,2),K=Math.min(st.k,1000),cmp=id==='compare',h1=cb*s1,h2=cb*s2,E=5;
+    cap(0,`${st.k} ${st.k>1?'estimates':'estimate'} drawn with H₀ true`);
+    if(!cmp){// Where each t-test rejects: β₁'s test left and right, β₂'s test above and below; the corners are in both
+      rectB(Pl,B0[0]-E,B0[0]-h1,B0[1]-E,B0[1]+E,'var(--res)',.13);rectB(Pl,B0[0]+h1,B0[0]+E,B0[1]-E,B0[1]+E,'var(--res)',.13);
+      rectB(Pl,B0[0]-E,B0[0]+E,B0[1]-E,B0[1]-h2,'var(--x)',.15);rectB(Pl,B0[0]-E,B0[0]+E,B0[1]+h2,B0[1]+E,'var(--x)',.15);
+      const p1=Pl.S([B0[0]+h1,VIEW.cd.y[1]]),p2=Pl.S([VIEW.cd.x[0],B0[1]+h2]);halo(txt(Pl.s,p1[0]+6,p1[1]+18,'R₁: test of β₁ rejects','var(--fg)'));halo(txt(Pl.s,p2[0]+6,p2[1]-8,'R₂: test of β₂ rejects','var(--fg)'))}
+    else ell(Pl,B0,c,{w:2.2,fill:'var(--fit)',fo:.07});
+    el('polygon',{points:pts2([[-h1,-h2],[h1,-h2],[h1,h2],[-h1,h2]].map(d=>Pl.S([B0[0]+d[0],B0[1]+d[1]]))),fill:'none',stroke:'var(--fg)','stroke-width':1.5,'stroke-dasharray':'6 4'},Pl.g);
+    for(let i=st.k-K;i<st.k;i++){const d=at([0,0],zi(i),R),a1=Math.abs(d[0])>h1,a2=Math.abs(d[1])>h2,ob=a1||a2,oe=quad(d,Vi)>c;
+      const cl=cmp?(ob&&oe?'var(--res)':oe?'var(--fit)':ob?'var(--fg)':'var(--muted)'):(a1&&a2?'var(--fg)':a1?'var(--res)':a2?'var(--x)':'var(--muted)');
+      dotAt(Pl,[B0[0]+d[0],B0[1]+d[1]],cl,K>200?2.4:3.4,ob||oe?.9:.45)}
+    nullPt(Pl,'H₀');if(cmp)est(Pl,st.bB,'your estimate');
+    legend(cmp?[['line','var(--fit)','95% ellipse'],['dash','var(--fg)',`Box, |t| ≤ ${f2(cb)}`],['dot','var(--res)','Both reject'],['dot','var(--fit)','Only the ellipse rejects'],['dot','var(--fg)','Only the box rejects']]
+      :[['area','var(--res)',`R₁: |t₁| > ${f2(cb)}`],['area','var(--x)',`R₂: |t₂| > ${f2(cb)}`],['dot','var(--fg)','In both: a corner'],['dash','var(--fg)','Neither rejects inside the box']]);break}
+  case 'ruler':case 'white':{const wh=id==='white',Pl=plane(P[0],{m:wh?st.m:0,C:B0}),b=st.bB,W=quad(sub(b,B0),inv2(Pl.Vm));
+    cap(0,wh?(st.m>.995?'The whitened plane: circles, and an ordinary ruler':st.m<.005?'The β plane':'Bending the plane…'):`Estimates drawn with H₀ true, and rings of equal W. W = ${f2(W)} at your estimate`);
+    {const R=sqrtm(Pl.Vm);for(let i=0;i<400;i++)dotAt(Pl,at(B0,zi(i),R),'var(--muted)',2.2,.35)}
+    // Contour labels line up on the side away from the estimate, so the arrow never crosses them
+    const zb=mv(inv2(sqrtm(Pl.Vm)),sub(b,B0)),ang=Math.atan2(-zb[1],-zb[0])+.5;
+    [1,4,9].forEach(l=>elab(Pl,ell(Pl,B0,l,{w:1,op:.7}),`W = ${l}`,null,ang));
+    elab(Pl,ell(Pl,B0,cq(.05,2),{w:2.4,fill:'var(--fit)',fo:.07}),'5.99, 95%',null,ang-.5);
+    ell(Pl,B0,W,{c:'var(--y)',w:1.6,dash:'5 4'});
+    nullPt(Pl,'H₀');arrow(Pl,B0,b,'d');est(Pl,b,`W = ${f2(W)}`);
+    legend([['dot','var(--muted)','Estimates drawn with H₀ true'],['line','var(--fit)','Points at equal W'],['dash','var(--y)','Ring through your estimate']]);break}
+  case 'chi':{const Pl=plane(P[0]),b=st.bB,W=quad(sub(b,B0),inv2(Pl.Vm)),c=cq(st.alpha,2),p=pq(W,2);
+    cap(0,`Acceptance region at α = ${f2(st.alpha)}: the ${Math.round(100*(1-st.alpha))}% ellipse`);cap(1,`W = ${f2(W)} against χ²₂: p = ${f3(p)}`);
+    elab(Pl,ell(Pl,B0,c,{w:2.4,fill:'var(--fit)',fo:.1}),`${Math.round(100*(1-st.alpha))}%`);ell(Pl,B0,W,{c:'var(--y)',w:1.6,dash:'5 4'});
+    nullPt(Pl,'H₀');arrow(Pl,B0,b,'d');est(Pl,b,W>c?'reject':'do not reject');
+    const[sx,sy,g,m]=frame(P[1],[0,16],[0,.55],'W','',440,190,{noy:1});
+    bell(g,sx,sy,x=>chi(x,2),[0,16],{c:'var(--muted)',fill:[[c,16,'var(--res)',.28],[Math.min(W,16),16,'var(--fit)',.45]]});
+    seg(g,[sx(c),sy(0)],[sx(c),sy(chi(c,2)+.08)],'var(--res)',1.5);halo(txt(P[1],sx(c)+4,sy(chi(c,2)+.06),`c = ${f2(c)}`,'var(--fg)'));
+    vline(P[1],g,sx,m,Math.min(W,15.9),'var(--y)',`W = ${f2(W)}`,{side:W>9?'l':'r'});
+    legend([['area','var(--fit)','Acceptance region / p-value'],['area','var(--res)','Rejection region'],['dash','var(--y)','Level of your W']]);break}
+  case 'region':{const Pl=plane(P[0]),b=st.bB,Vi=inv2(Pl.Vm),c=cq(st.alpha,2),cs=GRID/Pl.span*Pl.w,X=VIEW.cd.x,Y=VIEW.cd.y;
+    cap(0,`Testing β₀ = ${pair(st.probe)}: ${quad(sub(b,st.probe),Vi)>c?'rejected':'not rejected'}`);
+    vis.forEach(key=>{const i=key%NG,j=(key-i)/NG,t=[X[0]+(i+.5)*GRID,Y[0]+(j+.5)*GRID],ok=quad(sub(b,t),Vi)<=c,p=Pl.S(t);
+      el('rect',{x:p[0]-cs/2,y:p[1]-cs/2,width:cs+.4,height:cs+.4,fill:ok?'var(--fit)':'var(--res)','fill-opacity':ok?.5:.2},Pl.g)});
+    if(allTested){elab(Pl,ell(Pl,b,c,{w:2.4}),`${Math.round(100*(1-st.alpha))}% confidence region`);const z=crit(st.alpha),[s1,s2]=se(Pl.Vm);
+      el('polygon',{points:pts2([[-1,-1],[1,-1],[1,1],[-1,1]].map(([u,v])=>Pl.S([b[0]+u*z*s1,b[1]+v*z*s2]))),fill:'none',stroke:'var(--fg)','stroke-width':1.5,'stroke-dasharray':'6 4'},Pl.g)}
+    const q=Pl.S(st.probe);el('polygon',{points:`${q[0]},${q[1]-11} ${q[0]-10},${q[1]+7} ${q[0]+10},${q[1]+7}`,fill:'var(--x)',stroke:'var(--panel)','stroke-width':1.5},Pl.s);
+    halo(txt(Pl.s,q[0]+(q[0]<Pl.pl+Pl.w*.6?13:-13),q[1]-8,`β₀ ${pair(st.probe)}`,'var(--fg)','',q[0]<Pl.pl+Pl.w*.6?'start':'end'));
+    est(Pl,b,'your estimate');
+    legend([['area','var(--fit)','Not rejected'],['area','var(--res)','Rejected'],['dot','var(--x)','β₀ being tested'],...(allTested?[['dash','var(--fg)','Two separate CIs']]:[])]);break}
+  case 'line':{const Pl=plane(P[0]),b=st.bC,T_=linTest(b,[1,1],1,Pl.Vm),R=sqrtm(Pl.Vm),sd=Math.sqrt(T_.s),sn=Math.sqrt(Pl.Vm[0][0]+Pl.Vm[1][1]),z=1.96;
+    cap(0,`d = β̂₁ + β̂₂ − 1 = ${f3(T_.d)}, se(d) = ${f3(sd)}: ${T_.W>z*z?'reject':'do not reject'}`);
+    // The acceptance region of a line null is a strip: sums within z·se(d) of 1
+    strip(Pl,[1,1],1-z*sd,1+z*sd,{c:'var(--x)',fo:.14});
+    for(let i=0;i<300;i++)dotAt(Pl,at(B0,zi(i),R),'var(--muted)',2.2,.35);
+    lin(Pl,[1,1],1-z*sn,{c:'var(--fg)',w:1.2,dash:'2 3'});lin(Pl,[1,1],1+z*sn,{c:'var(--fg)',w:1.2,dash:'2 3'});
+    lin(Pl,[1,1],1);lin(Pl,[1,1],b[0]+b[1],{c:'var(--y)',w:1.4,dash:'5 4'});
+    const p=Pl.S(B0);el('circle',{cx:p[0],cy:p[1],r:5,fill:'var(--panel)',stroke:'var(--x)','stroke-width':2},Pl.s);halo(txt(Pl.s,p[0]-10,p[1]+16,'(0.3, 0.7)','var(--fg)','','end'));
+    const lp=Pl.S([.02,.98]);halo(txt(Pl.s,lp[0]+8,lp[1]-6,'H₀: β₁ + β₂ = 1','var(--fg)','lab'));
+    est(Pl,b,'your estimate');
+    legend([['line','var(--x)','H₀: constant returns'],['area','var(--x)','Not rejected at 5%'],['dash','var(--fg)','Same, ignoring the covariance'],['dot','var(--muted)','Estimates drawn at (0.3, 0.7)'],['dash','var(--y)','Same sum as your estimate']]);break}
+  case 'touch':{const Pl=plane(P[0],{m:st.m,C:B0}),b=st.bC,a=[1,1],T_=linTest(b,a,1,Pl.Vm),foot=[b[0]-(dot(a,b)-1)/2,b[1]-(dot(a,b)-1)/2];
+    cap(0,st.m>.995?'Whitened: the arrow meets the line at a right angle':`The ellipse around your estimate touches the line at level W = ${f2(T_.W)}`);
+    lin(Pl,a,1);ell(Pl,b,T_.W,{c:'var(--y)',w:1.8,dash:'5 4'});
+    seg(Pl.g,Pl.S(b),Pl.S(foot),'var(--muted)',1.4,'2 3');dotAt(Pl,foot,'var(--muted)',4,1);
+    arrow(Pl,T_.star,b,'d',null);const sp=Pl.S(T_.star);marker(Pl.s,sp[0],sp[1],'var(--fg)',4.5);
+    if(st.m>.995)rightAngle(Pl,sp,Pl.S(b),Pl.S([T_.star[0]-.1,T_.star[1]+.1]));
+    est(Pl,b,'your estimate');
+    legend([['line','var(--x)','H₀: β₁ + β₂ = 1'],['dash','var(--y)','Ellipse at level W'],['dot','var(--fg)','Touching point'],['dot','var(--muted)','Nearest point by ordinary distance']]);break}
+  case 'curve':case 'tangent':case 'linnull':case 'far':case 'inv':case 'invsim':{const Pl=plane(P[0],{view:'nl'}),b=st.bD,A=gA(b),TA=nlTest(b,A,Pl.Vm),u=Math.hypot(...A.G);
+    // Level curves of g: β₁β₂ = 1 + g, labelled where they cross the diagonal β₁ = β₂
+    if(id==='curve')[-.5,.5,1.5,3,5].forEach(gv=>{hyper(Pl,1+gv,{c:'var(--muted)',w:1,dash:'3 3'});const s=Math.sqrt(1+gv),p=Pl.S([s,s]);halo(txt(Pl.s,p[0]+5,p[1]-5,`g = ${gv}`,'var(--muted)'))});
+    hyper(Pl,1);const lp=Pl.S([2.7,1/2.7]);halo(txt(Pl.s,lp[0],lp[1]+24,'H₀: β₁β₂ = 1','var(--fg)','lab','middle'));
+    if(['curve','tangent','linnull'].includes(id))hyper(Pl,b[0]*b[1],{c:'var(--y)',w:1.6,dash:'6 3'});
+    if(id==='curve'){cap(0,`Your estimate sits on the curve where g = ${f2(A.g)}`);est(Pl,b,`g = ${f2(A.g)}`);
+      legend([['line','var(--x)','H₀: g = 0'],['dash','var(--muted)','Other values of g'],['dash','var(--y)','The curve through your estimate']])}
+    if(id==='tangent'){cap(0,`Gradient G = ${pair(A.G)} at your estimate`);lin(Pl,A.G,dot(A.G,b),{c:'var(--fg)',w:1.4});arrow(Pl,b,[b[0]+A.G[0]/u*.6,b[1]+A.G[1]/u*.6],'G');est(Pl,b,'linearise here');
+      legend([['line','var(--x)','H₀: g = 0'],['dash','var(--y)','The curve through your estimate'],['line','var(--fg)','Its tangent, and the gradient G']])}
+    if(id==='linnull'){cap(0,`Linearised null: W = ${f2(TA.W)}`);lin(Pl,A.G,dot(A.G,b),{c:'var(--muted)',w:1.2});
+      lin(Pl,A.G,dot(A.G,b)-A.g,{c:'var(--x2)',w:2.4,dash:'8 4'});ell(Pl,b,TA.W,{c:'var(--y)',w:1.6,dash:'5 4'});
+      arrow(Pl,TA.star,b,'d','var(--disc)');const sp=Pl.S(TA.star);marker(Pl.s,sp[0],sp[1],'var(--x2)',5);est(Pl,b,'your estimate');
+      legend([['line','var(--x)','H₀'],['dash','var(--x2)','Linearised null'],['line','var(--muted)','Tangent at your estimate'],['dash','var(--y)','Ellipse at level W']])}
+    if(id==='far'){const Vi=inv2(Pl.Vm),C_=toCurve(b,Vi);cap(0,`Wald W = ${f2(TA.W)} · distance to the curve itself = ${f2(C_.L)}`);
+      lin(Pl,A.G,dot(A.G,b)-A.g,{c:'var(--x2)',w:2.2,dash:'8 4'});ell(Pl,b,TA.W,{c:'var(--y)',w:1.6,dash:'5 4'});ell(Pl,b,C_.L,{c:'var(--fit)',w:2,dash:'2 3'});
+      const cp=Pl.S(C_.pt);marker(Pl.s,cp[0],cp[1],'var(--fit)',5);const sp=Pl.S(TA.star);marker(Pl.s,sp[0],sp[1],'var(--x2)',5);est(Pl,b,'your estimate');
+      legend([['line','var(--x)','H₀'],['dash','var(--x2)','Linearised null'],['dash','var(--y)','Wald: touches the green line'],['dash','var(--fit)','Touches the curve itself']])}
+    if(id==='inv'){const B=gB(b),TB=nlTest(b,B,Pl.Vm),cc=cq(.05,1),v=W=>W>cc?'reject':'do not reject';cap(0,`A: W = ${f2(TA.W)}, ${v(TA.W)} · B: W = ${f2(TB.W)}, ${v(TB.W)}`);
+      lin(Pl,A.G,dot(A.G,b)-A.g,{c:'var(--x2)',w:2.2,dash:'8 4'});lin(Pl,B.G,dot(B.G,b)-B.g,{c:'var(--disc)',w:2.2,dash:'8 4'});
+      ell(Pl,b,TA.W,{c:'var(--x2)',w:1.4,op:.8});ell(Pl,b,TB.W,{c:'var(--disc)',w:1.4,op:.8});est(Pl,b,'your estimate');
+      legend([['line','var(--x)','H₀'],['dash','var(--x2)','A: linearised β₁β₂ − 1 = 0'],['dash','var(--disc)','B: linearised β₁ − 1/β₂ = 0'],['line','var(--muted)','Each version’s ellipse at its W']])}
+    if(id==='invsim'){const R=sqrtm(Pl.Vm),cc=cq(.05,1),K=Math.min(st.k,1000);cap(0,`${st.k} estimates drawn with H₀ true, n = ${st.n}`);
+      for(let i=st.k-K;i<st.k;i++){const x=at(TNL,zi(i),R),ra=nlTest(x,gA(x),Pl.Vm).W>cc,rb=Math.abs(x[1])>1e-6&&nlTest(x,gB(x),Pl.Vm).W>cc;
+        dotAt(Pl,x,ra&&rb?'var(--res)':ra?'var(--x2)':rb?'var(--disc)':'var(--muted)',K>300?2.4:3.2,ra||rb?.9:.4)}
+      ring(Pl,TNL,'var(--fg)','true β = (2, 0.5)');
+      legend([['dot','var(--disc)','Only B rejects'],['dot','var(--x2)','Only A rejects'],['dot','var(--res)','Both reject'],['dot','var(--muted)','Neither']])}
+    break}
+  case 'recap':{const[sx,sy,g,m]=frame(P[0],[0,12],[0,.6],'W','',440,260,{noy:1}),c1=cq(st.alpha,1),c2=cq(st.alpha,2);cap(0,`Critical values at α = ${f2(st.alpha)}`);
+    bell(g,sx,sy,x=>chi(x,1),[.01,12],{c:'var(--x2)',w:2.2,fill:[[c1,12,'var(--x2)',.18]]});bell(g,sx,sy,x=>chi(x,2),[0,12],{c:'var(--fit)',w:2.2,fill:[[c2,12,'var(--fit)',.18]]});
+    vline(P[0],g,sx,m,c1,'var(--x2)',`q = 1: ${f2(c1)}`,{w:1.2,dash:'4 3',side:'r'});vline(P[0],g,sx,m,c2,'var(--fit)',`q = 2: ${f2(c2)}`,{w:1.2,dash:'4 3',side:'r',row:1});
+    legend([['line','var(--x2)','χ²₁'],['line','var(--fit)','χ²₂'],['area','var(--muted)','Rejection regions']]);break}
+  }
+}
+// Confidence-region grid: cells of the β plane tested so far
+const GRID=.025,NG=Math.round((VIEW.cd.x[1]-VIEW.cd.x[0])/GRID);
+let vis=new Set,allTested=false;
+const visit=b=>{const i=Math.floor((b[0]-VIEW.cd.x[0])/GRID),j=Math.floor((b[1]-VIEW.cd.y[0])/GRID);
+  for(let u=-1;u<=1;u++)for(let v=-1;v<=1;v++){const a=i+u,c=j+v;if(a>=0&&a<NG&&c>=0&&c<NG)vis.add(c*NG+a)}};
+
+/* ---------- readout ---------- */
+function readout(id){const Vm=V(),[s1,s2]=se(Vm),L=[],c=(a,w=26)=>col(a,w),dec=r=>r?'reject H₀':'do not reject H₀';
+  switch(id){
+  case 'one':{const b=sample(st.seed),t=(b[0]-B0[0])/s1;L.push(c('estimate of β₁')+f3(b[0]),c('se₁')+f3(s1),c('t')+f3(t),c('W = t²')+f3(t*t),c('critical value 1.96²')+'3.841','',c('decision')+dec(t*t>3.8415));break}
+  case 'where':{const E=st.drawn.map(sample),cur=E[E.length-1];L.push(c('samples drawn')+E.length,c('your estimate')+pair(cur,f3));
+    if(st.reveal)L.push(c('true β')+pair(TRUE,f3),c('this one is off by')+pair(sub(cur,TRUE),f3));else L.push(c('true β')+'hidden');break}
+  case 'shape':L.push(c('corr(log K, log L)')+f2(st.r),c('corr of the estimates')+f2(Vm[0][1]/(s1*s2)),'',c('se₁')+f3(s1),c('se₂')+f3(s2),c('se of the sum')+f3(Math.sqrt(quad([1,1],Vm))),c('se of the difference')+f3(Math.sqrt(quad([1,-1],Vm))));break;
+  case 'joint':{const b=st.bB,d=sub(b,B0);L.push(c('H₀')+'(0.300, 0.700)',c('your estimate')+pair(b,f3),c('d = estimate − H₀')+pair(d,f3),'',c('t₁ alone')+f2(d[0]/s1),c('t₂ alone')+f2(d[1]/s2));break}
+  case 'twot':case 'widen':{const cb=id==='twot'?1.96:st.cbox,r=rates(cb,st.k),lr=rates(cb),row=(lab,k,p)=>c(lab)+col(String(k),7)+pct(p);
+    L.push(c('cut-off: reject if |t| >')+f2(cb),c('estimates drawn')+st.k,'',row('R₁: test of β₁ rejects',r.k1,r.r1),row('R₂: test of β₂ rejects',r.k2,r.r2),row('both: a corner',r.kb,r.both),row('either: R₁ + R₂ − both',r.ku,r.b),'',
+      'in the long run, with H₀ true:',`  ${pct(lr.r1)} + ${pct(lr.r2)} − ${pct(lr.both)} = ${pct(lr.b)}`);break}
+  case 'compare':{const r=rates(st.cbox),b=st.bB,d=sub(b,B0),W=quad(d,inv2(Vm));L.push(c('box cut-off')+f2(st.cbox),'in the long run, with H₀ true:',c('  box rejects')+pct(r.b),c('  ellipse rejects')+pct(r.e),c('  the two disagree')+pct(r.dis),'',
+    c('your estimate: t₁, t₂')+`${f2(d[0]/s1)}, ${f2(d[1]/s2)}`,c('your estimate: W')+f2(W)+(W>cq(.05,2)?'  > 5.99':'  ≤ 5.99'));break}
+  case 'ruler':{const d=sub(st.bB,B0),W=quad(d,inv2(Vm)),t1=d[0]/s1,t2=d[1]/s2,cc=cq(.05,2);let k=0;for(let i=0;i<NSIM;i++){const z=zi(i);k+=dot(z,z)<=cc}
+    L.push(c('d')+pair(d,f3),c("W = d'V̂⁻¹d")+f2(W),c('t₁² + t₂²')+f2(t1*t1+t2*t2)+'  ignores the correlation','',c('draws inside W = 5.99')+pct(k/NSIM));break}
+  case 'white':{const d=sub(st.bB,B0),z=mv(sqrtm(inv2(Vm)),d);L.push(c('z = V̂^(−1/2) d')+pair(z),c('z₁² + z₂²')+f2(dot(z,z)),c("W = d'V̂⁻¹d")+f2(quad(d,inv2(Vm))));break}
+  case 'chi':{const W=quad(sub(st.bB,B0),inv2(Vm)),cc=cq(st.alpha,2);L.push(c('W')+f3(W),c('critical value c')+f3(cc),c('p = exp(−W/2)')+f3(pq(W,2)),c('α')+f2(st.alpha),'',c('decision')+dec(W>cc));break}
+  case 'region':{const W=quad(sub(st.bB,st.probe),inv2(Vm)),cc=cq(st.alpha,2);L.push(c('β₀ being tested')+pair(st.probe),c('W')+f2(W),c('p-value')+f3(pq(W,2)),c('decision')+dec(W>cc),c('cells tested')+vis.size);break}
+  case 'line':{const T_=linTest(st.bC,[1,1],1,Vm),cc=cq(.05,1),sn=Math.sqrt(Vm[0][0]+Vm[1][1]);L.push(c('sum of the estimates')+f3(st.bC[0]+st.bC[1]),c('d')+f3(T_.d),c('se(d)')+f3(Math.sqrt(T_.s)),c('t = d / se(d)')+f2(T_.d/Math.sqrt(T_.s)),c('W = t²')+f2(T_.W),c('decision at 5%')+dec(T_.W>cc),'',
+    c('se ignoring the cov')+f3(sn),c('t ignoring the cov')+f2(T_.d/sn)+(Math.abs(T_.d/sn)>1.96?'  reject':'  do not reject'));break}
+  case 'touch':{const b=st.bC,T_=linTest(b,[1,1],1,Vm),Vi=inv2(Vm),foot=[b[0]-(b[0]+b[1]-1)/2,b[1]-(b[0]+b[1]-1)/2];
+    L.push(c('W')+f3(T_.W),c('touching point')+pair(T_.star,f3),c('W-distance to it')+f3(quad(sub(b,T_.star),Vi)),'',c('nearest point, ordinary')+pair(foot,f3),c('W-distance to it')+f3(quad(sub(b,foot),Vi))+'  larger');break}
+  case 'curve':{const b=st.bD;L.push(c('your estimate')+pair(b),c('d = g(estimate)')+f3(gA(b).g),c('standard error of d')+'needs the next step');break}
+  case 'tangent':{const b=st.bD,A=gA(b),TA=nlTest(b,A,Vm);L.push(c('your estimate')+pair(b),c('d = g(estimate)')+f3(A.g),c('gradient G')+pair(A.G),c("se(d) ≈ √(GV̂G')")+f3(Math.sqrt(TA.s)));break}
+  case 'linnull':{const b=st.bD,A=gA(b),TA=nlTest(b,A,Vm),cc=cq(.05,1);L.push(c('d = g(estimate)')+f3(A.g),c("se(d) ≈ √(GV̂G')")+f3(Math.sqrt(TA.s)),c("W = d² / GV̂G'")+f2(TA.W),c('critical value, χ²₁')+'3.84',c('decision at 5%')+dec(TA.W>cc));break}
+  case 'far':{const b=st.bD,TA=nlTest(b,gA(b),Vm),C_=toCurve(b,inv2(Vm)),cc=cq(.05,1);L.push(c('Wald W, tangent line')+col(f2(TA.W),8)+dec(TA.W>cc),c('distance to the curve')+col(f2(C_.L),8)+dec(C_.L>cc));break}
+  case 'inv':{const b=st.bD,A=gA(b),B=gB(b),TA=nlTest(b,A,Vm),TB=nlTest(b,B,Vm),cc=cq(.05,1),w=16;
+    L.push(c('',22)+col('A: β₁β₂ − 1',w)+'B: β₁ − 1/β₂',c('g at the estimate',22)+col(f3(A.g),w)+f3(B.g),c('gradient G',22)+col(pair(A.G),w)+pair(B.G),c('W',22)+col(f2(TA.W),w)+f2(TB.W),c('decision at 5%',22)+col(TA.W>cc?'reject':'do not reject',w)+(TB.W>cc?'reject':'do not reject'));break}
+  case 'invsim':{const R=sqrtm(Vm),cc=cq(.05,1),sim=k=>{let a=0,b=0;for(let i=0;i<k;i++){const x=at(TNL,zi(i),R);a+=nlTest(x,gA(x),Vm).W>cc;b+=Math.abs(x[1])>1e-6&&nlTest(x,gB(x),Vm).W>cc}return[a,b]};
+    const[a,b]=sim(st.k),[la,lb]=sim(NSIM);L.push(c('n')+st.n,c('estimates drawn')+st.k,'',c('A: β₁β₂ − 1 rejects')+col(String(a),7)+pct(a/st.k),c('B: β₁ − 1/β₂ rejects')+col(String(b),7)+pct(b/st.k),'','in the long run, with H₀ true:',c('  A rejects')+pct(la/NSIM),c('  B rejects')+pct(lb/NSIM));break}
+  case 'recap':L.push(c('α')+f2(st.alpha),c('c for q = 1')+f3(cq(st.alpha,1)),c('c for q = 2')+f3(cq(st.alpha,2)));break;
+  }
+  $('readout').textContent=L.join('\n');
+}
+
+/* ---------- render ---------- */
+const SL=['n','r','cbox','m','alpha'],BT=['new','ten','more','rand','all','reveal'];
+function go(k){const step=steps[k],was=steps[st.step].part,f=$('fig');
+  if(step.part==='D'&&was!=='D')Object.assign(st,DPART);else if(step.part!=='D'&&was==='D')Object.assign(st,{n:DEF.n,r:DEF.r});
+  st.step=k;Object.assign(st,JSON.parse(JSON.stringify(step.set||{})));st.reveal=false;st.drawn=[st.seed];st.k=step.k0||10;vis=new Set;allTested=false;visit(st.probe);
+  f.innerHTML='';P=step.fig.map((c,i)=>{const d=document.createElement('div'),l=document.createElement('div'),s=document.createElementNS(NS,'svg');d.className='cell';l.className='plabel';s.id='p'+i;s.setAttribute('role','img');d.append(l,s);f.append(d);return s});
+  if(step.drag)P[0].classList.add('drag');
+  render()}
+function render(){
+  const k=st.step,step=steps[k],show=step.ctl;
+  [...$('nav').querySelectorAll('button')].forEach((b,i)=>{b.classList.toggle('on',i===k);b.classList.toggle('done',i<k);b.setAttribute('aria-current',i===k?'step':'false')});
+  $('stepnum').textContent=`Part ${step.part} · ${parts[step.part]} · Step ${k+1} of ${steps.length}`;
+  $('stitle').textContent=step.t;
+  $('stext').innerHTML=typeof katex!=='undefined'?tex(step.text):step.text.replace(/\\\(|\\\)/g,'');
+  $('hint').textContent=step.hint;
+  SL.forEach(c=>{$('c-'+c).hidden=!show.includes(c)});BT.forEach(c=>{$(c).hidden=!show.includes(c)});
+  $('new').textContent=step.newLabel||'New sample';$('ten').textContent=step.tenLabel||'Draw 10';$('more').textContent=step.moreLabel||'Draw 100';
+  document.querySelector('.controls').classList.toggle('btnfirst',!!step.btnFirst);
+  $('prev').disabled=k===0;$('next').disabled=k===steps.length-1;
+  draw()}
+function draw(){const id=steps[st.step].id;
+  $('reveal').textContent=st.reveal?'Hide β':'Reveal β';
+  figure(id);readout(id);
+  // Say on the plot itself that it responds to the pointer
+  const dg=steps[st.step].drag;if(dg)halo(txt(P[0],426,26,dg==='probe'?'click or drag: the triangle follows':'click or drag: your estimate follows','var(--muted)','','end'));
+  SL.forEach(c=>{$(c).value=st[c];$(c+'o').textContent=c==='n'?st.n:f2(st[c])})}
+
+/* nav */
+let lastPart='';steps.forEach((s,i)=>{if(s.part!==lastPart){const p=document.createElement('span');p.className='part';p.textContent=parts[s.part];$('nav').appendChild(p);lastPart=s.part}
+  const b=document.createElement('button');b.textContent=i+1;b.title=s.t;b.setAttribute('aria-label',`Step ${i+1}: ${s.t}`);b.onclick=()=>go(i);$('nav').appendChild(b)});
+$('prev').onclick=()=>{if(st.step>0)go(st.step-1)};
+$('next').onclick=()=>{if(st.step<steps.length-1)go(st.step+1)};
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')$('next').click();if(e.key==='ArrowLeft')$('prev').click()});
+SL.forEach(c=>$(c).addEventListener('input',()=>{st[c]=+$(c).value;draw()}));
+// Draw buttons: more samples on the "where" step, more draws under H₀ on the two box steps, a new sample elsewhere
+const drawMany=k=>{const id=steps[st.step].id;
+  if(id==='where'){for(let i=0;i<k;i++){st.seed=st.seed%500+1;st.drawn.push(st.seed)}st.drawn=st.drawn.slice(-500)}
+  else if(['twot','widen','compare','invsim'].includes(id))st.k=Math.min(st.k+k,NSIM);
+  else st.seed=st.seed%500+1;
+  draw()};
+$('new').onclick=()=>drawMany(1);
+$('ten').onclick=()=>drawMany(10);
+$('more').onclick=()=>drawMany(100);
+$('all').onclick=()=>{for(let i=0;i<NG*NG;i++)vis.add(i);allTested=true;draw()};
+let randSeed=1;
+$('rand').onclick=()=>{const r=mulberry32(randSeed++*104729),X=VIEW.cd.x,Y=VIEW.cd.y;for(let i=0;i<20;i++){const b=[X[0]+r()*(X[1]-X[0]),Y[0]+r()*(Y[1]-Y[0])];visit(b);st.probe=b.map(v=>Math.round(v*200)/200)}draw()};
+$('reveal').onclick=()=>{st.reveal=!st.reveal;draw()};
+$('reset').onclick=()=>{const s=st.step;Object.assign(st,fresh(),steps[s].part==='D'?DPART:{});go(s)};
+
+/* dragging in the plane */
+const svgPt=(svg,e)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
+let dragging=false;
+function moveTo(e){const step=steps[st.step],s=P[0],q=svgPt(s,e),b=s._inv(q.x,q.y),vw=VIEW[step.view||'cd'],r=v=>Math.round(v*200)/200;
+  let v=[clamp(b[0],vw.x[0]+.01,vw.x[1]-.01),clamp(b[1],vw.y[0]+.01,vw.y[1]-.01)].map(r);
+  if(step.view==='nl')v=v.map(x=>Math.max(x,.05));
+  if(step.drag==='probe'){st.probe=v;visit(v)}else st[step.drag]=v;draw()}
+$('fig').addEventListener('pointerdown',e=>{const s=e.target.closest('svg');if(!s||s!==P[0]||!steps[st.step].drag)return;dragging=true;moveTo(e);e.preventDefault()});
+window.addEventListener('pointermove',e=>{if(dragging)moveTo(e)});
+window.addEventListener('pointerup',()=>{dragging=false});
+
+/* tooltips */
+window.addEventListener('pointermove',e=>{const t=e.target,tip=$('tip');let s=null;if(dragging){tip.hidden=true;return}
+  const svg=t.closest&&t.closest('svg');if(svg&&svg._pts&&svg._pts.length){const q=svgPt(svg,e);let best=200;svg._pts.forEach(p=>{const d=(p[0]-q.x)**2+(p[1]-q.y)**2;if(d<best){best=d;s=p[2]}})}
+  tip.hidden=!s;if(s){tip.textContent=s;tip.style.left=Math.min(e.clientX+12,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=Math.max(4,e.clientY-30)+'px'}});
+
+go(0);
+})();
+</script>
+</body>
+</html>
