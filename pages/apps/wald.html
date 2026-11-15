@@ -34,10 +34,15 @@ h1{font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
 .steps button.done{border-color:var(--muted)}
 .grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start}
 @media (max-width:820px){.grid{grid-template-columns:1fr}}
+@media (min-width:821px){.grid.wide{grid-template-columns:minmax(0,1.75fr) minmax(0,1fr)}}
 .panel{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px;min-width:0}
 .panel svg{display:block;width:100%;height:auto;user-select:none}
 .panel svg.drag{touch-action:none;cursor:grab}
 .figs{display:grid;gap:8px}
+/* Two figures side by side (one sample vs many samples); text scaled up because each svg is drawn smaller */
+.figs.pair svg text{font-size:15px}
+.figs.pair svg .lab{font-size:16px}
+@media (min-width:560px){.figs.pair{grid-template-columns:1fr 1fr}.figs.pair svg text{font-size:18px}.figs.pair svg .lab{font-size:19px}}
 .cell{min-width:0}
 .hint{margin:6px 2px 0;font-size:.8rem;color:var(--muted);min-height:1.2em}
 .side{display:grid;gap:12px;min-width:0}
@@ -99,7 +104,7 @@ svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:itali
     <nav class="steps" id="nav" aria-label="Steps"></nav>
     <div class="pager"><button id="prev">← Previous</button><button id="next" class="primary">Next →</button></div>
   </div>
-  <div class="grid">
+  <div class="grid" id="grid">
     <section class="panel">
       <div class="figs" id="fig"></div>
       <div class="legend" id="legend"></div>
@@ -114,6 +119,7 @@ svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:itali
       <div class="controls">
         <div class="ctl" id="c-n"><label for="n">n firms</label><input type="range" id="n" min="5" max="400" step="5"><output id="no"></output></div>
         <div class="ctl" id="c-r"><label for="r">corr(K, L)</label><input type="range" id="r" min="-0.9" max="0.9" step="0.05"><output id="ro"></output></div>
+        <div class="ctl" id="c-sdl"><label for="sdl">sd(log L)</label><input type="range" id="sdl" min="0.5" max="1.5" step="0.05"><output id="sdlo"></output></div>
         <div class="ctl" id="c-cbox"><label for="cbox">box cut-off</label><input type="range" id="cbox" min="1.8" max="3" step="0.01"><output id="cboxo"></output></div>
         <div class="ctl" id="c-m"><label for="m">whiten</label><input type="range" id="m" min="0" max="1" step="0.01"><output id="mo"></output></div>
         <div class="ctl" id="c-alpha"><label for="alpha">α</label><input type="range" id="alpha" min="0.01" max="0.2" step="0.01"><output id="alphao"></output></div>
@@ -123,7 +129,10 @@ svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:itali
           <button id="more">Draw 100</button>
           <button id="rand">Test 20 random β₀</button>
           <button id="all">Test every β₀</button>
-          <button id="reveal">Reveal β</button>
+          <button id="reveal">Show answer</button>
+          <button id="wa">Uncorrelated</button>
+          <button id="wb">Negative</button>
+          <button id="wc">Positive</button>
           <button id="reset">Reset</button>
         </div>
       </div>
@@ -138,16 +147,16 @@ svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:itali
 (function(){
 const $=id=>document.getElementById(id);
 const NS='http://www.w3.org/2000/svg';
-// log Y = β₀ + β₁ log K + β₂ log L + u. Inputs have SDs SDK and SDL and correlation r; the error has SD SIG
-const SDK=1,SDL=.8,SIG=.8,NSIM=4000;
-const B0=[.3,.7],TRUE=[.4,.72],TNL=[2,.5];
+// log Y = β₀ + β₁ log K + β₂ log L + u. Inputs have SDs SDK and st.sdl and correlation r; the error has SD SIG
+const SDK=1,SIG=.8,NSIM=4000;
+const B0=[.3,.7],TRUE=[.3,.7],TNL=[2,.5];
 // The two estimates of the "right size, wrong rejections" step, in t-units: both a bit high; one up, one down
 const WRONG=[['A',[1.5,1.5]],['B',[2.1,-2.1]]];
-const DEF={n:100,r:.6,alpha:.05,m:0,cbox:1.96,seed:4,bB:[.45,.88],bC:[.45,.78],bD:[1.6,1],probe:[.3,.7]};
-// Part D uses a smaller, noisier sample so the curvature of the null matters
-const DPART={n:10,r:.3};
+const DEF={n:100,r:.6,alpha:.05,m:0,cbox:1.96,seed:4,bB:[.45,.88],bC:[.45,.78],bD:[1.6,1],probe:[.3,.7],sdl:1};
+// Per-part sample settings, applied on entering a part. Part E uses a smaller, noisier sample so the curvature of the null matters
+const PS={E:{n:10,r:.3,sdl:.8}};
 const fresh=()=>JSON.parse(JSON.stringify(DEF));
-const st={step:0,...fresh(),reveal:false,k:10,drawn:[]};
+const st={step:0,...fresh(),reveal:false,k:10};
 const T=String.raw;
 
 const RECIPE=[
@@ -161,54 +170,60 @@ const recipe=on=>`<ol class="recipe">${RECIPE.map((t,i)=>`<li class="${on.includ
 const steps=[
  {id:'one',part:'A',t:'One restriction you already know',fig:[1,1],ctl:['n','new'],hint:'Draw a new sample: t moves, and W = t² moves with it. Both red tails on top fold into the one red tail below.',
   text:T`<p>A Cobb–Douglas production function, estimated by OLS on \(n\) firms:</p><p class="eq">\(\log Y=\beta_0+\beta_1\log K+\beta_2\log L+u\)</p><p>\(\beta_1\) and \(\beta_2\) are the output elasticities of capital and labour. Start with one of them: is \(\beta_1=0.3\)? That is a t-test, as in <a href="hypothesis-testing.html">the hypothesis-testing app</a>.</p><p class="key">Square the t-statistic: \(W=t^2\). Rejecting when \(|t|>1.96\) is rejecting when \(W>1.96^2=3.84\). <strong>Same test, new scale.</strong> \(W\) follows a \(\chi^2_1\) distribution, the square of a standard normal.</p><p>The squared version is the one that extends to several restrictions at once.</p>`},
- {id:'where',part:'A',t:'Two coefficients, one estimate',fig:[1],ctl:['new','ten','more','reveal'],newLabel:'Draw another sample',tenLabel:'Draw 10 samples',moreLabel:'Draw 100 samples',hint:'Each new sample leaves its estimate behind as a faded dot.',
-  text:T`<p>Each sample gives two estimates, so one point \(\hat\beta=(\hat\beta_1,\hat\beta_2)\) in the plane. The true \(\beta\) is a fixed point somewhere nearby.</p><p class="key">Draw more samples. <strong>The estimates scatter in a cloud around \(\beta\).</strong> One estimate cannot tell you how far off it is. The cloud tells you how far off estimates typically are, and in which directions.</p><p>Reveal \(\beta\) to see how far off each one was.</p>`},
- {id:'shape',part:'A',t:'The shape of the noise',fig:[1],ctl:['n','r'],hint:'Move the correlation between log K and log L: the cloud tilts. Move n: it shrinks.',
-  text:T`<p>The cloud is the sampling distribution of \(\hat\beta\): approximately normal, centred on \(\beta\), with covariance matrix \(\hat V\). The squared standard errors sit on its diagonal; the covariance of \(\hat\beta_1\) and \(\hat\beta_2\) sits off it.</p><p>More data shrinks the cloud. Correlation between the inputs tilts it.</p><p class="key">When firms with more capital also employ more labour, <strong>the estimates are negatively correlated</strong>. The data mostly show the two inputs moving together. A sample that credits a little too much output to capital fits almost as well if it credits a little less to labour, so the two errors offset each other.</p><p>The data then pin down the sum \(\beta_1+\beta_2\) well, but not how to split it between the inputs.</p><p>If firms substitute one input for the other, so that log K and log L are negatively correlated, the errors move together instead and the estimates are positively correlated. With two regressors, \(\text{corr}(\hat\beta_1,\hat\beta_2)=-\text{corr}(\log K,\log L)\).</p>`},
- {id:'joint',part:'B',t:'A joint null: β₁ = 0.3 and β₂ = 0.7',fig:[1],ctl:[],drag:'bB',hint:'Click or drag in the plane to move your estimate.',
+ {id:'cloud',part:'B',t:'Two coefficients, correlated estimates',fig:[1],ctl:['r','n'],set:{r:.85},hint:'Move the correlation between log K and log L: the cloud tilts, and the narrow strip swaps from the total to the split.',
+  text:T`<p>Now two coefficients at once. Each sample gives one estimate \((\hat\beta_1,\hat\beta_2)\); the dots are estimates from many samples around the true \((0.3,\,0.7)\).</p><p>The estimates are correlated. When firms with more capital also have more labour, every sample pins down the total \(\beta_1+\beta_2\) well but the split poorly, so the estimates spread out along the blue line: a sample that overstates \(\beta_1\) tends to understate \(\beta_2\). Why this happens is worked through in <a href="correlated-estimates.html">the correlated-estimates app</a>.</p><p class="key">A test should use this. <strong>The noise is much larger along the blue line than across it</strong>, so an estimate some distance from \(H_0\) is ordinary if it lies along the line and surprising if it lies across it. A joint test that knows the correlation can tell the two apart; two separate t-tests cannot.</p><p>With substitutes (correlation below 0) the cloud tilts the other way; with two regressors, \(\text{corr}(\hat\beta_1,\hat\beta_2)=-\text{corr}(\log K,\log L)\). The rest of this app builds a test that uses the correlation: the Wald test.</p>`},
+ {id:'joint',part:'C',t:'A joint null: β₁ = 0.3 and β₂ = 0.7',fig:[1],ctl:[],drag:'bB',hint:'Click or drag in the plane to move your estimate.',
   text:T`<p>Two points in the plane. The <strong>orange point is the null hypothesis</strong>, the textbook shares of capital and labour:</p><p class="eq">\(H_0:\ \beta_1=0.3\ \text{and}\ \beta_2=0.7\)</p><p>The <strong>blue point is your estimate</strong> from one sample, \((\hat\beta_1,\hat\beta_2)\). It starts at (0.45, 0.88). Click or drag in the plane to move it.</p><p>\(H_0\) makes two claims at once, so it imposes two restrictions: \(q=2\). The <strong>discrepancy</strong> is the arrow from the null to the estimate, \(d=\hat\beta-(0.3,\,0.7)'\).</p><p class="key">The question: <strong>is the arrow long compared with the noise?</strong> Rejecting says at least one of the two values is wrong. It does not say which.</p>${recipe([0,1])}<p>In the recipe's notation, \(R=I_2\) and \(r=(0.3,\,0.7)'\).</p>`},
- {id:'twot',part:'B',t:'Why not two t-tests?',fig:[1],ctl:['new','ten','more','r'],btnFirst:true,newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Every dot is drawn with H₀ true. Set the correlation to 0 to get 9.75%; raise it and the corners fill up.',
-  text:T`<p>A shortcut: test \(\beta_1=0.3\) and \(\beta_2=0.7\) separately, each with its own t-test, and reject \(H_0\) if either rejects.</p><p>The red bands are where the first test rejects: \(\hat\beta_1\) too far left or right. The orange bands are where the second rejects: \(\hat\beta_2\) too high or too low. Every dot is an estimate drawn <strong>with \(H_0\) true</strong>, so a 5% test should reject 5% of them.</p><p class="eq">\(P(R)=P(R_1)+P(R_2)-P(R_1\cap R_2)\)</p><p class="key">Each band catches 5% of the draws. The corners lie in both bands, so they must not be counted twice. <strong>With independent estimates, 5% + 5% − 0.25% = 9.75%</strong>: almost double the size we asked for.</p><p>Correlated estimates are more often extreme together, so more draws land in the corners, the overlap grows, and the rate falls back towards 5%. At a correlation of ±1 the two tests would be the same test asked twice, and the rate would be exactly 5%.</p><p>So the rule is closer to the right size when the estimates are strongly correlated. That does not make it a good test: step 11 shows what it gets wrong.</p>`},
- {id:'widen',part:'B',t:'Widen the box?',fig:[1],ctl:['cbox','r','new','ten','more'],set:{cbox:2.24},newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Move the cut-off and the correlation; watch the long-run rate in the readout.',
-  text:T`<p>A fix for the size: make each t-test stricter, so that the two together reject 5%. With independent estimates \(|t|>2.24\) does it: each band now catches 2.5%, and 2.5% + 2.5% − 0.06% ≈ 5%.</p><p class="key">The size is right, but <strong>only for one correlation</strong>. Change it and the overlap changes, so the same cut-off no longer gives 5%.</p><p>And the box has the wrong shape. With correlated estimates the cloud is a tilted ellipse: the box keeps corners where draws almost never land and cuts into the long tips of the cloud.</p><p>A better region would follow the shape of the cloud. The next step builds it.</p>`},
- {id:'ruler',part:'B',t:'Where the ellipses come from',fig:[1],ctl:['r'],drag:'bB',hint:'Click or drag to move your estimate. Along an ellipse W stays put; across the ellipses W climbs.',
-  text:T`<p>Look at the cloud of estimates drawn with \(H_0\) true. It is densest at the null and thins out in rings that share the cloud's shape: <strong>ellipses</strong>.</p>${recipe([2])}<p>Each ring is a set of points with the same value of the Wald statistic,</p><p class="eq">\(W=d'\hat V^{-1}d\)</p><p>which measures the arrow with the noise as its unit. With one coefficient it is \(d^2/\text{se}^2=t^2\). With two, \(\hat V^{-1}\) also allows for the correlation.</p><p class="key">A step along the long, noisy direction raises \(W\) slowly; a step across it, quickly. <strong>The ring at \(W=5.99\) holds 95% of the cloud.</strong></p><p>Adding up \(t_1^2+t_2^2\) would ignore the correlation. The readout shows how far off that is.</p>`},
- {id:'white',part:'B',t:'Take the noise out: whitening',fig:[1],ctl:['m','r'],set:{m:0},drag:'bB',hint:'Slide from the β plane to the whitened plane. The dots are draws with H₀ true; the grid lines are lines of constant β₁ and β₂.',
+ {id:'twoq',part:'C',t:'Two questions: is the total right, is the split right?',fig:[1],ctl:['r'],set:{sdl:1},drag:'bB',hint:'Click or drag to move your estimate: each segment is one question, measured in its own standard errors.',
+  text:T`<p>The joint null asks two questions at once: is the total \(\beta_1+\beta_2\) right, and is the split \(\beta_1-\beta_2\) right? Each has its own noise, so measure each error against its own standard error:</p><p class="eq">\(t_{\text{total}}=\frac{(\hat\beta_1+\hat\beta_2)-1}{\text{se}_{\text{total}}},\qquad t_{\text{split}}=\frac{(\hat\beta_1-\hat\beta_2)+0.4}{\text{se}_{\text{split}}}\)</p><p class="key">When log K and log L have the same spread, these two are uncorrelated, and <strong>the Wald statistic is just \(W=t_{\text{total}}^2+t_{\text{split}}^2\)</strong>. Your estimate passes both separate t-tests on \(\beta_1\) and \(\beta_2\), but its total is 3.7 standard errors too high: \(W\approx13.6\).</p><p>So the joint test is two t-tests after all, on the right combinations: the ones whose estimates are uncorrelated. The next steps show what goes wrong with t-tests on \(\beta_1\) and \(\beta_2\) themselves, then build the general version, which works whatever the spreads.</p>`},
+ {id:'twot',part:'C',t:'Why not two t-tests?',fig:[1],ctl:['new','ten','more','r'],btnFirst:true,newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Every dot is drawn with H₀ true. Set the correlation to 0 to get 9.75%; raise it and the corners fill up.',
+  text:T`<p>A shortcut: test \(\beta_1=0.3\) and \(\beta_2=0.7\) separately, each with its own t-test, and reject \(H_0\) if either rejects.</p><p>The red bands are where the first test rejects: \(\hat\beta_1\) too far left or right. The orange bands are where the second rejects: \(\hat\beta_2\) too high or too low. Every dot is an estimate drawn <strong>with \(H_0\) true</strong>, so a 5% test should reject 5% of them.</p><p class="eq">\(P(R)=P(R_1)+P(R_2)-P(R_1\cap R_2)\)</p><p class="key">Each band catches 5% of the draws. The corners lie in both bands, so they must not be counted twice. <strong>With independent estimates, 5% + 5% − 0.25% = 9.75%</strong>: almost double the size we asked for.</p><p>Correlated estimates are more often extreme together, so more draws land in the corners, the overlap grows, and the rate falls back towards 5%. At a correlation of ±1 the two tests would be the same test asked twice, and the rate would be exactly 5%.</p><p>So the rule is closer to the right size when the estimates are strongly correlated. That does not make it a good test: @{wrong} shows what it gets wrong. A better region would follow the shape of the cloud. The next step builds it.</p>`},
+ {id:'ruler',part:'C',t:'Where the ellipses come from',fig:[1],ctl:['r'],drag:'bB',hint:'Click or drag to move your estimate. Along an ellipse W stays put; across the ellipses W climbs.',
+  text:T`<p>Look at the cloud of estimates drawn with \(H_0\) true. It is densest at the null and thins out in rings that share the cloud's shape: <strong>ellipses</strong>.</p>${recipe([2])}<p>Each ring is a set of points with the same value of the Wald statistic,</p><p class="eq">\(W=d'\hat V^{-1}d\)</p><p>which measures the arrow with the noise as its unit. With one coefficient it is \(d^2/\text{se}^2=t^2\). With two, \(\hat V^{-1}\) also allows for the correlation.</p><p class="key">A step along the long, noisy direction raises \(W\) slowly; a step across it, quickly. <strong>The ring at \(W=5.99\) holds 95% of the cloud.</strong></p><p>This is the familiar critical value, in two dimensions. With one coefficient, a 5% test rejects when \(|t|>1.96\): two cut-offs on a line, with the rejection region in the two tails. With two, the cut-off becomes a curve. <strong>The 95% ellipse plays the role of \(\pm1.96\)</strong>: inside it, do not reject; outside it is the rejection region, which holds 5% of the estimates when \(H_0\) is true.</p><p>Adding up \(t_1^2+t_2^2\) would ignore the correlation. The readout shows how far off that is.</p>`},
+ {id:'white',part:'C',t:'Take the noise out: whitening',fig:[1],ctl:['m','r'],set:{m:0},drag:'bB',hint:'Slide from the β plane to the whitened plane. The dots are draws with H₀ true; the grid lines are lines of constant β₁ and β₂.',
   text:T`<p>Change coordinates so that the noise is the same size in every direction and uncorrelated:</p><p class="eq">\(z=\hat V^{-1/2}(\hat\beta-r)\)</p><p>The slider bends the plane into these coordinates. Everything moves with it: the grid, the cloud, the ellipses and your estimate.</p><p class="key">In the whitened plane <strong>the ellipses are circles and \(W\) is the ordinary squared length of the arrow</strong>: \(W=z_1^2+z_2^2\).</p><p>If \(H_0\) is true, \(z_1\) and \(z_2\) are independent standard normals, and a sum of \(q\) squared independent standard normals is exactly what a \(\chi^2_q\) variable is.</p>`},
- {id:'chi',part:'B',t:'W against χ²₂',fig:[1,1],ctl:['alpha'],drag:'bB',hint:'Drag your estimate or move α. The dashed ellipse runs through your estimate, at level W.',
-  text:T`${recipe([3,4])}<p>Each cut-off on the \(\chi^2_2\) curve is one ellipse in the plane. With \(\alpha=0.05\) the cut-off is \(c=5.99\), and the shaded 95% ellipse is where the test does not reject.</p><p>The p-value is the share of the curve beyond your \(W\): the chance, if \(H_0\) is true, of an estimate on a larger ellipse than yours.</p><p class="key">Reject \(H_0\) when \(W>c\): <strong>when your estimate lies outside the \(1-\alpha\) ellipse</strong> around the null.</p><p>Software usually reports \(F=W/q\) instead, compared with an \(F(q,\,n-k)\) distribution, which allows for \(\sigma\) being estimated. In large samples the two give the same answer.</p>`},
- {id:'compare',part:'B',t:'Box or ellipse?',fig:[1],ctl:['cbox','r','new','ten','more'],set:{cbox:2.24},drag:'bB',newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Purple dots: only the ellipse rejects. Dark dots: only the box rejects. Raise the correlation and watch them multiply.',
-  text:T`<p>Now put the two regions side by side: the widened box from before, and the 95% ellipse. With independent estimates, both reject 5% of the draws.</p><p class="key">Same size, different shape. The ellipse follows the cloud; the box does not. <strong>The two rules disagree on many samples</strong>, more so as the correlation grows.</p><p>Press Reset to put your estimate back where it started: inside the box, outside the ellipse. Neither t-test rejects, but the joint test does. Both coefficients are a little high <em>together</em>, which the negative correlation makes unlikely. The next step walks through this, and the opposite mistake, point by point.</p><p>Of all regions holding 95% of the draws, the ellipse is the smallest: it leaves out the least likely estimates first.</p>`},
- {id:'wrong',part:'B',t:'Right size, wrong rejections',fig:[1],ctl:['r'],set:{r:.85},hint:'Move the correlation between 0 and 0.9: the box’s verdicts on A and B never change, the ellipse’s do.',
-  text:T`<p>Step 5 showed that correlation shrinks the two-t-test rule's size problem: the two tests overlap, so their false alarms are largely the same draws. At this correlation the rule's false-alarm rate (in the readout) is already much closer to 5% than the 9.75% at zero correlation.</p><p>That only says <em>how often</em> it rejects. Look at <em>which</em> estimates it rejects, with the original cut-off of 1.96 and the starting correlation of 0.85:</p><ul><li><strong>A: both coefficients a bit high</strong>, \(t=(1.5,\,1.5)\). Neither t-test rejects, so the box keeps \(H_0\). But the estimates are negatively correlated: the noise almost never pushes both up together. A lies far outside the ellipse, with \(W\) around 30.</li><li><strong>B: one high, one low</strong>, \(t=(2.1,\,-2.1)\). Both t-tests reject. But this is exactly how the noise moves, along the long axis of the cloud. B lies inside the ellipse, with \(W\) under 5.99.</li></ul><p class="key">The box gets the count roughly right but <strong>rejects the wrong estimates</strong>. It keeps A, which is very unlikely if \(H_0\) is true, and rejects B, which is ordinary. The stronger the correlation, the more it gets wrong.</p><p>Move the correlation to 0: the cloud turns round, and the two rules agree on both points. With a negative correlation the cloud tilts the other way, and the mirror images of A and B become the problem cases.</p>`},
- {id:'region',part:'B',t:'Confidence region: every β₀ you cannot reject',fig:[1],ctl:['alpha','rand','all'],set:{r:.6},drag:'probe',hint:'Click or drag anywhere in the plane: the triangle follows, and each spot it visits is tested and marked.',
-  text:T`<p>Now keep the estimate fixed and move the null instead. The orange triangle is a candidate null, \(\beta_0\). <strong>Click or drag anywhere in the plane</strong> to move it: each spot it visits is tested and marked purple if the test does not reject it, red if it does. Or let the buttons test pairs for you.</p><p class="key">The survivors form an ellipse around \(\hat\beta\). <strong>The 95% confidence region contains all pairs \((\beta_1,\beta_2)\) we cannot reject.</strong> It has the shape of the acceptance region, centred on the estimate instead of the null.</p><p>It is not the box formed by the two separate confidence intervals (dashed). A pair can sit inside both intervals and still be rejected jointly. The triangle starts at (0.3, 0.7), the null from step 4: inside both intervals, outside the region.</p>`},
- {id:'line',part:'C',t:'Constant returns: a line',fig:[1],ctl:['r'],drag:'bC',hint:'Move the correlation: the strip the test does not reject narrows or widens. Click or drag to move your estimate in and out of it.',
-  text:T`${recipe([0,1,2])}<p>A weaker question: <strong>constant returns to scale</strong>, \(H_0:\beta_1+\beta_2=1\). One restriction, so \(q=1\), \(R=[1\;\;1]\) and \(r=1\). The null is now a whole line, and (0.3, 0.7) is one point on it.</p><p>The discrepancy is one number, \(d=\hat\beta_1+\hat\beta_2-1\), with variance</p><p class="eq">\(R\hat VR'=\text{se}_1^2+\text{se}_2^2+2\,\text{cov}(\hat\beta_1,\hat\beta_2)\)</p><p class="key">So \(W=d^2/R\hat VR'\) is the squared t-statistic for the sum, compared with \(\chi^2_1\). <strong>\(q\) counts restrictions, not coefficients.</strong></p><p>The shaded strip is where the test does not reject: sums within \(1.96\) standard errors of 1. The cloud shows estimates drawn at (0.3, 0.7), one point where \(H_0\) holds. When the estimates are negatively correlated, the cloud lies along the line and the sum is precise, so the strip is narrow.</p><p>Leave out the covariance and you get the dotted strip instead, which is too wide here: the test then misses a sum that is clearly above 1.</p>`},
- {id:'touch',part:'C',t:'W is the distance to the line',fig:[1],ctl:['m','r'],set:{m:0},drag:'bC',hint:'Drag your estimate, then slide to the whitened plane.',
-  text:T`<p>\(W\) is also the smallest stretched distance from \(\hat\beta\) to any point of the null. Grow an ellipse around \(\hat\beta\) until it touches the line: its level is \(W\).</p><p>The touching point is generally not the nearest point by ordinary distance (grey).</p><p class="key">Bend the plane into whitened coordinates: <strong>the arrow meets the line at a right angle</strong>, and \(W\) is its squared length.</p><p>The joint null works the same way. There the null was a single point, so the arrow ran straight to it.</p>`},
- {id:'curve',part:'D',view:'nl',t:'A curved null',fig:[1],ctl:[],drag:'bD',hint:'Click or drag to move your estimate across the grey curves: g changes from one to the next.',
+ {id:'chi',part:'C',t:'W against χ²₂',fig:[1,1],ctl:['alpha'],drag:'bB',hint:'Drag the blue point to try other estimates, or move α. The dashed ellipse runs through your estimate, at level W.',
+  text:T`${recipe([3,4])}<p><strong>Drag the blue point to pick a different estimate</strong>: each position is an estimate a sample might have given you. The arrow from \(H_0\) to it is its discrepancy \(d\), and the curve below shows where its \(W\) falls.</p><p>Each cut-off on the \(\chi^2_2\) curve is one ellipse in the plane. With \(\alpha=0.05\) the cut-off is \(c=5.99\), and the shaded 95% ellipse is where the test does not reject.</p><p>The p-value is the share of the curve beyond your \(W\): the chance, if \(H_0\) is true, of an estimate on a larger ellipse than yours.</p><p class="key">Reject \(H_0\) when \(W>c\): <strong>when your estimate lies outside the \(1-\alpha\) ellipse</strong> around the null.</p><p>Software usually reports \(F=W/q\) instead, compared with an \(F(q,\,n-k)\) distribution, which allows for \(\sigma\) being estimated. In large samples the two give the same answer.</p>`},
+ {id:'compare',part:'C',t:'Widen the box, or use the ellipse?',fig:[1],ctl:['cbox','r','sdl','new','ten','more'],set:{cbox:2.24},drag:'bB',newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Move the cut-off and the correlation: the readout gives each rule’s long-run rate. Purple dots: only the ellipse rejects. Dark dots: only the box rejects.',
+  text:T`<p>One repair for the two t-tests: make each stricter, so that together they reject 5%. With independent estimates \(|t|>2.24\) does it: 2.5% + 2.5% − 0.06% ≈ 5%. But <strong>only at that correlation</strong>. Move the correlation and the overlap changes, so the same cut-off no longer gives 5% (see the readout).</p><p>Now put the widened box next to the 95% ellipse.</p><p class="key">Even at the right size, the box has the wrong shape. It keeps corners where draws almost never land and cuts into the long tips of the cloud. <strong>The two rules disagree on many samples</strong>, more so as the correlation grows.</p><p>Press Reset to put your estimate back where it started: inside the box, outside the ellipse. Neither t-test rejects, but the joint test does. Both coefficients are a little high <em>together</em>, which the negative correlation makes unlikely. The next step walks through this, and the opposite mistake, point by point.</p><p>Of all regions holding 95% of the draws, the ellipse is the smallest: it leaves out the least likely estimates first.</p>`},
+ {id:'wrong',part:'C',t:'Right size, wrong rejections',fig:[1],ctl:['r'],set:{r:.85},hint:'Move the correlation between 0 and 0.9: the box’s verdicts on A and B never change, the ellipse’s do.',
+  text:T`<p>As @{twot} showed, correlation shrinks the two-t-test rule's size problem: the two tests overlap, so their false alarms are largely the same draws. At this correlation the rule's false-alarm rate (in the readout) is already much closer to 5% than the 9.75% at zero correlation.</p><p>That only says <em>how often</em> it rejects. Look at <em>which</em> estimates it rejects, with the original cut-off of 1.96 and a correlation of 0.85 between the inputs:</p><ul><li><strong>A: both coefficients a bit high</strong>, \(t=(1.5,\,1.5)\). Neither t-test rejects, so the box keeps \(H_0\). But A moves the <em>sum</em>, the direction the firms pin down precisely (@{cloud}). The noise almost never pushes both estimates up together. A lies far outside the ellipse, with \(W\) around 30.</li><li><strong>B: one high, one low</strong>, \(t=(2.1,\,-2.1)\). Both t-tests reject. But B moves only the <em>split</em>, which the data barely see. That is exactly how the noise moves, along the long axis of the cloud. B lies inside the ellipse, with \(W\) under 5.99.</li></ul><p class="key">The box gets the count roughly right but <strong>rejects the wrong estimates</strong>. It keeps A, which is very unlikely if \(H_0\) is true, and rejects B, which is ordinary. The stronger the correlation, the more it gets wrong.</p><p>Move the correlation to 0: the cloud turns round, and the two rules agree on both points. With a negative correlation the cloud tilts the other way (@{cloud}), and the mirror images of A and B become the problem cases.</p>`},
+ {id:'witness',part:'C',t:'Same t-statistics, different evidence',fig:[1],ctl:['wa','wb','wc','r'],btnFirst:true,set:{r:0},hint:'Switch the correlation of the estimates with the buttons or the slider. A and B stay put in t-units; their W changes.',
+  text:T`<p>Why does the correlation change the verdict? Take the two estimates from the last step, <strong>A</strong> (both coefficients a bit high, \(t=(1.5,\,1.5)\)) and <strong>B</strong> (one high and one low, \(t=(2.1,\,-2.1)\)), and change how the estimates are correlated.</p><ul><li><strong>Uncorrelated.</strong> \(W=t_1^2+t_2^2\): 4.5 for A, 8.8 for B.</li><li><strong>Negatively correlated</strong> (complements, our firms). The noise usually pushes the two estimates in opposite directions. So A, both high, is unusual: \(W\approx30\). B is what the noise usually does: \(W\) under 5.99.</li><li><strong>Positively correlated</strong> (substitutes). The noise usually pushes both the same way. Now A is ordinary (\(W=2.4\)) and B unusual (\(W\approx59\)).</li></ul><p class="key">The same two t-statistics can be strong or weak evidence against \(H_0\), depending on what the noise usually does. <strong>\(\hat V^{-1}\) accounts for that; \(t_1^2+t_2^2\) does not.</strong></p><p>An analogy: two witnesses at a trial. If they are strangers, their agreement corroborates. If they come from opposite camps, agreement is striking and disagreement expected. If they rehearsed together, agreement is cheap and disagreement alarming.</p>`},
+ {id:'region',part:'C',t:'Confidence region: every β₀ you cannot reject',fig:[1],ctl:['alpha','rand','all'],set:{r:.6},drag:'probe',hint:'Click or drag anywhere in the plane: the triangle follows, and each spot it visits is tested and marked.',
+  text:T`<p>Now keep the estimate fixed and move the null instead. The orange triangle is a candidate null, \(\beta_0\). <strong>Click or drag anywhere in the plane</strong> to move it: each spot it visits is tested and marked purple if the test does not reject it, red if it does. Or let the buttons test pairs for you.</p><p class="key">The survivors form an ellipse around \(\hat\beta\). <strong>The 95% confidence region contains all pairs \((\beta_1,\beta_2)\) we cannot reject.</strong> It has the shape of the acceptance region, centred on the estimate instead of the null.</p><p>It is not the box formed by the two separate confidence intervals (dashed). A pair can sit inside both intervals and still be rejected jointly. The triangle starts at (0.3, 0.7), the null from @{joint}: inside both intervals, outside the region.</p>`},
+ {id:'line0',part:'D',t:'A weaker null: constant returns',fig:[1],ctl:[],drag:'bC',hint:'Click or drag to move your estimate. The dashed line through it collects the estimates with the same sum.',
+  text:T`<p>So far the null was a single point. A weaker question: does production have <strong>constant returns to scale</strong>?</p><p class="eq">\(H_0:\beta_1+\beta_2=1\)</p><p>This null is a whole line: every pair on it, (0.3, 0.7) among them, satisfies \(H_0\). It is <strong>one restriction</strong> on two coefficients, so \(q=1\).</p><p class="key">The discrepancy is now one number: how far the estimated sum is from 1, \(d=\hat\beta_1+\hat\beta_2-1\). Every estimate on the dashed line through yours has the same \(d\).</p><p>The question is again whether \(d\) is large compared with its noise. The next step works out that noise.</p>`},
+ {id:'line',part:'D',t:'The noise in the sum uses the covariance',fig:[1],ctl:['r','sdl'],drag:'bC',hint:'Move the correlation: the strip the test does not reject narrows or widens. Click or drag to move your estimate in and out of it.',
+  text:T`${recipe([0,1,2])}<p>To judge \(d=\hat\beta_1+\hat\beta_2-1\) we need its standard error. In the recipe's notation \(R=[1\;\;1]\) and \(r=1\), so its variance is</p><p class="eq">\(R\hat VR'=\text{se}_1^2+\text{se}_2^2+2\,\text{cov}(\hat\beta_1,\hat\beta_2)\)</p><p class="key">So \(W=d^2/R\hat VR'\) is the squared t-statistic for the sum, compared with \(\chi^2_1\). <strong>\(q\) counts restrictions, not coefficients.</strong></p><p>The shaded strip is where the test does not reject: sums within \(1.96\) standard errors of 1. The sum is the direction the firms pin down well (@{cloud}): when the inputs move together, the cloud lies along the line, the sum is precise, and the strip is narrow.</p><p>Leave out the covariance and you get the dotted strip instead, which is too wide here: the test then misses a sum that is clearly above 1.</p>`},
+ {id:'touch',part:'D',t:'W is the distance to the line',fig:[1],ctl:['m','r','sdl'],set:{m:0,sdl:.7},drag:'bC',hint:'Drag your estimate, then slide to the whitened plane. Set sd(log L) to 1: the two points meet.',
+  text:T`<p>\(W\) is also the smallest stretched distance from \(\hat\beta\) to any point of the null. Grow an ellipse around \(\hat\beta\) until it touches the line: its level is \(W\).</p><p>The touching point is generally not the nearest point by ordinary distance (grey). They coincide only when the ellipse's axes run along and across the line, as they do when log K and log L have the same spread; this step starts at sd(log L) = 0.7 to pull them apart.</p><p class="key">Bend the plane into whitened coordinates: <strong>the arrow meets the line at a right angle</strong>, and \(W\) is its squared length.</p><p>The joint null works the same way. There the null was a single point, so the arrow ran straight to it.</p>`},
+ {id:'curve',part:'E',view:'nl',t:'A curved null',fig:[1],ctl:[],drag:'bD',hint:'Click or drag to move your estimate across the grey curves: g changes from one to the next.',
   text:T`<p>Leave the production function for a restriction that is a curve:</p><p class="eq">\(H_0:\ g(\beta)=\beta_1\beta_2-1=0\)</p><p>The discrepancy is still how far the estimate is from satisfying \(H_0\): \(d=g(\hat\beta)\). It is 0 on the orange curve. The grey curves are where \(g\) takes other values, and your estimate sits on the blue one.</p><p class="key">To turn \(d\) into a test we need its standard error. With a linear restriction that was \(\sqrt{R\hat VR'}\). <strong>A curve has no single \(R\)</strong>: how fast \(g\) changes depends on where you are.</p>`},
- {id:'tangent',part:'D',view:'nl',t:'Linearise at the estimate',fig:[1],ctl:[],drag:'bD',hint:'Click or drag to move your estimate: the arrow and the tangent move with it.',
+ {id:'tangent',part:'E',view:'nl',t:'Linearise at the estimate',fig:[1],ctl:[],drag:'bD',hint:'Click or drag to move your estimate: the arrow and the tangent move with it.',
   text:T`<p>The <strong>delta method</strong>: near the estimate, replace \(g\) by its tangent approximation,</p><p class="eq">\(g(\beta)\approx g(\hat\beta)+G\,(\beta-\hat\beta)\)</p><p>The gradient \(G=(\hat\beta_2,\,\hat\beta_1)\) is the black arrow. It points where \(g\) rises fastest, at right angles to the blue curve, and the black line is the blue curve's tangent.</p><p class="key">Locally, \(g\) is linear with \(G\) playing the role of \(R\). So <strong>\(\text{Var}(g(\hat\beta))\approx G\hat VG'\)</strong>, the same formula as before.</p>`},
- {id:'linnull',part:'D',view:'nl',t:'The linearised null',fig:[1],ctl:[],drag:'bD',hint:'Click or drag to move your estimate: the green line and the ellipse move with it.',
+ {id:'linnull',part:'E',view:'nl',t:'The linearised null',fig:[1],ctl:[],drag:'bD',hint:'Click or drag to move your estimate: the green line and the ellipse move with it.',
   text:T`<p>Where does the tangent approximation say \(g=0\)? On a line parallel to the tangent, shifted by \(g(\hat\beta)\): the green <strong>linearised null</strong>. Near the estimate it follows the orange curve.</p><p class="key">From here it is a linear test: <strong>\(W=g(\hat\beta)^2/(G\hat VG')\)</strong>, compared with \(\chi^2_1\). Geometrically, the ellipse around \(\hat\beta\) grows until it touches the green line.</p>`},
- {id:'far',part:'D',view:'nl',t:'When the tangent is a poor stand-in',fig:[1],ctl:[],drag:'bD',hint:'Drag the estimate towards the lower left, where the curve bends sharply.',
+ {id:'far',part:'E',view:'nl',t:'When the tangent is a poor stand-in',fig:[1],ctl:[],drag:'bD',hint:'Drag the estimate towards the lower left, where the curve bends sharply.',
   text:T`<p>\(W\) measures the distance to the green line, not to the orange curve. Near the curve the two are close. Far from it, or where the curve bends sharply, they part.</p><p>The dotted ellipse grows until it touches the curve itself. With a normal \(\hat\beta\) and known \(\hat V\), its level is the likelihood ratio statistic: the distance to the null as it really is.</p><p class="key">The Wald test only uses what it can see at \(\hat\beta\): <strong>the estimate and the slope of \(g\) there</strong>. That makes it easy to compute, and approximate.</p>`},
- {id:'inv',part:'D',view:'nl',t:'Same hypothesis, written another way',fig:[1],ctl:[],set:{bD:[1.9,1.1]},drag:'bD',hint:'Click or drag to move your estimate: the two linearised nulls, and the two W, disagree almost everywhere.',
+ {id:'inv',part:'E',view:'nl',t:'Same hypothesis, written another way',fig:[1],ctl:[],set:{bD:[1.9,1.1]},drag:'bD',hint:'Click or drag to move your estimate: the two linearised nulls, and the two W, disagree almost everywhere.',
   text:T`<p>The same null can be written as</p><p class="eq">\(g_A(\beta)=\beta_1\beta_2-1=0\quad\text{or}\quad g_B(\beta)=\beta_1-1/\beta_2=0\)</p><p>Both are zero on exactly the same orange curve, so they make the same claim about \(\beta\).</p><p>But they are different functions, with different values and different gradients at \(\hat\beta\). So the delta method draws two different linearised nulls (green and pink), and the two Wald statistics differ.</p><p class="key"><strong>The Wald test is not invariant to how the restriction is written.</strong> At the starting estimate, version A does not reject and version B does.</p>`},
- {id:'invsim',part:'D',view:'nl',t:'Which version keeps its size?',fig:[1],ctl:['new','ten','more','n'],btnFirst:true,k0:200,newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Every dot is an estimate drawn with H₀ true. Pink dots: only version B rejects. Raise n and both rates approach 5%.',
+ {id:'invsim',part:'E',view:'nl',t:'Which version keeps its size?',fig:[1],ctl:['new','ten','more','n'],btnFirst:true,k0:200,newLabel:'Draw an estimate',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Every dot is an estimate drawn with H₀ true. Pink dots: only version B rejects. Raise n and both rates approach 5%.',
   text:T`<p>To judge a test, run it many times with \(H_0\) true. A 5% test should reject 5% of the time.</p><p>Each dot is an estimate from a sample generated with \(\beta=(2,\,0.5)\), the ringed point on the curve, so \(H_0\) holds. Each dot is tested both ways and coloured by which versions reject it.</p><p class="key">Version B, with \(1/\beta_2\), <strong>rejects far more often than 5%</strong>. When \(\hat\beta_2\) is small and noisy, \(1/\hat\beta_2\) is far from linear and its tangent is a poor guide.</p><p>In large samples \(\hat\beta\) stays close to \(\beta\), where every tangent is a good approximation. Raise \(n\): both rates approach 5%.</p>`},
- {id:'recap',part:'E',t:'Recap',fig:[1],ctl:['alpha'],hint:'Move α: both cut-offs move.',
-  text:T`<p>One recipe covers every case:</p><p class="eq">\(W=d'\,(G\hat VG')^{-1}d\;\sim\;\chi^2_q\)</p><ul><li>\(d\) is how far the estimate is from satisfying \(H_0\): \(R\hat\beta-r\), or \(g(\hat\beta)\).</li><li>\(G\) is \(R\) for linear restrictions, and the gradient of \(g\) at \(\hat\beta\) otherwise.</li><li>\(q\) is the number of restrictions, not the number of coefficients.</li><li>\(W\) is the squared length of \(d\) once the noise is whitened. The ellipses are its contours.</li><li>A joint test is not two t-tests: the box has the wrong size, and the wrong shape.</li><li>The confidence region is every \(\beta_0\) the test does not reject.</li><li>A nonlinear Wald test depends on how \(g\) is written.</li></ul>`}
+ {id:'recap',part:'F',t:'Recap: two t-tests or one Wald test',fig:[1],ctl:['r','alpha'],hint:'Move the correlation: the box stays put while the ellipse tilts. Move α: both grow or shrink. Purple: only Wald rejects; dark: only the two t-tests reject.',
+  text:T`<p>The figure puts the two rules side by side one last time, on estimates drawn with \(H_0\) true: <strong>two separate t-tests</strong> (the box, each at the usual critical value) and <strong>the Wald test</strong> (the ellipse, at the \(\chi^2_2\) critical value). The readout shows how often each rejects, and how often they disagree.</p><p class="eq">\(W=d'\,(G\hat VG')^{-1}d\;\sim\;\chi^2_q\)</p><ul><li>\(d\) is how far the estimate is from satisfying \(H_0\): \(R\hat\beta-r\), or \(g(\hat\beta)\).</li><li>\(G\) is \(R\) for linear restrictions, and the gradient of \(g\) at \(\hat\beta\) otherwise.</li><li>\(q\) is the number of restrictions, not the number of coefficients.</li><li>Correlated estimates: the data pin down some combinations of coefficients much better than others, and the test has to know which.</li><li>A joint test is not two t-tests: the box has the wrong size, and the wrong shape.</li><li>The same t-statistics can be strong or weak evidence; \(\hat V^{-1}\) accounts for the correlation, \(t_1^2+t_2^2\) does not.</li><li>\(W\) is the squared length of \(d\) once the noise is whitened. The ellipses are its contours.</li><li>The confidence region is every \(\beta_0\) the test does not reject.</li><li>A nonlinear Wald test depends on how \(g\) is written.</li></ul>`}
 ];
-const parts={A:'Two coefficients',B:'A joint null',C:'One linear restriction',D:'Nonlinear',E:'Recap'};
+const parts={A:'Warm-up',B:'Correlated estimates',C:'A joint null',D:'One linear restriction',E:'Nonlinear',F:'Recap'};
+// "@{id}" in a step's text becomes a link to that step, so references survive reordering
+const refs=s=>s.replace(/@\{(\w+)\}/g,(m,id)=>{const i=steps.findIndex(x=>x.id===id);return i<0?m:`<a href="#" data-go="${i}">step ${i+1}</a>`});
 
 function tex(s){return s.replace(/\\\((.+?)\\\)([.,:;]?)/g,(m,t,p)=>{let h=t;try{h=katex.renderToString(t,{output:'mathml',throwOnError:false})}catch(e){}return p?`<span style="white-space:nowrap">${h}${p}</span>`:h})}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const f2=v=>(Math.abs(v)<0.005?0:v).toFixed(2);
 const f3=v=>(Math.abs(v)<0.0005?0:v).toFixed(3);
 const pct=v=>(100*v).toFixed(1)+'%';
+// A squared number for captions, bracketed when negative
+const sq=v=>(v<-.005?`(${f2(v)})`:f2(v))+"²";
 const pair=(b,f=f2)=>`(${f(b[0])}, ${f(b[1])})`;
 const col=(s,w)=>s+' '.repeat(Math.max(0,w-s.replace(/[̂̃̄]/g,'').length));
 const halo=t=>{t.style.cssText+='paint-order:stroke;stroke:var(--panel);stroke-width:4px';return t};
@@ -239,7 +254,7 @@ const quad=(d,M)=>d[0]*(M[0][0]*d[0]+M[0][1]*d[1])+d[1]*(M[1][0]*d[0]+M[1][1]*d[
 const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]];
 const dot=(a,b)=>a[0]*b[0]+a[1]*b[1];
 // OLS covariance of (β̂₁, β̂₂): σ²/n times the inverse covariance matrix of (log K, log L)
-function V(){const k=SIG*SIG/(st.n*(1-st.r*st.r)),c=-st.r*k/(SDK*SDL);return[[k/(SDK*SDK),c],[c,k/(SDL*SDL)]]}
+function V(){const SDL=st.sdl,k=SIG*SIG/(st.n*(1-st.r*st.r)),c=-st.r*k/(SDK*SDL);return[[k/(SDK*SDK),c],[c,k/(SDL*SDL)]]}
 const se=Vm=>[Math.sqrt(Vm[0][0]),Math.sqrt(Vm[1][1])];
 // One linear restriction a·β = c: W, and the point of the null where the ellipse around β̂ touches it
 function linTest(b,a,c,Vm){const d=dot(a,b)-c,s=quad(a,Vm),Va=mv(Vm,a);return{d,s,W:d*d/s,star:[b[0]-Va[0]*d/s,b[1]-Va[1]*d/s]}}
@@ -262,7 +277,6 @@ function sample(seed){const r=mulberry32(seed*7919+13);return at(TRUE,[boxMuller
 // Fixed standard normal pairs; scaling them by V^{1/2} gives draws that morph smoothly as n and r move
 let ZS=null;const sims=()=>{if(!ZS){const r=mulberry32(271);ZS=Float64Array.from({length:2*NSIM},()=>boxMuller(r))}return ZS};
 const zi=i=>{const Z=sims();return[Z[2*i],Z[2*i+1]]};
-
 /* ---------- chart pieces ---------- */
 function frame(s,xr,yr,xl,yl,Wd,Hd,o={}){s.innerHTML='';s.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);s._pts=[];
   const pl=o.noy?16:o.pl??50,pr_=14,pt=10,pb=40,fx=o.fx||(v=>v),fy=o.fy||(v=>v);
@@ -299,8 +313,8 @@ function plane(s,o={}){const vw=VIEW[o.view||'cd'],Wd=440,Hd=430,pl=50,pt=8,w=38
   const cid='clip-'+s.id,cp=el('clipPath',{id:cid},el('defs',{},s));el('rect',{x:pl,y:pt,width:w,height:h},cp);
   const g=el('g',{'clip-path':`url(#${cid})`},s),G=vw.g,ext=2*span;
   // Grid lines of constant β₁ and β₂, carried through the same map as everything else
-  for(let i=Math.ceil((X[0]-ext)/G);i*G<=X[1]+ext;i++)seg(g,S([i*G,Y[0]-ext]),S([i*G,Y[1]+ext]),'var(--grid)',1);
-  for(let i=Math.ceil((Y[0]-ext)/G);i*G<=Y[1]+ext;i++)seg(g,S([X[0]-ext,i*G]),S([X[1]+ext,i*G]),'var(--grid)',1);
+  if(!o.noGrid)for(let i=Math.ceil((X[0]-ext)/G);i*G<=X[1]+ext;i++)seg(g,S([i*G,Y[0]-ext]),S([i*G,Y[1]+ext]),'var(--grid)',1);
+  if(!o.noGrid)for(let i=Math.ceil((Y[0]-ext)/G);i*G<=Y[1]+ext;i++)seg(g,S([X[0]-ext,i*G]),S([X[1]+ext,i*G]),'var(--grid)',1);
   el('rect',{x:pl,y:pt,width:w,height:h,fill:'none',stroke:'var(--rule)'},s);
   if(m<.005){seg(s,[pl,pt],[pl,pt+h],'var(--fg)',1.2);seg(s,[pl,pt+h],[pl+w,pt+h],'var(--fg)',1.2);ticks(X[0],X[1],6).forEach(t=>txt(s,sx(t),pt+h+15,String(+t.toFixed(2)),null,'','middle'));ticks(Y[0],Y[1],6).forEach(t=>txt(s,pl-6,sy(t)+4,String(+t.toFixed(2)),null,'','end'))}
   const xl=m<.005?vw.xl:m>.995?'whitened: z₁':'',yl=m<.005?vw.yl:m>.995?'z₂':'';
@@ -341,6 +355,23 @@ const dotAt=(Pl,b,c,r,op)=>{const p=Pl.S(b);el('circle',{cx:p[0],cy:p[1],r,fill:
 function rightAngle(Pl,a,b,u){let ux=b[0]-a[0],uy=b[1]-a[1];const ul=Math.hypot(ux,uy)||1;ux/=ul;uy/=ul;let vx=u[0]-a[0],vy=u[1]-a[1];const vl=Math.hypot(vx,vy)||1;vx/=vl;vy/=vl;const k=10;
   el('polyline',{points:`${a[0]+ux*k},${a[1]+uy*k} ${a[0]+ux*k+vx*k},${a[1]+uy*k+vy*k} ${a[0]+vx*k},${a[1]+vy*k}`,fill:'none',stroke:'var(--fg)','stroke-width':1.2},Pl.s)}
 
+// The two questions a joint null asks: is the total β₁ + β₂ right, and is the split β₁ − β₂ right? Each line
+// carries the strip in which 95% of estimates land if H₀ is true. With an estimate b, also its distance from each
+// line, in that combination's own standard errors; with sd(log K) = sd(log L) the two t's are uncorrelated
+function twoQ(Pl,N,b){const Vm=Pl.Vm,A=[1,1],D=[1,-1],ca=dot(A,N),cd=dot(D,N),sa=Math.sqrt(quad(A,Vm)),sd=Math.sqrt(quad(D,Vm));
+  strip(Pl,D,cd-1.96*sd,cd+1.96*sd,{c:'var(--res)',fo:.08});strip(Pl,A,ca-1.96*sa,ca+1.96*sa,{c:'var(--y)',fo:.13});
+  lin(Pl,A,ca,{c:'var(--y)',w:1.8});lin(Pl,D,cd,{c:'var(--res)',w:1.8});
+  const la=Pl.S([-.1,ca+.1]),ld=Pl.S([.88,.88-cd]);halo(txt(Pl.s,la[0]+4,la[1]-8,`total: β₁ + β₂ = ${+ca.toFixed(2)}`,'var(--y)','lab'));halo(txt(Pl.s,ld[0]-6,ld[1]+4,`split: β₁ − β₂ = ${+cd.toFixed(2)}`,'var(--res)','lab','end'));
+  const Q={sa,sd};if(!b)return Q;
+  const ea=dot(A,b)-ca,ed=dot(D,b)-cd,fa=[b[0]-ea/2,b[1]-ea/2],fd=[b[0]-ed/2,b[1]+ed/2],pb=Pl.S(b),pa=Pl.S(fa),pd=Pl.S(fd);
+  seg(Pl.s,pb,pa,'var(--y)',3.2);seg(Pl.s,pb,pd,'var(--res)',3.2);marker(Pl.s,pb[0],pb[1],'var(--fg)',7);
+  Pl.s._pts.push([pb[0],pb[1],`estimate ${pair(b,f3)}`]);
+  const side=q=>q[0]<pb[0]?[q[0]-8,'end']:[q[0]+8,'start'];
+  {const[x,a]=side(pa);halo(txt(Pl.s,x,pa[1]+(pa[1]>pb[1]?16:-8),`t = ${f2(ea/sa)}`,'var(--y)','',a))}
+  {const[x,a]=side(pd);halo(txt(Pl.s,x,pd[1]+(pd[1]>pb[1]?16:-8),`t = ${f2(ed/sd)}`,'var(--res)','',a))}
+  return Object.assign(Q,{ea,ed,ta:ea/sa,td:ed/sd,W:(ea/sa)**2+(ed/sd)**2})}
+const witName=rho=>rho<-.05?'Negatively correlated estimates':rho>.05?'Positively correlated estimates':'Uncorrelated estimates';
+
 /* ---------- figures ---------- */
 let P=[];
 const cap=(i,t)=>{P[i].previousSibling.textContent=t};
@@ -363,22 +394,26 @@ function figure(id){legend([]);const step=steps[st.step];
     halo(txt(P[1],sx2(c*c)+4,sy2(.16),`3.84 = 1.96²`,'var(--fg)'));
     vline(P[1],g2,sx2,m2,Math.min(W,11.9),'var(--y)',`W = ${f2(W)}`,{side:W>6?'l':'r'});
     legend([['area','var(--res)','Reject at 5%'],['line','var(--y)','Your sample']]);break}
-  case 'where':{const Pl=plane(P[0]),E=st.drawn.map(sample),cur=E[E.length-1],N=E.length-1,many=N>20;
-    cap(0,N?`Your estimate, and ${N} earlier ${N>1?'ones':'one'}`:'Your estimate');
-    E.slice(0,-1).forEach(b=>dotAt(Pl,b,'var(--y)',many?2.6:4,many?.3:.35));
-    if(st.reveal){const t=Pl.S(TRUE);if(!many)E.slice(0,-1).forEach(b=>seg(Pl.g,Pl.S(b),t,'var(--res)',1,null,.35));seg(Pl.g,Pl.S(cur),t,'var(--res)',2.5);ring(Pl,TRUE,'var(--fg)','true β')}
-    else halo(txt(Pl.s,Pl.pl+Pl.w/2,Pl.pt+20,'β is a fixed point somewhere here. Where?','var(--fg)','','middle'));
-    guides(Pl,cur,'var(--y)');est(Pl,cur,'your estimate (β̂₁, β̂₂)');
-    legend([['dot','var(--y)','Estimate'],['dash','var(--y)','Its two coordinates'],['ring','var(--fg)','True β, once revealed']]);break}
-  case 'shape':{const Pl=plane(P[0]),R=sqrtm(Pl.Vm);cap(0,'300 estimates from 300 samples');
-    for(let i=0;i<300;i++)dotAt(Pl,at(TRUE,zi(i),R),'var(--y)',2.4,.4);
-    elab(Pl,ell(Pl,TRUE,cq(.05,2),{w:2.2}),'95% of estimates');ring(Pl,TRUE,'var(--fg)','true β');
-    legend([['dot','var(--y)','Estimates'],['line','var(--fit)','Ellipse holding 95% of them'],['ring','var(--fg)','True β']]);break}
+  case 'cloud':{const Pl=plane(P[0]),R=sqrtm(Pl.Vm);for(let i=0;i<300;i++)dotAt(Pl,at(TRUE,zi(i),R),'var(--muted)',2.4,.5);
+    const Q=twoQ(Pl,TRUE);ring(Pl,TRUE,'var(--fg)','true β');
+    cap(0,st.r>.05?'Complements: every sample gets the total about right':st.r<-.05?'Substitutes: every sample gets the split about right':'No correlation: total and split equally precise');
+    legend([['area','var(--y)',`95% of samples: total within ±${f2(1.96*Q.sa)}`],['area','var(--res)',`95% of samples: split within ±${f2(1.96*Q.sd)}`],['dot','var(--muted)','One sample’s estimate']]);break}
+  case 'twoq':{const Pl=plane(P[0]);ell(Pl,B0,cq(.05,2),{w:1.4,op:.7,dash:'5 4'});const Q=twoQ(Pl,B0,st.bB);nullPt(Pl,'H₀');
+    cap(0,`W = ${sq(Q.ta)} + ${sq(Q.td)} = ${f2(Q.W)}: ${Q.W>5.99?'reject':'do not reject'} H₀`);
+    legend([['line','var(--y)','Total: its error in its se'],['line','var(--res)','Split: its error in its se'],['dash','var(--fit)','W = 5.99'],['dot','var(--fg)','Your estimate']]);break}
+  case 'witness':{const Pl=plane(P[0]),R=sqrtm(Pl.Vm),Vi=inv2(Pl.Vm),[s1,s2]=se(Pl.Vm),c=cq(.05,2),rho=Pl.Vm[0][1]/(s1*s2);
+    cap(0,`${witName(rho)}: corr = ${f2(rho)}`);
+    for(let i=0;i<400;i++)dotAt(Pl,at(B0,zi(i),R),'var(--muted)',2.2,.35);
+    ell(Pl,B0,c,{w:2.2,fill:'var(--fit)',fo:.07});nullPt(Pl,'H₀');
+    WRONG.forEach(([lab,t])=>{const b=[B0[0]+t[0]*s1,B0[1]+t[1]*s2],W=quad(sub(b,B0),Vi),p=Pl.S(b),right=p[0]<Pl.pl+Pl.w-130,x=p[0]+(right?12:-12),a=right?'start':'end';
+      marker(Pl.s,p[0],p[1],'var(--y)',7);halo(txt(Pl.s,x,p[1]-12,lab==='A'?'A: both high':'B: one high, one low','var(--fg)','lab',a));
+      halo(txt(Pl.s,x,p[1]+4,`W = ${f2(W)}`,'var(--fg)','',a));halo(txt(Pl.s,x,p[1]+19,W>c?'reject':'do not reject','var(--fg)','',a))});
+    legend([['dot','var(--muted)','Estimates drawn with H₀ true'],['line','var(--fit)','95% ellipse'],['dot','var(--y)','Estimates A and B']]);break}
   case 'joint':{const Pl=plane(P[0]),b=st.bB;cap(0,'Two points: the null and your estimate. The arrow between them is the discrepancy');
     guides(Pl,B0,'var(--x)');guides(Pl,b,'var(--y)');
     nullPt(Pl,'H₀: (0.3, 0.7)');arrow(Pl,B0,b,'d');est(Pl,b,`your estimate ${pair(b)}`);
     legend([['dot','var(--x)','Null hypothesis H₀'],['dot','var(--y)','Your estimate'],['line','var(--fg)','Discrepancy d']]);break}
-  case 'twot':case 'widen':case 'compare':{const Pl=plane(P[0]),R=sqrtm(Pl.Vm),Vi=inv2(Pl.Vm),[s1,s2]=se(Pl.Vm),cb=id==='twot'?1.96:st.cbox,c=cq(.05,2),K=Math.min(st.k,1000),cmp=id==='compare',h1=cb*s1,h2=cb*s2,E=5;
+  case 'twot':case 'compare':{const Pl=plane(P[0]),R=sqrtm(Pl.Vm),Vi=inv2(Pl.Vm),[s1,s2]=se(Pl.Vm),cb=id==='twot'?1.96:st.cbox,c=cq(.05,2),K=Math.min(st.k,1000),cmp=id==='compare',h1=cb*s1,h2=cb*s2,E=5;
     cap(0,`${st.k} ${st.k>1?'estimates':'estimate'} drawn with H₀ true`);
     if(!cmp){// Where each t-test rejects: β₁'s test left and right, β₂'s test above and below; the corners are in both
       rectB(Pl,B0[0]-E,B0[0]-h1,B0[1]-E,B0[1]+E,'var(--res)',.13);rectB(Pl,B0[0]+h1,B0[0]+E,B0[1]-E,B0[1]+E,'var(--res)',.13);
@@ -402,7 +437,7 @@ function figure(id){legend([]);const step=steps[st.step];
     ell(Pl,B0,W,{c:'var(--y)',w:1.6,dash:'5 4'});
     nullPt(Pl,'H₀');arrow(Pl,B0,b,'d');est(Pl,b,`W = ${f2(W)}`);
     legend([['dot','var(--muted)','Estimates drawn with H₀ true'],['line','var(--fit)','Points at equal W'],['dash','var(--y)','Ring through your estimate']]);break}
-  case 'chi':{const Pl=plane(P[0]),b=st.bB,W=quad(sub(b,B0),inv2(Pl.Vm)),c=cq(st.alpha,2),p=pq(W,2);
+  case 'chi':{const Pl=plane(P[0],{noGrid:1}),b=st.bB,W=quad(sub(b,B0),inv2(Pl.Vm)),c=cq(st.alpha,2),p=pq(W,2);
     cap(0,`Acceptance region at α = ${f2(st.alpha)}: the ${Math.round(100*(1-st.alpha))}% ellipse`);cap(1,`W = ${f2(W)} against χ²₂: p = ${f3(p)}`);
     elab(Pl,ell(Pl,B0,c,{w:2.4,fill:'var(--fit)',fo:.1}),`${Math.round(100*(1-st.alpha))}%`);ell(Pl,B0,W,{c:'var(--y)',w:1.6,dash:'5 4'});
     nullPt(Pl,'H₀');arrow(Pl,B0,b,'d');est(Pl,b,W>c?'reject':'do not reject');
@@ -431,6 +466,13 @@ function figure(id){legend([]);const step=steps[st.step];
     halo(txt(Pl.s,q[0]+(q[0]<Pl.pl+Pl.w*.6?13:-13),q[1]-8,`β₀ ${pair(st.probe)}`,'var(--fg)','',q[0]<Pl.pl+Pl.w*.6?'start':'end'));
     est(Pl,b,'your estimate');
     legend([['area','var(--fit)','Not rejected'],['area','var(--res)','Rejected'],['dot','var(--x)','β₀ being tested'],...(allTested?[['dash','var(--fg)','Two separate CIs']]:[])]);break}
+  case 'line0':{const Pl=plane(P[0]),b=st.bC,R=sqrtm(Pl.Vm),d=b[0]+b[1]-1;cap(0,`d = β̂₁ + β̂₂ − 1 = ${f3(d)}`);
+    for(let i=0;i<300;i++)dotAt(Pl,at(B0,zi(i),R),'var(--muted)',2.2,.35);
+    lin(Pl,[1,1],1);lin(Pl,[1,1],b[0]+b[1],{c:'var(--y)',w:1.4,dash:'5 4'});
+    const lp=Pl.S([.02,.98]);halo(txt(Pl.s,lp[0]+8,lp[1]-6,'H₀: β₁ + β₂ = 1','var(--fg)','lab'));
+    const p=Pl.S(B0);el('circle',{cx:p[0],cy:p[1],r:5,fill:'var(--panel)',stroke:'var(--x)','stroke-width':2},Pl.s);halo(txt(Pl.s,p[0]-10,p[1]+16,'(0.3, 0.7)','var(--fg)','','end'));
+    est(Pl,b,'your estimate');
+    legend([['line','var(--x)','H₀: constant returns'],['dash','var(--y)','Same sum as your estimate'],['dot','var(--muted)','Estimates drawn at (0.3, 0.7)']]);break}
   case 'line':{const Pl=plane(P[0]),b=st.bC,T_=linTest(b,[1,1],1,Pl.Vm),R=sqrtm(Pl.Vm),sd=Math.sqrt(T_.s),sn=Math.sqrt(Pl.Vm[0][0]+Pl.Vm[1][1]),z=1.96;
     cap(0,`d = β̂₁ + β̂₂ − 1 = ${f3(T_.d)}, se(d) = ${f3(sd)}: ${T_.W>z*z?'reject':'do not reject'}`);
     // The acceptance region of a line null is a strip: sums within z·se(d) of 1
@@ -477,10 +519,14 @@ function figure(id){legend([]);const step=steps[st.step];
       ring(Pl,TNL,'var(--fg)','true β = (2, 0.5)');
       legend([['dot','var(--disc)','Only B rejects'],['dot','var(--x2)','Only A rejects'],['dot','var(--res)','Both reject'],['dot','var(--muted)','Neither']])}
     break}
-  case 'recap':{const[sx,sy,g,m]=frame(P[0],[0,12],[0,.6],'W','',440,260,{noy:1}),c1=cq(st.alpha,1),c2=cq(st.alpha,2);cap(0,`Critical values at α = ${f2(st.alpha)}`);
-    bell(g,sx,sy,x=>chi(x,1),[.01,12],{c:'var(--x2)',w:2.2,fill:[[c1,12,'var(--x2)',.18]]});bell(g,sx,sy,x=>chi(x,2),[0,12],{c:'var(--fit)',w:2.2,fill:[[c2,12,'var(--fit)',.18]]});
-    vline(P[0],g,sx,m,c1,'var(--x2)',`q = 1: ${f2(c1)}`,{w:1.2,dash:'4 3',side:'r'});vline(P[0],g,sx,m,c2,'var(--fit)',`q = 2: ${f2(c2)}`,{w:1.2,dash:'4 3',side:'r',row:1});
-    legend([['line','var(--x2)','χ²₁'],['line','var(--fit)','χ²₂'],['area','var(--muted)','Rejection regions']]);break}
+  case 'recap':{const Pl=plane(P[0]),R=sqrtm(Pl.Vm),Vi=inv2(Pl.Vm),[s1,s2]=se(Pl.Vm),z=crit(st.alpha),c2=cq(st.alpha,2),h1=z*s1,h2=z*s2;
+    cap(0,`Two t-tests at |t| > ${f2(z)} against Wald at W > ${f2(c2)}`);
+    for(let i=0;i<1000;i++){const d=at([0,0],zi(i),R),ob=Math.abs(d[0])>h1||Math.abs(d[1])>h2,oe=quad(d,Vi)>c2;
+      dotAt(Pl,[B0[0]+d[0],B0[1]+d[1]],ob&&oe?'var(--res)':oe?'var(--fit)':ob?'var(--fg)':'var(--muted)',2.4,ob||oe?.9:.35)}
+    ell(Pl,B0,c2,{w:2.4,fill:'var(--fit)',fo:.07});
+    el('polygon',{points:pts2([[-h1,-h2],[h1,-h2],[h1,h2],[-h1,h2]].map(d=>Pl.S([B0[0]+d[0],B0[1]+d[1]]))),fill:'none',stroke:'var(--fg)','stroke-width':1.6,'stroke-dasharray':'6 4'},Pl.g);
+    nullPt(Pl,'H₀');
+    legend([['line','var(--fit)','Wald: W ≤ c'],['dash','var(--fg)','Two t-tests: both |t| ≤ z'],['dot','var(--res)','Both reject'],['dot','var(--fit)','Only Wald rejects'],['dot','var(--fg)','Only the t-tests reject']]);break}
   }
 }
 // Confidence-region grid: cells of the β plane tested so far
@@ -490,17 +536,23 @@ const visit=b=>{const i=Math.floor((b[0]-VIEW.cd.x[0])/GRID),j=Math.floor((b[1]-
   for(let u=-1;u<=1;u++)for(let v=-1;v<=1;v++){const a=i+u,c=j+v;if(a>=0&&a<NG&&c>=0&&c<NG)vis.add(c*NG+a)}};
 
 /* ---------- readout ---------- */
+const twoQread=(b,N,Vm,s1,s2,c)=>{const sa=Math.sqrt(quad([1,1],Vm)),sd=Math.sqrt(quad([1,-1],Vm)),ea=dot([1,1],b)-dot([1,1],N),ed=dot([1,-1],b)-dot([1,-1],N),W=(ea/sa)**2+(ed/sd)**2;
+  return[c('estimate')+pair(b,f3),c('separate t₁, t₂')+`${f2((b[0]-N[0])/s1)}, ${f2((b[1]-N[1])/s2)}`,'',col('',10)+col('error',9)+col('se',8)+'t',col('total',10)+col(f3(ea),9)+col(f3(sa),8)+f2(ea/sa),col('split',10)+col(f3(ed),9)+col(f3(sd),8)+f2(ed/sd),'',
+    c('W = t²(total) + t²(split)')+f2(W),c("check: d'V̂⁻¹d")+f2(quad(sub(b,N),inv2(Vm))),c('critical value, χ²₂')+'5.99',c('decision')+(W>5.99?'reject H₀':'do not reject H₀')]};
 function readout(id){const Vm=V(),[s1,s2]=se(Vm),L=[],c=(a,w=26)=>col(a,w),dec=r=>r?'reject H₀':'do not reject H₀';
   switch(id){
   case 'one':{const b=sample(st.seed),t=(b[0]-B0[0])/s1;L.push(c('estimate of β₁')+f3(b[0]),c('se₁')+f3(s1),c('t')+f3(t),c('W = t²')+f3(t*t),c('critical value 1.96²')+'3.841','',c('decision')+dec(t*t>3.8415));break}
-  case 'where':{const E=st.drawn.map(sample),cur=E[E.length-1];L.push(c('samples drawn')+E.length,c('your estimate')+pair(cur,f3));
-    if(st.reveal)L.push(c('true β')+pair(TRUE,f3),c('this one is off by')+pair(sub(cur,TRUE),f3));else L.push(c('true β')+'hidden');break}
-  case 'shape':L.push(c('corr(log K, log L)')+f2(st.r),c('corr of the estimates')+f2(Vm[0][1]/(s1*s2)),'',c('se₁')+f3(s1),c('se₂')+f3(s2),c('se of the sum')+f3(Math.sqrt(quad([1,1],Vm))),c('se of the difference')+f3(Math.sqrt(quad([1,-1],Vm))));break;
+  case 'cloud':L.push(c('corr(log K, log L)')+f2(st.r),c('corr of the estimates')+f2(Vm[0][1]/(s1*s2)),'',c('se₁, se₂')+`${f3(s1)}, ${f3(s2)}`,c('se of the total')+f3(Math.sqrt(quad([1,1],Vm))),c('se of the split')+f3(Math.sqrt(quad([1,-1],Vm))));break;
+  case 'twoq':L.push(...twoQread(st.bB,B0,Vm,s1,s2,c));break;
+  case 'witness':{const Wf=(t,p)=>(t[0]*t[0]+t[1]*t[1]-2*p*t[0]*t[1])/(1-p*p),rho=Vm[0][1]/(s1*s2),P_=[0,-.85,.85],w=11,cc=cq(.05,2),A=WRONG[0][1],B=WRONG[1][1];
+    L.push(col('',18)+col('uncorr.',w)+col('negative',w)+'positive',col('corr of β̂',18)+P_.map((p,i)=>i<2?col(f2(p),w):f2(p)).join(''),
+      col('W for A',18)+P_.map((p,i)=>i<2?col(f2(Wf(A,p)),w):f2(Wf(A,p))).join(''),col('W for B',18)+P_.map((p,i)=>i<2?col(f2(Wf(B,p)),w):f2(Wf(B,p))).join(''),'',
+      c('now: corr of β̂')+f2(rho),c('  W for A')+col(f2(Wf(A,rho)),8)+dec(Wf(A,rho)>cc),c('  W for B')+col(f2(Wf(B,rho)),8)+dec(Wf(B,rho)>cc),c('  t₁² + t₂², A and B')+`${f2(Wf(A,0))}, ${f2(Wf(B,0))}`);break}
   case 'joint':{const b=st.bB,d=sub(b,B0);L.push(c('H₀')+'(0.300, 0.700)',c('your estimate')+pair(b,f3),c('d = estimate − H₀')+pair(d,f3),'',c('t₁ alone')+f2(d[0]/s1),c('t₂ alone')+f2(d[1]/s2));break}
-  case 'twot':case 'widen':{const cb=id==='twot'?1.96:st.cbox,r=rates(cb,st.k),lr=rates(cb),row=(lab,k,p)=>c(lab)+col(String(k),7)+pct(p);
+  case 'twot':{const cb=1.96,r=rates(cb,st.k),lr=rates(cb),row=(lab,k,p)=>c(lab)+col(String(k),7)+pct(p);
     L.push(c('cut-off: reject if |t| >')+f2(cb),c('estimates drawn')+st.k,'',row('R₁: test of β₁ rejects',r.k1,r.r1),row('R₂: test of β₂ rejects',r.k2,r.r2),row('both: a corner',r.kb,r.both),row('either: R₁ + R₂ − both',r.ku,r.b),'',
       'in the long run, with H₀ true:',`  ${pct(lr.r1)} + ${pct(lr.r2)} − ${pct(lr.both)} = ${pct(lr.b)}`);break}
-  case 'compare':{const r=rates(st.cbox),b=st.bB,d=sub(b,B0),W=quad(d,inv2(Vm));L.push(c('box cut-off')+f2(st.cbox),'in the long run, with H₀ true:',c('  box rejects')+pct(r.b),c('  ellipse rejects')+pct(r.e),c('  the two disagree')+pct(r.dis),'',
+  case 'compare':{const r=rates(st.cbox),b=st.bB,d=sub(b,B0),W=quad(d,inv2(Vm));L.push(c('box cut-off')+f2(st.cbox),c('corr of the estimates')+f2(Vm[0][1]/(s1*s2)),'in the long run, with H₀ true:',c('  box rejects')+pct(r.b),c('  ellipse rejects')+pct(r.e),c('  the two disagree')+pct(r.dis),'',
     c('your estimate: t₁, t₂')+`${f2(d[0]/s1)}, ${f2(d[1]/s2)}`,c('your estimate: W')+f2(W)+(W>cq(.05,2)?'  > 5.99':'  ≤ 5.99'));break}
   case 'ruler':{const d=sub(st.bB,B0),W=quad(d,inv2(Vm)),t1=d[0]/s1,t2=d[1]/s2,cc=cq(.05,2);let k=0;for(let i=0;i<NSIM;i++){const z=zi(i);k+=dot(z,z)<=cc}
     L.push(c('d')+pair(d,f3),c("W = d'V̂⁻¹d")+f2(W),c('t₁² + t₂²')+f2(t1*t1+t2*t2)+'  ignores the correlation','',c('draws inside W = 5.99')+pct(k/NSIM));break}
@@ -510,6 +562,7 @@ function readout(id){const Vm=V(),[s1,s2]=se(Vm),L=[],c=(a,w=26)=>col(a,w),dec=r
       return col(lab,4)+col(`${f2(t[0])}, ${f2(t[1])}`,14)+col(box?'reject':'keep',9)+col(f2(W),8)+(W>cc?'reject':'keep')};
     L.push(col('',4)+col('t₁, t₂',14)+col('box',9)+col('W',8)+'ellipse',...WRONG.map(([l,t])=>row(l,t)),'',c('corr of the estimates')+f2(Vm[0][1]/(s1*s2)),'with H₀ true, in the long run:',c('  box rejects')+pct(r.b),c('  ellipse rejects')+pct(r.e));break}
   case 'region':{const W=quad(sub(st.bB,st.probe),inv2(Vm)),cc=cq(st.alpha,2);L.push(c('β₀ being tested')+pair(st.probe),c('W')+f2(W),c('p-value')+f3(pq(W,2)),c('decision')+dec(W>cc),c('cells tested')+vis.size);break}
+  case 'line0':{const b=st.bC;L.push(c('your estimate')+pair(b,f3),c('sum of the estimates')+f3(b[0]+b[1]),c('d = sum − 1')+f3(b[0]+b[1]-1),c('its standard error')+'next step');break}
   case 'line':{const T_=linTest(st.bC,[1,1],1,Vm),cc=cq(.05,1),sn=Math.sqrt(Vm[0][0]+Vm[1][1]);L.push(c('sum of the estimates')+f3(st.bC[0]+st.bC[1]),c('d')+f3(T_.d),c('se(d)')+f3(Math.sqrt(T_.s)),c('t = d / se(d)')+f2(T_.d/Math.sqrt(T_.s)),c('W = t²')+f2(T_.W),c('decision at 5%')+dec(T_.W>cc),'',
     c('se ignoring the cov')+f3(sn),c('t ignoring the cov')+f2(T_.d/sn)+(Math.abs(T_.d/sn)>1.96?'  reject':'  do not reject'));break}
   case 'touch':{const b=st.bC,T_=linTest(b,[1,1],1,Vm),Vi=inv2(Vm),foot=[b[0]-(b[0]+b[1]-1)/2,b[1]-(b[0]+b[1]-1)/2];
@@ -522,33 +575,36 @@ function readout(id){const Vm=V(),[s1,s2]=se(Vm),L=[],c=(a,w=26)=>col(a,w),dec=r
     L.push(c('',22)+col('A: β₁β₂ − 1',w)+'B: β₁ − 1/β₂',c('g at the estimate',22)+col(f3(A.g),w)+f3(B.g),c('gradient G',22)+col(pair(A.G),w)+pair(B.G),c('W',22)+col(f2(TA.W),w)+f2(TB.W),c('decision at 5%',22)+col(TA.W>cc?'reject':'do not reject',w)+(TB.W>cc?'reject':'do not reject'));break}
   case 'invsim':{const R=sqrtm(Vm),cc=cq(.05,1),sim=k=>{let a=0,b=0;for(let i=0;i<k;i++){const x=at(TNL,zi(i),R);a+=nlTest(x,gA(x),Vm).W>cc;b+=Math.abs(x[1])>1e-6&&nlTest(x,gB(x),Vm).W>cc}return[a,b]};
     const[a,b]=sim(st.k),[la,lb]=sim(NSIM);L.push(c('n')+st.n,c('estimates drawn')+st.k,'',c('A: β₁β₂ − 1 rejects')+col(String(a),7)+pct(a/st.k),c('B: β₁ − 1/β₂ rejects')+col(String(b),7)+pct(b/st.k),'','in the long run, with H₀ true:',c('  A rejects')+pct(la/NSIM),c('  B rejects')+pct(lb/NSIM));break}
-  case 'recap':L.push(c('α')+f2(st.alpha),c('c for q = 1')+f3(cq(st.alpha,1)),c('c for q = 2')+f3(cq(st.alpha,2)));break;
+  case 'recap':{const R=sqrtm(Vm),Vi=inv2(Vm),z=crit(st.alpha),c2=cq(st.alpha,2);let b=0,e=0,dis=0;
+    for(let i=0;i<NSIM;i++){const d=at([0,0],zi(i),R),ob=Math.abs(d[0])>z*s1||Math.abs(d[1])>z*s2,oe=quad(d,Vi)>c2;b+=ob;e+=oe;dis+=ob!==oe}
+    L.push(c('corr of the estimates')+f2(Vm[0][1]/(s1*s2)),c('α')+f2(st.alpha),'',c('two t-tests: reject if')+`|t| > ${f2(z)}`,c('Wald: reject if')+`W > ${f2(c2)}`,'',`with H₀ true, in the long run:`,c('  two t-tests reject')+pct(b/NSIM),c('  Wald rejects')+pct(e/NSIM),c('  the two disagree')+pct(dis/NSIM));break}
   }
   $('readout').textContent=L.join('\n');
 }
 
 /* ---------- render ---------- */
-const SL=['n','r','cbox','m','alpha'],BT=['new','ten','more','rand','all','reveal'];
-function go(k){const step=steps[k],was=steps[st.step].part,f=$('fig');
-  if(step.part==='D'&&was!=='D')Object.assign(st,DPART);else if(step.part!=='D'&&was==='D')Object.assign(st,{n:DEF.n,r:DEF.r});
-  st.step=k;Object.assign(st,JSON.parse(JSON.stringify(step.set||{})));st.reveal=false;st.drawn=[st.seed];st.k=step.k0||10;vis=new Set;allTested=false;visit(st.probe);
-  f.innerHTML='';P=step.fig.map((c,i)=>{const d=document.createElement('div'),l=document.createElement('div'),s=document.createElementNS(NS,'svg');d.className='cell';l.className='plabel';s.id='p'+i;s.setAttribute('role','img');d.append(l,s);f.append(d);return s});
+const SL=['n','r','sdl','cbox','m','alpha'],BT=['new','ten','more','rand','all','reveal','wa','wb','wc'];
+function go(k){const prev=st.step,step=steps[k],f=$('fig'),same=steps[prev].part===step.part;
+  if(!same)Object.assign(st,{n:DEF.n,r:DEF.r,sdl:DEF.sdl},PS[step.part]||{});
+  st.step=k;Object.assign(st,JSON.parse(JSON.stringify(step.set||{})));st.reveal=false;st.k=step.k0||10;vis=new Set;allTested=false;visit(st.probe);
+  f.innerHTML='';f.classList.toggle('pair',!!step.pair);$('grid').classList.toggle('wide',!!step.pair);P=step.fig.map((c,i)=>{const d=document.createElement('div'),l=document.createElement('div'),s=document.createElementNS(NS,'svg');d.className='cell';l.className='plabel';s.id='p'+i;s.setAttribute('role','img');d.append(l,s);f.append(d);return s});
   if(step.drag)P[0].classList.add('drag');
   render()}
+const RNG0={};['n','r','sdl','cbox','m','alpha'].forEach(c=>RNG0[c]=[$(c).min,$(c).max]);
 function render(){
   const k=st.step,step=steps[k],show=step.ctl;
   [...$('nav').querySelectorAll('button')].forEach((b,i)=>{b.classList.toggle('on',i===k);b.classList.toggle('done',i<k);b.setAttribute('aria-current',i===k?'step':'false')});
   $('stepnum').textContent=`Part ${step.part} · ${parts[step.part]} · Step ${k+1} of ${steps.length}`;
   $('stitle').textContent=step.t;
-  $('stext').innerHTML=typeof katex!=='undefined'?tex(step.text):step.text.replace(/\\\(|\\\)/g,'');
+  const body=refs(step.text);$('stext').innerHTML=typeof katex!=='undefined'?tex(body):body.replace(/\\\(|\\\)/g,'');
   $('hint').textContent=step.hint;
-  SL.forEach(c=>{$('c-'+c).hidden=!show.includes(c)});BT.forEach(c=>{$(c).hidden=!show.includes(c)});
+  SL.forEach(c=>{$('c-'+c).hidden=!show.includes(c);const r=(step.rng||{})[c]||RNG0[c];$(c).min=r[0];$(c).max=r[1]});BT.forEach(c=>{$(c).hidden=!show.includes(c)});
   $('new').textContent=step.newLabel||'New sample';$('ten').textContent=step.tenLabel||'Draw 10';$('more').textContent=step.moreLabel||'Draw 100';
   document.querySelector('.controls').classList.toggle('btnfirst',!!step.btnFirst);
   $('prev').disabled=k===0;$('next').disabled=k===steps.length-1;
   draw()}
 function draw(){const id=steps[st.step].id;
-  $('reveal').textContent=st.reveal?'Hide β':'Reveal β';
+  $('reveal').textContent=st.reveal?'Hide answer':'Show answer';
   figure(id);readout(id);
   // Say on the plot itself that it responds to the pointer
   const dg=steps[st.step].drag;if(dg)halo(txt(P[0],426,26,dg==='probe'?'click or drag: the triangle follows':'click or drag: your estimate follows','var(--muted)','','end'));
@@ -561,10 +617,10 @@ $('prev').onclick=()=>{if(st.step>0)go(st.step-1)};
 $('next').onclick=()=>{if(st.step<steps.length-1)go(st.step+1)};
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')$('next').click();if(e.key==='ArrowLeft')$('prev').click()});
 SL.forEach(c=>$(c).addEventListener('input',()=>{st[c]=+$(c).value;draw()}));
-// Draw buttons: more samples on the "where" step, more draws under H₀ on the two box steps, a new sample elsewhere
+$('stext').addEventListener('click',e=>{const a=e.target.closest('a[data-go]');if(a){e.preventDefault();go(+a.dataset.go)}});
+// Draw buttons: more draws under H₀ on the box and size steps, a new sample elsewhere
 const drawMany=k=>{const id=steps[st.step].id;
-  if(id==='where'){for(let i=0;i<k;i++){st.seed=st.seed%500+1;st.drawn.push(st.seed)}st.drawn=st.drawn.slice(-500)}
-  else if(['twot','widen','compare','invsim'].includes(id))st.k=Math.min(st.k+k,NSIM);
+  if(['twot','compare','invsim'].includes(id))st.k=Math.min(st.k+k,NSIM);
   else st.seed=st.seed%500+1;
   draw()};
 $('new').onclick=()=>drawMany(1);
@@ -574,7 +630,9 @@ $('all').onclick=()=>{for(let i=0;i<NG*NG;i++)vis.add(i);allTested=true;draw()};
 let randSeed=1;
 $('rand').onclick=()=>{const r=mulberry32(randSeed++*104729),X=VIEW.cd.x,Y=VIEW.cd.y;for(let i=0;i<20;i++){const b=[X[0]+r()*(X[1]-X[0]),Y[0]+r()*(Y[1]-Y[0])];visit(b);st.probe=b.map(v=>Math.round(v*200)/200)}draw()};
 $('reveal').onclick=()=>{st.reveal=!st.reveal;draw()};
-$('reset').onclick=()=>{const s=st.step;Object.assign(st,fresh(),steps[s].part==='D'?DPART:{});go(s)};
+$('reset').onclick=()=>{const s=st.step;Object.assign(st,fresh(),PS[steps[s].part]||{});go(s)};
+// Witness presets: the correlation of the inputs is minus that of the estimates
+[['wa',0],['wb',.85],['wc',-.85]].forEach(([id,r])=>$(id).onclick=()=>{st.r=r;draw()});
 
 /* dragging in the plane */
 const svgPt=(svg,e)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};

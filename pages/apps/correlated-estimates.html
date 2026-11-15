@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Correlated Estimates</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+/* Layout: figures left, narrative + controls + readout right; stacks on phone */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --fg:#1c2330; --muted:#5f6b7a; --grid:#e8ebf0; --rule:#d5dae2;
+  --y:#2457c5; --x:#c2620a; --x2:#16825a; --fit:#6b3fc0; --res:#cf2e2a; --disc:#b8318f;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --x2:#3fcf94; --fit:#b996ff; --res:#ff6b66; --disc:#f07ccf; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --panel:#1a1f28; --fg:#e5e9ef; --muted:#97a1b0; --grid:#232a35; --rule:#2e3542;
+  --y:#7ea6ff; --x:#f59e4b; --x2:#3fcf94; --fit:#b996ff; --res:#ff6b66; --disc:#f07ccf; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
+a{color:inherit;text-underline-offset:2px}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-size:1.45rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:2px 0 0;color:var(--muted)}
+.steps{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.steps .part{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 3px 0 8px}
+.steps .part:first-child{margin-left:0}
+.steps button{width:27px;height:27px;padding:0;border-radius:50%;font-family:var(--mono);font-size:.74rem}
+.steps button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.steps button.done{border-color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+@media (min-width:821px){.grid.wide{grid-template-columns:minmax(0,1.75fr) minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px;min-width:0}
+.panel svg{display:block;width:100%;height:auto;user-select:none}
+.panel svg.drag{touch-action:none;cursor:grab}
+.figs{display:grid;gap:8px}
+/* Two figures side by side (one sample vs many samples); text scaled up because each svg is drawn smaller */
+.figs.pair svg text{font-size:15px}
+.figs.pair svg .lab{font-size:16px}
+@media (min-width:560px){.figs.pair{grid-template-columns:1fr 1fr}.figs.pair svg text{font-size:18px}.figs.pair svg .lab{font-size:19px}}
+.cell{min-width:0}
+.hint{margin:6px 2px 0;font-size:.8rem;color:var(--muted);min-height:1.2em}
+.side{display:grid;gap:12px;min-width:0}
+.stepnum{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h2{margin:0;font-size:1.2rem;text-wrap:balance}
+.text{max-width:62ch}
+.text p{margin:0 0 .6em}
+.text ul{margin:0 0 .6em;padding-left:1.3em}
+.text li{margin-bottom:.25em}
+.text strong{font-weight:600}
+.text .key{margin:.7em 0;padding:7px 11px;border-left:3px solid var(--fit);border-radius:0 6px 6px 0;background:color-mix(in srgb,var(--fit) 9%,transparent)}
+.text .eq{margin:.6em 0;text-align:center;font-size:1.06em}
+.text .recipe{margin:0 0 .8em;padding:8px 10px 8px 2.1em;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+.text .recipe li{color:var(--muted)}
+.text .recipe li.on{color:var(--fg);font-weight:600}
+.text .recipe li.on::marker{color:var(--fit)}
+math{font-size:1.06em}
+.controls{display:grid;gap:10px}
+.controls:not(:has(:not([hidden]))){display:none}
+.controls.btnfirst #c-row{order:-1}
+.ctl{display:grid;grid-template-columns:6.2em 1fr 3.6em;gap:10px;align-items:center}
+.ctl label{font-family:var(--mono);font-size:.88rem}
+.ctl output{font-family:var(--mono);font-size:.85rem;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--fit)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-size:.85rem;padding:6px 12px;border-radius:6px;border:1px solid var(--rule);background:var(--panel);color:var(--fg);cursor:pointer}
+button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible{outline:2px solid var(--fit);outline-offset:2px}
+.readout{font-family:var(--mono);font-size:.82rem;line-height:1.7;font-variant-numeric:tabular-nums;border-left:2px solid var(--rule);padding-left:10px;overflow-x:auto;white-space:pre}
+.readout:empty{display:none}
+.plabel{font-size:.8rem;color:var(--fg);margin:0 0 2px 2px;font-weight:600}
+.plabel:empty{display:none}
+.topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px}
+.pager{display:flex;gap:8px;margin-left:auto}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin:6px 2px 0;font-size:.8rem;color:var(--muted)}
+.legend:empty{display:none}
+.li{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:18px;height:0;border-top:2px solid var(--c)}
+.sw.dash{border-top-style:dashed}
+.sw.dot{width:9px;height:9px;border:0;border-radius:50%;background:var(--c)}
+.sw.ring{width:10px;height:10px;border:2px solid var(--c);border-radius:50%}
+.sw.area{height:10px;border:0;background:var(--c);opacity:.3}
+.tip{position:fixed;z-index:9;pointer-events:none;background:var(--fg);color:var(--bg);font-family:var(--mono);font-size:.75rem;padding:2px 6px;border-radius:4px;white-space:nowrap}
+footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+svg text{font-family:var(--mono);font-size:12px}
+svg .lab{font-family:var(--sans);font-size:14px;font-weight:600;font-style:italic}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Correlated Estimates</h1>
+    <p class="sub">Why the estimates of two regression coefficients move together: what the data pin down, what varies from sample to sample, and what that means for testing. Use the buttons or the ← → keys.</p>
+  </header>
+  <div class="topbar">
+    <nav class="steps" id="nav" aria-label="Steps"></nav>
+    <div class="pager"><button id="prev">← Previous</button><button id="next" class="primary">Next →</button></div>
+  </div>
+  <div class="grid" id="grid">
+    <section class="panel">
+      <div class="figs" id="fig"></div>
+      <div class="legend" id="legend"></div>
+      <p class="hint" id="hint"></p>
+    </section>
+    <section class="side">
+      <div>
+        <div class="stepnum" id="stepnum"></div>
+        <h2 id="stitle"></h2>
+      </div>
+      <div class="text" id="stext"></div>
+      <div class="controls">
+        <div class="ctl" id="c-n"><label for="n">n firms</label><input type="range" id="n" min="5" max="400" step="5"><output id="no"></output></div>
+        <div class="ctl" id="c-r"><label for="r">corr(K, L)</label><input type="range" id="r" min="-0.9" max="0.9" step="0.05"><output id="ro"></output></div>
+        <div class="ctl" id="c-sdl"><label for="sdl">sd(log L)</label><input type="range" id="sdl" min="0.5" max="1.5" step="0.05"><output id="sdlo"></output></div>
+        <div class="row" id="c-row">
+          <button id="new">New sample</button>
+          <button id="ten">Draw 10</button>
+          <button id="more">Draw 100</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+      <div class="readout" id="readout"></div>
+    </section>
+  </div>
+  <footer><span>Rasmus Duret · LSE</span><a href="https://rassssd.github.io">rassssd.github.io</a></footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const NS='http://www.w3.org/2000/svg';
+// log Y = β₀ + β₁ log K + β₂ log L + u. Inputs have SDs SDK and st.sdl and correlation r; the error has SD SIG
+const SDK=1,SIG=.8;
+// The true coefficients, which are also the null hypothesis in the last step
+const TRUE=[.3,.7],B0=TRUE;
+const DEF={n:100,r:.85,sdl:1,cut:.35,pick:0,bT:[.45,.85]};
+const PS={};
+const fresh=()=>JSON.parse(JSON.stringify(DEF));
+const st={step:0,...fresh(),reveal:false,k:10};
+const T=String.raw;
+
+const steps=[
+ {id:'firms',part:'A',t:'The firms',fig:[1],ctl:['n'],set:{r:.85},hint:'Change n: more or fewer firms, the same rising pattern.',
+  text:T`<p>A production function with two coefficients. Before anything else, look at the data behind the estimates. We simulate \(n\) firms, so we know the truth:</p><p class="eq">\(\log Y=\beta_0+0.3\log K+0.7\log L+u\)</p><p>Each dot is a firm: how much capital and labour it uses, in logs, relative to the average firm.</p><p class="key"><strong>Big firms have more of both.</strong> Few firms are capital-heavy or labour-heavy for their size, so the dots hug a rising line: \(\text{corr}(\log K,\log L)=0.85\).</p><p>That is what you would expect if capital and labour are <strong>complements</strong>: a firm that grows adds machines <em>and</em> the workers to run them. Substitutes, where firms use one instead of the other, come next, in @{subs}.</p><p>Everything else in this part follows from that one fact about the data.</p>`},
+ {id:'see',part:'A',t:'What the data can tell you',fig:[1],ctl:['r','n'],rng:{r:[0,.9]},set:{r:.85},hint:'Lower the correlation towards 0: the band widens as firms differ more in mix, and the se of the split falls. Blue firms lie inside the band, red ones outside.',
+  text:T`<p>The regression learns about \(\beta_1\) and \(\beta_2\) by comparing firms. Two kinds of comparison are possible:</p><ul><li><strong>Size</strong> (blue), along the diagonal: a bigger firm has more of both inputs. How much more output it makes reveals the <strong>sum</strong> \(\beta_1+\beta_2\).</li><li><strong>Mix</strong> (red), across the diagonal: a firm that is capital-heavy or labour-heavy for its size. Only these comparisons reveal how output is <strong>split</strong> between capital and labour.</li></ul><p class="key">Because firms use the inputs together, <strong>most of the variation is in size and little is in mix</strong>: the band, one standard deviation of mix either side of the diagonal, is narrow, and only the red firms outside it differ much in mix. So the data identify the sum well, and the split much less well. In the readout, the standard error of the sum is a fraction of that of the difference.</p><p>Lower the correlation: the firms spread across the diagonal, the band widens, and the standard error of the split falls towards that of the sum.</p><p>Formally, \(\beta_1\log K+\beta_2\log L=\tfrac{\beta_1+\beta_2}{2}(\log K+\log L)+\tfrac{\beta_1-\beta_2}{2}(\log K-\log L)\): the sum multiplies size, the difference multiplies mix. The <a href="regression-geometry.html">regression-geometry app</a> shows the same thing as a long, flat valley in the least-squares bowl.</p>`},
+ {id:'subs',part:'A',t:'Substitutes: the roles swap',fig:[1],ctl:['r','n'],rng:{r:[-.9,0]},set:{r:-.85},hint:'Move the correlation towards 0: the two kinds of variation even out.',
+  text:T`<p>Now suppose capital and labour are <strong>substitutes</strong>: firms of similar size produce in different ways, some with machines and some with people. Then \(\log K\) and \(\log L\) are negatively correlated, and the firms lie along a falling line.</p><p class="key">The roles swap. <strong>Most of the variation is now in mix, and little is in size</strong> (the band, one standard deviation of size either side of the falling diagonal, is narrow; only the blue firms outside it differ much in size). So the data identify the split well, and the sum less well.</p><p>Nothing about the method changed: the regression can only learn about a combination of coefficients if the firms vary in the matching direction.</p><p>The next steps go back to complements, and let you switch to substitutes whenever you like.</p>`},
+ {id:'year',part:'B',t:'One sample, one regression',fig:[1,1],pair:true,ctl:['new','ten','r','n','sdl'],btnFirst:true,set:{r:.85},k0:1,newLabel:'Draw a new sample',tenLabel:'Draw 10 samples',hint:'Draw a new sample: new firms with the same pattern, new shocks, and the estimates on the right move. Then try a negative correlation.',
+  text:T`<p>Left: the firms in one sample, coloured as in @{see}. Right: what one regression on them estimates, with 95% confidence intervals. The black tick in each row is the true value.</p><p>The rows are \(\hat\beta_1\), \(\hat\beta_2\), their sum and their difference. Already in one sample, the sum's interval is narrow and the difference's wide.</p><p class="key">Now <strong>draw a new sample</strong>: new firms, drawn with the same pattern (big firms still have more of both), and new shocks \(u\). <strong>\(\hat\beta_1\) and \(\hat\beta_2\) jump around, in opposite directions, while their sum barely moves.</strong> Faded marks keep earlier samples.</p><p class="key">Move the correlation below 0, to substitutes, and the roles swap: <strong>with complements the sum is precise; with substitutes the difference is.</strong> The caption above the right plot says which.</p><p>Fewer firms widen every interval; a wider spread of \(\log L\) narrows the one for \(\hat\beta_2\).</p>`},
+ {id:'rerun',part:'B',t:'Many samples: the cloud of estimates',fig:[1],ctl:['new','ten','more','r'],set:{r:.85,sdl:1},k0:100,newLabel:'Draw a sample',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Each dot is one sample’s regression. Move the correlation below 0 and the cloud tilts the other way.',
+  text:T`<p>Now plot each sample's estimates as one point \((\hat\beta_1,\hat\beta_2)\). In @{year} each dot was a firm; here each dot is a whole regression.</p><p class="key">The firms' cloud rises, but <strong>the cloud of estimates falls</strong>: a sample that credits more to capital credits less to labour. With two regressors, \(\text{corr}(\hat\beta_1,\hat\beta_2)=-\text{corr}(\log K,\log L)\).</p><p>A question before the next step. The truth is \((0.3,\,0.7)\), and one sample gives \(\hat\beta_1=0.35\). Do you expect \(\hat\beta_2\) to be above or below 0.7?</p><p>In practice you see only one of these points. The cloud says how far off estimates typically are, and in which directions; its covariance matrix is \(\hat V\).</p>`},
+ {id:'total',part:'C',t:'Every sample gets the total right',fig:[1],ctl:['new','ten','more','r','n'],rng:{r:[0,.9]},set:{r:.85,sdl:1,pick:0},k0:100,drag:'pick',newLabel:'Draw a sample',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Click any dot to see its two errors. Lower the correlation towards 0: the blue strip widens and the red one narrows.',
+  text:T`<p>Why does the cloud fall? Start from the data.</p><ol><li><strong>Firms with higher \(k\) also have higher \(l\).</strong> So every sample shows clearly what happens to output when both rise together (@{see}).</li><li>That is the total, so <strong>every sample gets the total right</strong>: \(\hat\beta_1+\hat\beta_2\) lands close to the true \(0.3+0.7=1\). The narrow blue strip around the line \(\beta_1+\beta_2=1\) holds 95% of the samples.</li><li><strong>The split is what varies.</strong> The wide red strip around the true split, \(\beta_1-\beta_2=-0.4\), also holds 95% of the samples. The samples spread out along the blue line, not across it.</li></ol><p>The black dot is one sample. Its distance from the blue line is how wrong its total is; its distance from the red line, how wrong its split is. Draw new samples, or click any dot.</p><p class="key">The true values do not have to "hold" in each sample. What carries over from sample to sample is that <strong>each one estimates the total well</strong>, and the split much less well.</p><p>Both are still right on average: OLS is unbiased, so averaged over many samples the total and the split both hit the truth. What differs is the <strong>variance</strong>, how far a single sample can land from the truth.</p>`},
+ {id:'totals',part:'C',t:'Substitutes: every sample gets the difference right',fig:[1],ctl:['new','ten','more','r','n'],rng:{r:[-.9,0]},set:{r:-.85,sdl:1,pick:0},k0:100,drag:'pick',newLabel:'Draw a sample',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Click any dot to see its two errors. Move the correlation towards 0: the red strip widens and the blue one narrows.',
+  text:T`<p>With substitutes the roles swap. Firms differ mostly in mix (@{subs}), so every sample shows clearly what happens when production shifts from one input to the other.</p><p class="key">So <strong>every sample gets the difference right</strong>: the samples crowd into the narrow red strip around \(\beta_1-\beta_2=-0.4\). Now the total is what varies: still right on average, since OLS is unbiased, but with a much larger variance. So the samples spread out along the red line and the cloud rises.</p><p>The black dot is one sample: now its split is typically close and its total further off. Draw new samples, or click any dot.</p>`},
+ {id:'answer',part:'C',t:'So if β̂₁ = 0.35, expect β̂₂ ≈ 0.65',fig:[1],ctl:['ten','more','r'],rng:{r:[0,.9]},set:{r:.85,sdl:1,cut:.35},k0:300,drag:'cut',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Click on the plot to pick another value of β̂₁. Orange: the samples whose β̂₁ landed near it.',
+  text:T`<p>Back to the question. Every sample gets the total right, \(\hat\beta_1+\hat\beta_2\approx1\). If this sample gives \(\hat\beta_1=0.35\), which is 0.05 too high, then \(\hat\beta_2\) should be about</p><p class="eq">\(1-0.35=0.65\)</p><p>which is 0.05 too low. On the plot, the vertical line at 0.35 crosses the strip around 0.65.</p><p class="key">It is <strong>"expect", not "must"</strong>. The total is not estimated exactly, only much more precisely than the split. So given \(\hat\beta_1=0.35\), \(\hat\beta_2\) is lower on average, and close to 0.65 when the inputs are strongly correlated. The orange samples, whose \(\hat\beta_1\) landed near 0.35, show the spread.</p><p>Formally, with \(\rho\) the correlation of the estimates,</p><p class="eq">\(E[\hat\beta_2-0.7\mid\hat\beta_1-0.3=0.05]=\rho\,\tfrac{\text{sd}(\hat\beta_2)}{\text{sd}(\hat\beta_1)}\cdot0.05\)</p><p>and with two regressors \(\rho=-\text{corr}(\log K,\log L)\). At a correlation of 0.85 that gives 0.66 (the dashed grey line). Lower the correlation and the expected fall in \(\hat\beta_2\) shrinks; at 0 there is none.</p>`},
+ {id:'answers',part:'C',t:'Substitutes: β̂₁ = 0.35 means β̂₂ ≈ 0.75',fig:[1],ctl:['ten','more','r'],rng:{r:[-.9,0]},set:{r:-.85,sdl:1,cut:.35},k0:300,drag:'cut',tenLabel:'Draw 10',moreLabel:'Draw 100',hint:'Click on the plot to pick another value of β̂₁. Orange: the samples whose β̂₁ landed near it.',
+  text:T`<p>With substitutes every sample gets the difference right: \(\hat\beta_1-\hat\beta_2\approx0.3-0.7=-0.4\). So if a sample gives \(\hat\beta_1=0.35\), which is 0.05 too high, expect</p><p class="eq">\(\hat\beta_2\approx0.35+0.4=0.75\)</p><p>which is <em>also</em> 0.05 too high. <strong>The errors now share their sign</strong>: the estimates are positively correlated, \(\rho=-\text{corr}(\log K,\log L)>0\).</p><p class="key">The sign of the correlation between the estimates comes from which combination the data pin down: <strong>the total with complements, the difference with substitutes</strong>.</p><p>The last step shows what this means for testing.</p>`},
+ {id:'testing',part:'D',t:'What this means for testing',fig:[1],ctl:['r'],set:{r:.85,sdl:1,bT:[.45,.85]},k0:200,drag:'bT',hint:'Click or drag to move the estimate. Try (0.45, 0.85), then (0.45, 0.55). Then move the correlation below 0: the verdicts swap.',
+  text:T`<p>Suppose we test \(H_0:\beta_1=0.3\) and \(\beta_2=0.7\) at once. The black dot is an estimate; drag it around.</p><p>An estimate can be wrong in two ways: in its total and in its split. These are not equally surprising. An error of 0.3 in the total is 3.6 of its standard errors; the same error in the split is about 1.</p><p class="key">So <strong>measure each error against its own standard error, square, and add</strong>: \(W=t_{\text{total}}^2+t_{\text{split}}^2\). A large \(W\) means the estimate is far from \(H_0\) in a direction the noise rarely goes.</p><ul><li>\((0.45,\,0.85)\): both coefficients too high, so the total is off by 0.3: \(W\approx13\), reject.</li><li>\((0.45,\,0.55)\): one too high and one too low, so only the split is off: \(W\approx1\), ordinary noise.</li></ul><p>Testing \(\beta_1\) and \(\beta_2\) one at a time cannot tell these apart: both give \(|t_1|=|t_2|\approx1\), inside the dashed box, and neither test rejects. Correlated estimates need a joint test that uses the shape of the cloud. That is the <a href="wald.html">Wald test</a>.</p><p>Move the correlation below 0, to substitutes: now the split is the precise combination, and the verdicts on the two estimates swap.</p>`},
+];
+const parts={A:'The data',B:'Many samples',C:'Why',D:'For testing'};
+// "@{id}" in a step's text becomes a link to that step, so references survive reordering
+const refs=s=>s.replace(/@\{(\w+)\}/g,(m,id)=>{const i=steps.findIndex(x=>x.id===id);return i<0?m:`<a href="#" data-go="${i}">step ${i+1}</a>`});
+
+function tex(s){return s.replace(/\\\((.+?)\\\)([.,:;]?)/g,(m,t,p)=>{let h=t;try{h=katex.renderToString(t,{output:'mathml',throwOnError:false})}catch(e){}return p?`<span style="white-space:nowrap">${h}${p}</span>`:h})}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const f2=v=>(Math.abs(v)<0.005?0:v).toFixed(2);
+const f3=v=>(Math.abs(v)<0.0005?0:v).toFixed(3);
+const pct=v=>(100*v).toFixed(1)+'%';
+// A squared number for captions, bracketed when negative
+const sq=v=>(v<-.005?`(${f2(v)})`:f2(v))+"²";
+const pair=(b,f=f2)=>`(${f(b[0])}, ${f(b[1])})`;
+const col=(s,w)=>s+' '.repeat(Math.max(0,w-s.replace(/[̂̃̄]/g,'').length));
+const halo=t=>{t.style.cssText+='paint-order:stroke;stroke:var(--panel);stroke-width:4px';return t};
+function el(tag,at,p){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);if(p)p.appendChild(e);return e}
+function txt(p,x,y,s,c,cls,anchor){const t=el('text',{x,y,'text-anchor':anchor||'start',class:cls||''},p);t.textContent=s;t.style.fill=c||'var(--muted)';return t}
+function seg(p,a,b,c,w,dash,op){el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:c,'stroke-width':w||1.5,'stroke-dasharray':dash||'none',opacity:op??1},p)}
+function marker(p,x,y,c,r){el('circle',{cx:x,cy:y,r:r||6,fill:c,stroke:'var(--panel)','stroke-width':2},p)}
+function ticks(lo,hi,k){const raw=(hi-lo)/k,s_=Math.pow(10,Math.floor(Math.log10(raw)));const m=[1,2,2.5,5,10].find(m=>m*s_>=raw)*s_;const out=[];for(let v=Math.ceil(lo/m-1e-9)*m;v<=hi+1e-9;v+=m)out.push(+v.toFixed(6));return out}
+
+/* ---------- statistics ---------- */
+const npdf=(x,m,s)=>Math.exp(-.5*((x-m)/s)**2)/(s*Math.sqrt(2*Math.PI));
+// Standard normal CDF, Abramowitz and Stegun 26.2.17 (error below 1e-7)
+function Phi(z){const t=1/(1+.2316419*Math.abs(z)),d=.3989423*Math.exp(-z*z/2),p=d*t*(.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-p:p}
+const pval=z=>2*(1-Phi(Math.abs(z)));
+const crit=a=>{let lo=0,hi=10;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(pval(m)>a)lo=m;else hi=m}return(lo+hi)/2};
+// χ² with 1 or 2 degrees of freedom: density, critical value, p-value
+const chi=(x,q)=>x<0?0:q===2?Math.exp(-x/2)/2:x===0?0:Math.exp(-x/2)/Math.sqrt(2*Math.PI*x);
+const cq=(a,q)=>q===1?crit(a)**2:-2*Math.log(a);
+const pq=(W,q)=>q===1?pval(Math.sqrt(W)):Math.exp(-W/2);
+
+/* ---------- 2×2 matrices ---------- */
+const det=M=>M[0][0]*M[1][1]-M[0][1]*M[1][0];
+const inv2=M=>{const d=det(M);return[[M[1][1]/d,-M[0][1]/d],[-M[1][0]/d,M[0][0]/d]]};
+// Symmetric square root of a 2×2 positive definite matrix
+const sqrtm=M=>{const s=Math.sqrt(det(M)),t=Math.sqrt(M[0][0]+M[1][1]+2*s);return[[(M[0][0]+s)/t,M[0][1]/t],[M[1][0]/t,(M[1][1]+s)/t]]};
+const mv=(M,v)=>[M[0][0]*v[0]+M[0][1]*v[1],M[1][0]*v[0]+M[1][1]*v[1]];
+const quad=(d,M)=>d[0]*(M[0][0]*d[0]+M[0][1]*d[1])+d[1]*(M[1][0]*d[0]+M[1][1]*d[1]);
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1];
+// OLS covariance of (β̂₁, β̂₂): σ²/n times the inverse covariance matrix of (log K, log L)
+function V(){const SDL=st.sdl,k=SIG*SIG/(st.n*(1-st.r*st.r)),c=-st.r*k/(SDK*SDL);return[[k/(SDK*SDK),c],[c,k/(SDL*SDL)]]}
+// Covariance matrix of the inputs (log K, log L)
+const SX=()=>{const c=st.r*SDK*st.sdl;return[[SDK*SDK,c],[c,st.sdl*st.sdl]]};
+// Principal axes of a 2×2 covariance matrix: long direction u with sd s1, short direction v with sd s2
+function axes(M){const a=M[0][0],b=M[0][1],d=M[1][1],th=.5*Math.atan2(2*b,a-d),h=Math.sqrt((a-d)**2/4+b*b);
+  return{u:[Math.cos(th),Math.sin(th)],v:[-Math.sin(th),Math.cos(th)],s1:Math.sqrt((a+d)/2+h),s2:Math.sqrt(Math.max((a+d)/2-h,0))}}
+const chol=M=>{const a=Math.sqrt(M[0][0]),b=M[1][0]/a;return[[a,0],[b,Math.sqrt(Math.max(M[1][1]-b*b,1e-12))]]};
+const corrOf=E=>{const n=E.length,m=[0,1].map(j=>E.reduce((s,e)=>s+e[j],0)/n);let a=0,b=0,c=0;E.forEach(e=>{const x=e[0]-m[0],y=e[1]-m[1];a+=x*x;b+=y*y;c+=x*y});return c/Math.sqrt(a*b)}
+const se=Vm=>[Math.sqrt(Vm[0][0]),Math.sqrt(Vm[1][1])];
+/* ---------- data ---------- */
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const boxMuller=r=>Math.sqrt(-2*Math.log(r()+1e-12))*Math.cos(2*Math.PI*r());
+const at=(c,z,R)=>[c[0]+R[0][0]*z[0]+R[0][1]*z[1],c[1]+R[1][0]*z[0]+R[1][1]*z[1]];
+// Every step runs the actual regression. Sample j has its own n firms: the inputs are redrawn every sample, but the
+// pattern stays the same, because each sample's inputs are rescaled so their sample covariance is exactly SX().
+// Then each sample's OLS estimate is exactly N(β, V)
+const NF=400,NR=1000;let FZ=[],FC=new Map,FKEY='',UC=[];
+function firms(j=1){const n=st.n,key=n+'|'+st.r+'|'+st.sdl;if(key!==FKEY){FKEY=key;FC=new Map}if(FC.has(j))return FC.get(j);
+  if(!FZ[j]){const r=mulberry32(j*104729+97);FZ[j]=Float64Array.from({length:2*NF},()=>boxMuller(r))}const Z=FZ[j];
+  let m0=0,m1=0;for(let i=0;i<n;i++){m0+=Z[2*i];m1+=Z[2*i+1]}m0/=n;m1/=n;
+  const D=[];let s00=0,s01=0,s11=0;for(let i=0;i<n;i++){const a=Z[2*i]-m0,b=Z[2*i+1]-m1;D.push([a,b]);s00+=a*a;s01+=a*b;s11+=b*b}
+  const Li=inv2(chol([[s00/n,s01/n],[s01/n,s11/n]])),Lt=chol(SX()),X=D.map(z=>mv(Lt,mv(Li,z)));FC.set(j,X);return X}
+// Sample j's shocks u: the same standard normal draws whatever n, r and sd(log L), so the reruns morph as the sliders move
+const uj=j=>{if(!UC[j]){const r=mulberry32(j*7919+5);UC[j]=Float64Array.from({length:NF},()=>boxMuller(r))}return UC[j]};
+// OLS on sample j: inputs are demeaned, so β̂ − β = (X'X)⁻¹X'u = SX⁻¹ (X'u / n)
+function rerun(j){const X=firms(j),u=uj(j),n=X.length;let a=0,b=0;for(let i=0;i<n;i++){a+=X[i][0]*u[i];b+=X[i][1]*u[i]}
+  const e=mv(inv2(SX()),[a*SIG/n,b*SIG/n]);return[TRUE[0]+e[0],TRUE[1]+e[1]]}
+const reruns=k=>Array.from({length:k},(_,i)=>rerun(i+1));
+
+/* ---------- chart pieces ---------- */
+function frame(s,xr,yr,xl,yl,Wd,Hd,o={}){s.innerHTML='';s.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);s._pts=[];
+  const pl=o.noy?16:o.pl??50,pr_=14,pt=10,pb=40,fx=o.fx||(v=>v),fy=o.fy||(v=>v);
+  const sx=v=>pl+(v-xr[0])/(xr[1]-xr[0])*(Wd-pl-pr_),sy=v=>Hd-pb-(v-yr[0])/(yr[1]-yr[0])*(Hd-pt-pb);
+  ticks(xr[0],xr[1],o.kx||6).forEach(t=>{seg(s,[sx(t),pt],[sx(t),Hd-pb],'var(--grid)',1);txt(s,sx(t),Hd-pb+15,fx(t),null,'','middle')});
+  if(!o.noy){ticks(yr[0],yr[1],o.ky||4).forEach(t=>{seg(s,[pl,sy(t)],[Wd-pr_,sy(t)],'var(--grid)',1);txt(s,pl-6,sy(t)+4,fy(t),null,'','end')});seg(s,[pl,pt],[pl,Hd-pb],'var(--fg)',1.2)}
+  seg(s,[pl,Hd-pb],[Wd-pr_,Hd-pb],'var(--fg)',1.2);
+  txt(s,(pl+Wd-pr_)/2,Hd-5,xl,'var(--fg)','lab','middle');
+  if(yl){const m=(pt+Hd-pb)/2,t=txt(s,13,m,yl,'var(--fg)','lab','middle');t.setAttribute('transform',`rotate(-90 13 ${m})`)}
+  const cid='clip-'+s.id,cp=el('clipPath',{id:cid},el('defs',{},s));el('rect',{x:pl,y:pt,width:Wd-pl-pr_,height:Hd-pt-pb},cp);
+  return[sx,sy,el('g',{'clip-path':`url(#${cid})`},s),{pl,pr_,pt,pb,Wd,Hd}]}
+function legend(items){const e=$('legend');e.innerHTML='';items.forEach(([k,c,t])=>{const i=document.createElement('span'),sw=document.createElement('i');i.className='li';sw.className='sw '+k;sw.style.setProperty('--c',c);i.append(sw,t);e.append(i)})}
+function arrowS(p,a,b,c,w){const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(L<4)return;const ux=dx/L,uy=dy/L,h=Math.min(10,L*.5);
+  seg(p,a,[b[0]-ux*h,b[1]-uy*h],c,w);el('polygon',{points:`${b[0]},${b[1]} ${b[0]-ux*h-uy*4.5},${b[1]-uy*h+ux*4.5} ${b[0]-ux*h+uy*4.5},${b[1]-uy*h-ux*4.5}`,fill:c},p)}
+
+/* ---------- the parameter plane ---------- */
+const VIEW={cd:{x:[-.15,1.05],y:[.2,1.4],g:.2,xl:'β₁, capital',yl:'β₂, labour'},nl:{x:[-.2,3.2],y:[-.2,3.2],g:.5,xl:'β₁',yl:'β₂'}};
+// Everything is built in β coordinates and passed through one affine map. At m = 0 it is the identity;
+// at m = 1 it is the whitening V^{-1/2}, scaled by det(V)^{1/4} so that areas keep their size
+function plane(s,o={}){const vw=VIEW[o.view||'cd'],Wd=440,Hd=430,pl=50,pt=8,w=380,h=380,X=vw.x,Y=vw.y,span=X[1]-X[0];
+  s.innerHTML='';s.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);s._pts=[];
+  const Vm=V(),m=o.m||0,C=o.C||[(X[0]+X[1])/2,(Y[0]+Y[1])/2],k=Math.pow(det(Vm),.25),Si=sqrtm(inv2(Vm));
+  const A=[[1-m+m*k*Si[0][0],m*k*Si[0][1]],[m*k*Si[1][0],1-m+m*k*Si[1][1]]],Ai=inv2(A);
+  const sx=u=>pl+(u-X[0])/span*w,sy=u=>pt+h-(u-Y[0])/span*h;
+  const S=b=>{const d=sub(b,C),u=mv(A,d);return[sx(C[0]+u[0]),sy(C[1]+u[1])]};
+  const inv=(px,py)=>{const d=[X[0]+(px-pl)/w*span-C[0],Y[0]+(pt+h-py)/h*span-C[1]],u=mv(Ai,d);return[C[0]+u[0],C[1]+u[1]]};
+  s._inv=inv;
+  const cid='clip-'+s.id,cp=el('clipPath',{id:cid},el('defs',{},s));el('rect',{x:pl,y:pt,width:w,height:h},cp);
+  const g=el('g',{'clip-path':`url(#${cid})`},s),G=vw.g,ext=2*span;
+  // Grid lines of constant β₁ and β₂, carried through the same map as everything else
+  for(let i=Math.ceil((X[0]-ext)/G);i*G<=X[1]+ext;i++)seg(g,S([i*G,Y[0]-ext]),S([i*G,Y[1]+ext]),'var(--grid)',1);
+  for(let i=Math.ceil((Y[0]-ext)/G);i*G<=Y[1]+ext;i++)seg(g,S([X[0]-ext,i*G]),S([X[1]+ext,i*G]),'var(--grid)',1);
+  el('rect',{x:pl,y:pt,width:w,height:h,fill:'none',stroke:'var(--rule)'},s);
+  if(m<.005){seg(s,[pl,pt],[pl,pt+h],'var(--fg)',1.2);seg(s,[pl,pt+h],[pl+w,pt+h],'var(--fg)',1.2);ticks(X[0],X[1],6).forEach(t=>txt(s,sx(t),pt+h+15,String(+t.toFixed(2)),null,'','middle'));ticks(Y[0],Y[1],6).forEach(t=>txt(s,pl-6,sy(t)+4,String(+t.toFixed(2)),null,'','end'))}
+  const xl=m<.005?vw.xl:m>.995?'whitened: z₁':'',yl=m<.005?vw.yl:m>.995?'z₂':'';
+  txt(s,pl+w/2,Hd-6,xl,'var(--fg)','lab','middle');const ty=txt(s,14,pt+h/2,yl,'var(--fg)','lab','middle');ty.setAttribute('transform',`rotate(-90 14 ${pt+h/2})`);
+  if(m>.995){const L=k/span*w,x0=pl+w-12-L,y0=pt+h-14;seg(s,[x0,y0],[x0+L,y0],'var(--fg)',2);halo(txt(s,x0+L/2,y0-6,'1 se','var(--fg)','','middle'))}
+  return{s,g,S,Vm,m,k,C,pl,pt,w,h,span,vw}}
+const pts2=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+// Ellipse of points at W-distance lev from c, traced at whitened angles 0..2π; returns its screen points
+function ell(Pl,c,lev,o={}){const R=sqrtm(Pl.Vm),r=Math.sqrt(Math.max(lev,0)),q=[];
+  for(let i=0;i<=120;i++){const a=i/120*2*Math.PI;q.push(Pl.S(at(c,[Math.cos(a)*r,Math.sin(a)*r],R)))}
+  el('polygon',{points:pts2(q),fill:o.fill||'none','fill-opacity':o.fo??.1,stroke:o.c||'var(--fit)','stroke-width':o.w||1.5,'stroke-dasharray':o.dash||'none','stroke-opacity':o.op??1},Pl.g);
+  return q}
+// Label an ellipse at its top, or at whitened angle ang so that a family of labels lines up along one ray
+function elab(Pl,q,s,c,ang){const tp=ang==null?q.reduce((a,p)=>p[1]<a[1]?p:a):q[Math.round(((ang/(2*Math.PI))%1+1)%1*120)],right=tp[0]>Pl.pl+Pl.w/2;
+  if(tp[1]>Pl.pt+14&&tp[1]<Pl.pt+Pl.h-4&&tp[0]>Pl.pl+20&&tp[0]<Pl.pl+Pl.w-20)halo(txt(Pl.s,tp[0]+(ang==null?4:right?5:-5),tp[1]+(ang==null?-4:4),s,c||'var(--fit)','',ang==null||right?'start':'end'))}
+// The line a·β = c
+function lin(Pl,a,c,o={}){const n2=dot(a,a),n=Math.sqrt(n2),p=[a[0]*c/n2,a[1]*c/n2],d=[-a[1]/n,a[0]/n],L=40;
+  seg(Pl.g,Pl.S([p[0]-d[0]*L,p[1]-d[1]*L]),Pl.S([p[0]+d[0]*L,p[1]+d[1]*L]),o.c||'var(--x)',o.w||2.5,o.dash)}
+function est(Pl,b,lab){const p=Pl.S(b);marker(Pl.s,p[0],p[1],'var(--y)',7);Pl.s._pts.push([p[0],p[1],`estimate ${pair(b,f3)}`]);
+  if(lab){const right=p[0]<Pl.pl+Pl.w*.6;halo(txt(Pl.s,p[0]+(right?11:-11),p[1]+18,lab,'var(--fg)','',right?'start':'end'))}}
+// Filled region between two parallel lines a·β = c1 and a·β = c2
+function strip(Pl,a,c1,c2,o={}){const n2=dot(a,a),n=Math.sqrt(n2),d=[-a[1]/n,a[0]/n],L=40,P1=[a[0]*c1/n2,a[1]*c1/n2],P2=[a[0]*c2/n2,a[1]*c2/n2];
+  el('polygon',{points:pts2([[P1[0]-d[0]*L,P1[1]-d[1]*L],[P1[0]+d[0]*L,P1[1]+d[1]*L],[P2[0]+d[0]*L,P2[1]+d[1]*L],[P2[0]-d[0]*L,P2[1]-d[1]*L]].map(b=>Pl.S(b))),fill:o.c||'var(--x)','fill-opacity':o.fo??.12},Pl.g)}
+function ring(Pl,b,c,lab){const p=Pl.S(b);el('circle',{cx:p[0],cy:p[1],r:6,fill:'none',stroke:c,'stroke-width':2.4},Pl.s);if(lab)halo(txt(Pl.s,p[0]+10,p[1]-8,lab,'var(--fg)'))}
+const dotAt=(Pl,b,c,r,op)=>{const p=Pl.S(b);el('circle',{cx:p[0],cy:p[1],r,fill:c,'fill-opacity':op},Pl.g);return p};
+// The two questions a joint null asks: is the total β₁ + β₂ right, and is the split β₁ − β₂ right? Each line
+// carries the strip in which 95% of estimates land if H₀ is true. With an estimate b, also its distance from each
+// line, in that combination's own standard errors; with sd(log K) = sd(log L) the two t's are uncorrelated
+function twoQ(Pl,N,b){const Vm=Pl.Vm,A=[1,1],D=[1,-1],ca=dot(A,N),cd=dot(D,N),sa=Math.sqrt(quad(A,Vm)),sd=Math.sqrt(quad(D,Vm));
+  strip(Pl,D,cd-1.96*sd,cd+1.96*sd,{c:'var(--res)',fo:.08});strip(Pl,A,ca-1.96*sa,ca+1.96*sa,{c:'var(--y)',fo:.13});
+  lin(Pl,A,ca,{c:'var(--y)',w:1.8});lin(Pl,D,cd,{c:'var(--res)',w:1.8});
+  const la=Pl.S([-.1,ca+.1]),ld=Pl.S([.88,.88-cd]);halo(txt(Pl.s,la[0]+4,la[1]-8,`total: β₁ + β₂ = ${+ca.toFixed(2)}`,'var(--y)','lab'));halo(txt(Pl.s,ld[0]-6,ld[1]+4,`split: β₁ − β₂ = ${+cd.toFixed(2)}`,'var(--res)','lab','end'));
+  const Q={sa,sd};if(!b)return Q;
+  const ea=dot(A,b)-ca,ed=dot(D,b)-cd,fa=[b[0]-ea/2,b[1]-ea/2],fd=[b[0]-ed/2,b[1]+ed/2],pb=Pl.S(b),pa=Pl.S(fa),pd=Pl.S(fd);
+  seg(Pl.s,pb,pa,'var(--y)',3.2);seg(Pl.s,pb,pd,'var(--res)',3.2);marker(Pl.s,pb[0],pb[1],'var(--fg)',7);
+  Pl.s._pts.push([pb[0],pb[1],`estimate ${pair(b,f3)}`]);
+  const side=q=>q[0]<pb[0]?[q[0]-8,'end']:[q[0]+8,'start'];
+  {const[x,a]=side(pa);halo(txt(Pl.s,x,pa[1]+(pa[1]>pb[1]?16:-8),`t = ${f2(ea/sa)}`,'var(--y)','',a))}
+  {const[x,a]=side(pd);halo(txt(Pl.s,x,pd[1]+(pd[1]>pb[1]?16:-8),`t = ${f2(ed/sd)}`,'var(--res)','',a))}
+  return Object.assign(Q,{ea,ed,ta:ea/sa,td:ed/sd,W:(ea/sa)**2+(ed/sd)**2})}
+
+/* ---------- the firms ---------- */
+// Scatter of log K against log L for sample j, same scale on both axes. With o.info, firms inside the band
+// around the long diagonal take that direction's colour, firms outside it the scarce direction's (blue size, red mix)
+function firmsFig(s,o={}){const X=firms(o.year||1),R=[-4,4],[sx,sy,g,m]=frame(s,R,R,'log K, capital','log L, labour',440,430,{kx:o.k||8,ky:o.k||8}),S=b=>[sx(b[0]),sy(b[1])],M=sizeMix();
+  const col=x=>!o.info?'var(--x2)':(Math.abs(dot(x,M.uN))>M.sN)===M.comp?'var(--res)':'var(--y)';
+  X.forEach(x=>{const p=S(x);el('circle',{cx:p[0],cy:p[1],r:o.info?3.2:2.8,fill:col(x),'fill-opacity':o.info?.8:.65},g)});
+  return{X,sx,sy,g,m,S,M}}
+// Size (along the rising diagonal) and mix (across it): their sds, and which one is scarce
+function sizeMix(){const q=st.sdl,h=Math.SQRT1_2,sS=Math.sqrt((1+q*q+2*st.r*q)/2),sM=Math.sqrt((1+q*q-2*st.r*q)/2),comp=st.r>=0;
+  return{sS,sM,comp,uS:[h,h],uM:[h,-h],uL:comp?[h,h]:[h,-h],uN:comp?[h,-h]:[h,h],sN:comp?sM:sS}}
+// The rows of the coefficient plot: β̂₁, β̂₂, their sum and their difference
+const COMBOS=[['β̂₁',[1,0],'var(--x)'],['β̂₂',[0,1],'var(--x2)'],['β̂₁ + β̂₂',[1,1],'var(--y)'],['β̂₁ − β̂₂',[1,-1],'var(--res)']];
+// Coefficient plot for sample k: estimate and 95% interval per row, the true value, and faded marks for earlier samples
+function coefFig(s,k){s.innerHTML='';s._pts=[];const Wd=440,Hd=430,pl=118,pr=16,top=30,rh=86,X=[-1,1.6],Vm=V(),yb=top+4*rh,z=1.96;
+  s.setAttribute('viewBox',`0 0 ${Wd} ${Hd}`);const sx=v=>pl+(clamp(v,X[0]-.04,X[1]+.04)-X[0])/(X[1]-X[0])*(Wd-pl-pr);
+  const cur=rerun(k),old=Array.from({length:Math.min(k-1,60)},(_,i)=>rerun(k-1-i));
+  ticks(X[0],X[1],6).forEach(t=>{seg(s,[sx(t),top-14],[sx(t),yb],'var(--grid)',1);txt(s,sx(t),yb+18,String(+t.toFixed(2)),null,'','middle')});
+  seg(s,[pl,yb],[Wd-pr,yb],'var(--fg)',1.2);txt(s,(pl+Wd-pr)/2,Hd-6,'estimate, with 95% interval','var(--fg)','lab','middle');
+  COMBOS.forEach(([lab,a,c],r)=>{const y=top+r*rh+rh/2,e=dot(a,cur),h=z*Math.sqrt(quad(a,Vm)),tv=dot(a,TRUE);
+    txt(s,pl-12,y+6,lab,'var(--fg)','lab','end');
+    old.forEach(b=>{const x=sx(dot(a,b));seg(s,[x,y-10],[x,y+10],c,2,null,.22)});
+    seg(s,[sx(e-h),y],[sx(e+h),y],c,5);[e-h,e+h].forEach(v=>seg(s,[sx(v),y-8],[sx(v),y+8],c,2.5));
+    seg(s,[sx(tv),y-14],[sx(tv),y+14],'var(--fg)',2);
+    marker(s,sx(e),y,c,7);halo(txt(s,sx(e),y-20,f2(e),'var(--fg)','','middle'));
+    s._pts.push([sx(e),y,`${lab}: ${f3(e)}, 95% interval ${f3(e-h)} to ${f3(e+h)}`])})}
+// The combination every sample estimates precisely: the sum with complements, the difference with substitutes
+function precise(){const comp=st.r>=0,a=comp?[1,1]:[1,-1];return{comp,a,c:dot(a,TRUE),h:1.96*Math.sqrt(quad(a,V())),col:comp?'var(--y)':'var(--res)',lab:comp?'β̂₁ + β̂₂':'β̂₁ − β̂₂'}}
+
+/* ---------- figures ---------- */
+let P=[];
+const cap=(i,t)=>{P[i].previousSibling.textContent=t};
+function figure(id){legend([]);const step=steps[st.step];
+  switch(id){
+  case 'firms':{const F=firmsFig(P[0]),ax=axes(SX());cap(0,`${st.n} firms: inputs in logs, relative to the average firm`);
+    if(ax.u[0]*ax.u[1]>0&&st.r>.2){const at_=k=>F.S([ax.u[0]*k*ax.s1,ax.u[1]*k*ax.s1]),b=at_(2.3),s=at_(-2.3);
+      halo(txt(P[0],b[0]+8,b[1]+4,'big firms','var(--fg)','lab'));halo(txt(P[0],s[0]-8,s[1]+4,'small firms','var(--fg)','lab','end'))}
+    legend([['dot','var(--x2)','A firm']]);break}
+  case 'see':case 'subs':{const F=firmsFig(P[0],{info:true}),M=F.M,o=F.S([0,0]),pt=v=>F.S(v),mul=(u,k)=>[u[0]*k,u[1]*k];
+    cap(0,M.comp?'Size varies a lot; mix varies little':'Mix varies a lot; size varies little');
+    // Band of ±1 sd of the scarce direction around the long diagonal, drawn beneath the firms; its edge is the colour boundary
+    const band=el('polygon',{points:pts2([[8,1],[8,-1],[-8,-1],[-8,1]].map(([a,b])=>pt([M.uL[0]*a+M.uN[0]*b*M.sN,M.uL[1]*a+M.uN[1]*b*M.sN]))),fill:'var(--muted)','fill-opacity':.13});F.g.insertBefore(band,F.g.firstChild);
+    const LS=Math.max(2*M.sS,.5),LM=Math.max(2*M.sM,.5);
+    [1,-1].forEach(g=>{arrowS(P[0],o,pt(mul(M.uS,g*LS)),'var(--y)',2.6);arrowS(P[0],o,pt(mul(M.uM,g*LM)),'var(--res)',2.6)});
+    const ls=pt(mul(M.uS,LS)),lm=pt(mul(M.uM,-LM));halo(txt(P[0],ls[0]+8,ls[1]+4,'size','var(--y)','lab'));halo(txt(P[0],lm[0]-8,lm[1]-4,'mix','var(--res)','lab','end'));
+    legend([['dot','var(--y)','Firm telling us mostly about size'],['dot','var(--res)','Firm telling us mostly about mix'],['area','var(--muted)',`Within 1 sd of ${M.comp?'mix':'size'} of the diagonal`]]);break}
+  case 'year':{firmsFig(P[0],{k:4,info:true,year:st.k});cap(0,`Sample ${st.k}: ${st.n} firms`);
+    cap(1,st.r>.05?'Complements: the sum is precise, the difference is not':st.r<-.05?'Substitutes: the difference is precise, the sum is not':'No correlation: sum and difference equally precise');coefFig(P[1],st.k);
+    legend([['dot','var(--y)','Left: mostly about size'],['dot','var(--res)','Left: mostly about mix'],['line','var(--fg)','Right: true value'],['line','var(--muted)','Right, faded: earlier samples']]);break}
+  case 'rerun':{const Pl=plane(P[0]),E=reruns(st.k),big=st.k>100;cap(0,`Many samples: one point each (${st.k})`);
+    if(st.k>=30)elab(Pl,ell(Pl,TRUE,cq(.05,2),{w:1.8}),'95%');
+    E.forEach(b=>dotAt(Pl,b,'var(--y)',big?2.6:3.4,big?.4:.55));
+    ring(Pl,TRUE,'var(--fg)','true β = (0.3, 0.7)');
+    legend([['dot','var(--y)','One sample’s estimates'],['ring','var(--fg)','True β'],...(st.k>=30?[['line','var(--fit)','Holds 95% of the estimates']]:[])]);break}
+  case 'total':case 'totals':{const Pl=plane(P[0]),E=reruns(st.k),Vm=Pl.Vm,A=[1,1],D=[1,-1],ca=dot(A,TRUE),cd=dot(D,TRUE),ha=1.96*Math.sqrt(quad(A,Vm)),hd=1.96*Math.sqrt(quad(D,Vm));
+    // The two true lines, β₁ + β₂ = 1 and β₁ − β₂ = −0.4, each with the strip holding 95% of samples' estimates of it
+    strip(Pl,D,cd-hd,cd+hd,{c:'var(--res)',fo:.09});strip(Pl,A,ca-ha,ca+ha,{c:'var(--y)',fo:.14});
+    lin(Pl,A,ca,{c:'var(--y)',w:1.8});lin(Pl,D,cd,{c:'var(--res)',w:1.8});
+    const la=Pl.S([-.1,ca+.1]),ld=Pl.S([.88,.88-cd]);halo(txt(Pl.s,la[0]+4,la[1]-8,'β₁ + β₂ = 1','var(--y)','lab'));halo(txt(Pl.s,ld[0]-6,ld[1]+4,'β₁ − β₂ = −0.4','var(--res)','lab','end'));
+    E.forEach(b=>dotAt(Pl,b,'var(--muted)',2.4,.45));ring(Pl,TRUE,'var(--fg)','');
+    // The chosen sample, and its distance to each line: along (1,1) to the total line, along (1,−1) to the split line
+    const j=st.pick||st.k,b=rerun(j),ea=dot(A,b)-ca,ed=dot(D,b)-cd,fa=[b[0]-ea/2,b[1]-ea/2],fd=[b[0]-ed/2,b[1]+ed/2],pb=Pl.S(b);
+    seg(Pl.s,pb,Pl.S(fa),'var(--y)',3.2);seg(Pl.s,pb,Pl.S(fd),'var(--res)',3.2);marker(Pl.s,pb[0],pb[1],'var(--fg)',7);
+    // Labels sit at the far end of each segment, where it meets its line, on the side away from the chosen dot
+    const sg=v=>(v>=0?'+':'')+f2(v),pa=Pl.S(fa),pd=Pl.S(fd),side=(q,dx)=>q[0]<pb[0]?[q[0]-dx,'end']:[q[0]+dx,'start'];
+    {const[x,a]=side(pa,8);halo(txt(Pl.s,x,pa[1]+(pa[1]>pb[1]?16:-8),`total ${sg(ea)}`,'var(--y)','',a))}
+    {const[x,a]=side(pd,8);halo(txt(Pl.s,x,pd[1]+(pd[1]>pb[1]?16:-8),`split ${sg(ed)}`,'var(--res)','',a))}
+    cap(0,`Sample ${j}: total off by ${sg(ea)}, split off by ${sg(ed)}`);
+    legend([['area','var(--y)',`95% of samples: total within ±${f2(ha)}`],['area','var(--res)',`95% of samples: split within ±${f2(hd)}`],['dot','var(--muted)','One sample'],['dot','var(--fg)','Chosen sample']]);break}
+  case 'answer':case 'answers':{const Pl=plane(P[0]),E=reruns(st.k),T_=precise(),w=.025;
+    strip(Pl,T_.a,T_.c-T_.h,T_.c+T_.h,{c:T_.col,fo:.16});lin(Pl,T_.a,T_.c,{c:T_.col,w:1.6});
+    const lp=Pl.S([-.08,(T_.c+.08*T_.a[0])/T_.a[1]]);halo(txt(Pl.s,lp[0]+6,lp[1]+(T_.a[1]>0?-10:22),`${T_.lab.replace(/̂/g,'')} = ${f2(T_.c)}`,T_.col,'lab'));
+    const inS=E.map(b=>Math.abs(b[0]-st.cut)<=w);
+    E.forEach((b,i)=>{if(!inS[i])dotAt(Pl,b,'var(--muted)',2.4,.45)});E.forEach((b,i)=>{if(inS[i])dotAt(Pl,b,'var(--x)',3.4,.95)});
+    ring(Pl,TRUE,'var(--fg)','');
+    // The vertical line at the chosen β̂₁, the stretch of it inside the strip, and the exact expected β̂₂ given β̂₁
+    const Vm=Pl.Vm,sl=Vm[0][1]/Vm[0][0],ex=TRUE[1]+sl*(st.cut-TRUE[0]),yAt=cc=>(cc-T_.a[0]*st.cut)/T_.a[1],mid=yAt(T_.c);
+    seg(Pl.g,Pl.S([TRUE[0]-3,TRUE[1]-3*sl]),Pl.S([TRUE[0]+3,TRUE[1]+3*sl]),'var(--muted)',1.4,'5 4');
+    seg(Pl.g,Pl.S([st.cut,-5]),Pl.S([st.cut,5]),'var(--fg)',1.2,'3 3');
+    seg(Pl.s,Pl.S([st.cut,yAt(T_.c-T_.h)]),Pl.S([st.cut,yAt(T_.c+T_.h)]),T_.col,6,null,.55);
+    const mp=Pl.S([st.cut,mid]);marker(Pl.s,mp[0],mp[1],T_.col,6);halo(txt(Pl.s,mp[0]+12,mp[1]+5,`β̂₂ ≈ ${f2(mid)}`,'var(--fg)','lab'));
+    cap(0,`β̂₁ = ${f2(st.cut)}: the strip says β̂₂ ≈ ${f2(mid)}; exactly, expect ${f2(ex)}`);
+    legend([['area',T_.col,`95% of samples: ${T_.lab} within ±${f2(T_.h)}`],['dot','var(--x)',`Samples with β̂₁ near ${f2(st.cut)}`],['dash','var(--muted)','Expected β̂₂ given β̂₁'],['ring','var(--fg)','True β']]);break}
+  case 'testing':{const Pl=plane(P[0]),E=reruns(st.k),[s1,s2]=se(Pl.Vm),h1=1.96*s1,h2=1.96*s2;
+    E.forEach(b=>dotAt(Pl,b,'var(--muted)',2.2,.35));
+    ell(Pl,B0,cq(.05,2),{w:2,c:'var(--fit)'});
+    el('polygon',{points:pts2([[-h1,-h2],[h1,-h2],[h1,h2],[-h1,h2]].map(d=>Pl.S([B0[0]+d[0],B0[1]+d[1]]))),fill:'none',stroke:'var(--fg)','stroke-width':1.4,'stroke-dasharray':'6 4'},Pl.g);
+    const Q=twoQ(Pl,B0,st.bT);ring(Pl,B0,'var(--fg)','');
+    cap(0,`W = ${sq(Q.ta)} + ${sq(Q.td)} = ${f2(Q.W)}: ${Q.W>5.99?'reject':'do not reject'} H₀`);
+    legend([['line','var(--y)','Total: its error in its se'],['line','var(--res)','Split: its error in its se'],['line','var(--fit)','W = 5.99, the 95% ellipse'],['dash','var(--fg)','Separate t-tests: |t₁|, |t₂| ≤ 1.96'],['dot','var(--muted)','Estimates if H₀ is true']]);break}
+  }
+}
+/* ---------- readout ---------- */
+const twoQread=(b,N,Vm,s1,s2,c)=>{const sa=Math.sqrt(quad([1,1],Vm)),sd=Math.sqrt(quad([1,-1],Vm)),ea=dot([1,1],b)-dot([1,1],N),ed=dot([1,-1],b)-dot([1,-1],N),W=(ea/sa)**2+(ed/sd)**2;
+  return[c('estimate')+pair(b,f3),c('separate t₁, t₂')+`${f2((b[0]-N[0])/s1)}, ${f2((b[1]-N[1])/s2)}`,'',col('',10)+col('error',9)+col('se',8)+'t',col('total',10)+col(f3(ea),9)+col(f3(sa),8)+f2(ea/sa),col('split',10)+col(f3(ed),9)+col(f3(sd),8)+f2(ed/sd),'',
+    c('W = t²(total) + t²(split)')+f2(W),c("check: d'V̂⁻¹d")+f2(quad(sub(b,N),inv2(Vm))),c('critical value, χ²₂')+'5.99',c('decision')+(W>5.99?'reject H₀':'do not reject H₀')]};
+function readout(id){const Vm=V(),[s1,s2]=se(Vm),L=[],c=(a,w=26)=>col(a,w),dec=r=>r?'reject H₀':'do not reject H₀';
+  switch(id){
+  case 'firms':L.push(c('firms')+st.n,c('corr(log K, log L)')+f2(st.r),c('sd(log K)')+f2(SDK),c('sd(log L)')+f2(st.sdl));break;
+  case 'see':case 'subs':{const M=sizeMix();
+    L.push(c('corr(log K, log L)')+f2(st.r),c('sd of size')+f2(M.sS),c('sd of mix')+f2(M.sM),'',c('se of β̂₁ + β̂₂, the sum')+f3(Math.sqrt(quad([1,1],Vm))),c('se of β̂₁ − β̂₂, the split')+f3(Math.sqrt(quad([1,-1],Vm))),c('se₁, se₂')+`${f3(s1)}, ${f3(s2)}`);break}
+  case 'year':{const b=rerun(st.k);L.push(c('corr(log K, log L)')+f2(st.r),c('sample')+st.k,'',col('',12)+col('estimate',10)+col('se',8)+'true',
+    ...COMBOS.map(([lab,a])=>col(lab,12)+col(f3(dot(a,b)),10)+col(f3(Math.sqrt(quad(a,Vm))),8)+f2(dot(a,TRUE))));break}
+  case 'rerun':{const k=st.k,E=reruns(k),rms=f=>f3(Math.sqrt(E.reduce((q,b)=>q+f(b)**2,0)/k));
+    L.push(c('corr(log K, log L)')+f2(st.r),c('samples')+k,c('corr of the estimates')+(k>=3?f2(corrOf(E)):'—')+`  theory ${f2(-st.r)}`,'',
+      col('',16)+col('across samples',16)+'se',col('β̂₁',16)+col(rms(b=>b[0]-TRUE[0]),16)+f3(s1),col('β̂₂',16)+col(rms(b=>b[1]-TRUE[1]),16)+f3(s2),col('β̂₁ + β̂₂',16)+col(rms(b=>b[0]+b[1]-1),16)+f3(Math.sqrt(quad([1,1],Vm))),col('β̂₁ − β̂₂',16)+col(rms(b=>b[0]-b[1]+.4),16)+f3(Math.sqrt(quad([1,-1],Vm))));break}
+  case 'total':case 'totals':{const E=reruns(st.k),A=[1,1],D=[1,-1],sa=Math.sqrt(quad(A,Vm)),sd=Math.sqrt(quad(D,Vm)),j=st.pick||st.k,b=rerun(j),
+      ina=E.filter(x=>Math.abs(dot(A,x)-1)<=1.96*sa).length,ind=E.filter(x=>Math.abs(dot(D,x)+.4)<=1.96*sd).length;
+    L.push(c('corr(log K, log L)')+f2(st.r),c('chosen sample')+j,'',col('',14)+col('its error',11)+'se',col('total',14)+col(f3(dot(A,b)-1),11)+f3(sa),col('split',14)+col(f3(dot(D,b)+.4),11)+f3(sd),'',
+      c('samples in the blue strip')+`${ina} of ${st.k}`,c('samples in the red strip')+`${ind} of ${st.k}`);break}
+  case 'answer':case 'answers':{const T_=precise(),E=reruns(st.k),S_=E.filter(b=>Math.abs(b[0]-st.cut)<=.025),sl=Vm[0][1]/Vm[0][0],rho=Vm[0][1]/(s1*s2),mid=(T_.c-T_.a[0]*st.cut)/T_.a[1];
+    L.push(c('β̂₁ (click to change)')+f2(st.cut),'',c(`from ${T_.lab} ≈ ${f2(T_.c)}`)+`β̂₂ ≈ ${f3(mid)}`,c('exactly, expected β̂₂')+f3(TRUE[1]+sl*(st.cut-TRUE[0])),c('  = 0.7 + ρ·sd₂/sd₁·(β̂₁ − 0.3)'),c('  ρ = −corr(K, L)')+f2(rho),'',
+      `samples with β̂₁ within 0.025: ${S_.length} of ${st.k}`,c('  their average β̂₂')+(S_.length?f3(S_.reduce((a,b)=>a+b[1],0)/S_.length):'—'));break}
+  case 'testing':L.push(c('corr(log K, log L)')+f2(st.r),'',...twoQread(st.bT,B0,Vm,s1,s2,c));break;
+  }
+  $('readout').textContent=L.join('\n');
+}
+
+/* ---------- render ---------- */
+const SL=['n','r','sdl'],BT=['new','ten','more'];
+function go(k){const prev=st.step,step=steps[k],f=$('fig'),same=steps[prev].part===step.part;
+  if(!same)Object.assign(st,{n:DEF.n,r:DEF.r,sdl:DEF.sdl},PS[step.part]||{});
+  st.step=k;Object.assign(st,JSON.parse(JSON.stringify(step.set||{})));st.reveal=false;st.k=step.k0||10;
+  f.innerHTML='';f.classList.toggle('pair',!!step.pair);$('grid').classList.toggle('wide',!!step.pair);P=step.fig.map((c,i)=>{const d=document.createElement('div'),l=document.createElement('div'),s=document.createElementNS(NS,'svg');d.className='cell';l.className='plabel';s.id='p'+i;s.setAttribute('role','img');d.append(l,s);f.append(d);return s});
+  if(step.drag)P[0].classList.add('drag');
+  render()}
+const RNG0={};SL.forEach(c=>RNG0[c]=[$(c).min,$(c).max]);
+function render(){
+  const k=st.step,step=steps[k],show=step.ctl;
+  [...$('nav').querySelectorAll('button')].forEach((b,i)=>{b.classList.toggle('on',i===k);b.classList.toggle('done',i<k);b.setAttribute('aria-current',i===k?'step':'false')});
+  $('stepnum').textContent=`Part ${step.part} · ${parts[step.part]} · Step ${k+1} of ${steps.length}`;
+  $('stitle').textContent=step.t;
+  const body=refs(step.text);$('stext').innerHTML=typeof katex!=='undefined'?tex(body):body.replace(/\\\(|\\\)/g,'');
+  $('hint').textContent=step.hint;
+  SL.forEach(c=>{$('c-'+c).hidden=!show.includes(c);const r=(step.rng||{})[c]||RNG0[c];$(c).min=r[0];$(c).max=r[1]});BT.forEach(c=>{$(c).hidden=!show.includes(c)});
+  $('new').textContent=step.newLabel||'New sample';$('ten').textContent=step.tenLabel||'Draw 10';$('more').textContent=step.moreLabel||'Draw 100';
+  document.querySelector('.controls').classList.toggle('btnfirst',!!step.btnFirst);
+  $('prev').disabled=k===0;$('next').disabled=k===steps.length-1;
+  draw()}
+function draw(){const id=steps[st.step].id;
+  figure(id);readout(id);
+  // Say on the plot itself that it responds to the pointer
+  const dg=steps[st.step].drag;if(dg)halo(txt(P[0],426,26,dg==='cut'?'click: pick β̂₁':dg==='pick'?'click a dot: pick a sample':'click or drag: your estimate follows','var(--muted)','','end'));
+  SL.forEach(c=>{$(c).value=st[c];$(c+'o').textContent=c==='n'?st.n:f2(st[c])})}
+
+/* nav */
+let lastPart='';steps.forEach((s,i)=>{if(s.part!==lastPart){const p=document.createElement('span');p.className='part';p.textContent=parts[s.part];$('nav').appendChild(p);lastPart=s.part}
+  const b=document.createElement('button');b.textContent=i+1;b.title=s.t;b.setAttribute('aria-label',`Step ${i+1}: ${s.t}`);b.onclick=()=>go(i);$('nav').appendChild(b)});
+$('prev').onclick=()=>{if(st.step>0)go(st.step-1)};
+$('next').onclick=()=>{if(st.step<steps.length-1)go(st.step+1)};
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')$('next').click();if(e.key==='ArrowLeft')$('prev').click()});
+SL.forEach(c=>$(c).addEventListener('input',()=>{st[c]=+$(c).value;draw()}));
+$('stext').addEventListener('click',e=>{const a=e.target.closest('a[data-go]');if(a){e.preventDefault();go(+a.dataset.go)}});
+// Draw buttons: more samples; a fresh draw picks the newest sample
+const drawMany=k=>{st.k=Math.min(st.k+k,NR);st.pick=0;draw()};
+$('new').onclick=()=>drawMany(1);
+$('ten').onclick=()=>drawMany(10);
+$('more').onclick=()=>drawMany(100);
+$('reset').onclick=()=>{const s=st.step;Object.assign(st,fresh(),PS[steps[s].part]||{});go(s)};
+
+/* dragging in the plane */
+const svgPt=(svg,e)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
+let dragging=false;
+function moveTo(e){const step=steps[st.step],s=P[0],q=svgPt(s,e),b=s._inv(q.x,q.y),vw=VIEW[step.view||'cd'],r=v=>Math.round(v*200)/200;
+  let v=[clamp(b[0],vw.x[0]+.01,vw.x[1]-.01),clamp(b[1],vw.y[0]+.01,vw.y[1]-.01)].map(r);
+  if(step.view==='nl')v=v.map(x=>Math.max(x,.05));
+  if(step.drag==='cut')st.cut=clamp(v[0],0,.8);else if(step.drag==='pick'){let bd=Infinity;for(let j=1;j<=st.k;j++){const b=rerun(j),d=(b[0]-v[0])**2+(b[1]-v[1])**2;if(d<bd){bd=d;st.pick=j}}}else st[step.drag]=v;draw()}
+$('fig').addEventListener('pointerdown',e=>{const s=e.target.closest('svg');if(!s||s!==P[0]||!steps[st.step].drag)return;dragging=true;moveTo(e);e.preventDefault()});
+window.addEventListener('pointermove',e=>{if(dragging)moveTo(e)});
+window.addEventListener('pointerup',()=>{dragging=false});
+
+/* tooltips */
+window.addEventListener('pointermove',e=>{const t=e.target,tip=$('tip');let s=null;if(dragging){tip.hidden=true;return}
+  const svg=t.closest&&t.closest('svg');if(svg&&svg._pts&&svg._pts.length){const q=svgPt(svg,e);let best=200;svg._pts.forEach(p=>{const d=(p[0]-q.x)**2+(p[1]-q.y)**2;if(d<best){best=d;s=p[2]}})}
+  tip.hidden=!s;if(s){tip.textContent=s;tip.style.left=Math.min(e.clientX+12,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=Math.max(4,e.clientY-30)+'px'}});
+
+go(0);
+})();
+</script>
+</body>
+</html>
